@@ -5,7 +5,7 @@ import Icon from './Icon'
 const nav: { id: Page; icon: string; label: string }[] = [
   { id: 'study', icon: '▤', label: '문장분석' },
   { id: 'vocabulary', icon: '◆', label: '단어장' },
-  { id: 'analysis', icon: '✓', label: '테스트' },
+  { id: 'quiz', icon: '✓', label: '테스트' },
   { id: 'story', icon: '✦', label: '스토리텔링' },
   { id: 'profile', icon: '●', label: '마이페이지' },
 ]

@@ -3,6 +3,7 @@ import AppShell from './components/AppShell'
 import AnalysisPage from './pages/AnalysisPage'
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
+import QuizPage from './pages/QuizPage'
 import StoryPage from './pages/StoryPage'
 import StudyPage from './pages/StudyPage'
 import VocabularyPage from './pages/VocabularyPage'
@@ -14,12 +15,12 @@ export default function App() {
 
   useEffect(() => {
     const syncRoute = () => setPage(readRoute())
-    window.addEventListener('hashchange', syncRoute)
-    return () => window.removeEventListener('hashchange', syncRoute)
+    window.addEventListener('popstate', syncRoute)
+    return () => window.removeEventListener('popstate', syncRoute)
   }, [])
 
   const go = (nextPage: Page) => {
-    location.hash = `/${nextPage}`
+    history.pushState(null, '', `/${nextPage}`)
     setPage(nextPage)
     window.scrollTo(0, 0)
   }
@@ -32,6 +33,8 @@ export default function App() {
       ? <AnalysisPage/>
       : page === 'vocabulary'
         ? <VocabularyPage/>
+        : page === 'quiz'
+          ? <QuizPage/>
         : page === 'story'
           ? <StoryPage/>
           : <ProfilePage logout={() => go('login')}/>

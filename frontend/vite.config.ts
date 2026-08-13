@@ -20,7 +20,7 @@ export default defineConfig({
       manifest: {
         name: 'Hwalingo PWA',
         short_name: 'Hwalingo',
-        start_url: '/',
+        start_url: '/study',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#0ea5a4',
