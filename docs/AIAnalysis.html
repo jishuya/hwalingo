@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HwaLingo - Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "surface-tint": "#006d34",
+                            "tertiary-fixed-dim": "#98d4ab",
+                            "error": "#ba1a1a",
+                            "inverse-primary": "#6cdd8a",
+                            "on-secondary": "#ffffff",
+                            "secondary-fixed": "#cbe9dc",
+                            "surface-container-highest": "#dce2f3",
+                            "surface": "#F7F7F2",
+                            "tertiary": "#2e6746",
+                            "secondary-fixed-dim": "#afcdc0",
+                            "on-tertiary-fixed-variant": "#155132",
+                            "tertiary-container": "#47805d",
+                            "on-error": "#ffffff",
+                            "surface-container-high": "#e2e8f8",
+                            "primary": "#008C44",
+                            "error-container": "#ffdad6",
+                            "primary-fixed-dim": "#6cdd8a",
+                            "on-primary": "#ffffff",
+                            "on-surface": "#18332A",
+                            "surface-dim": "#d3daea",
+                            "secondary-container": "#c8e7d9",
+                            "inverse-on-surface": "#ebf1ff",
+                            "surface-variant": "#dce2f3",
+                            "on-surface-variant": "#18332A",
+                            "outline": "#6e7a6e",
+                            "surface-bright": "#f9f9ff",
+                            "on-tertiary": "#ffffff",
+                            "on-background": "#18332A",
+                            "on-primary-container": "#f7fff3",
+                            "on-secondary-container": "#4d685e",
+                            "primary-fixed": "#89faa4",
+                            "secondary": "#486459",
+                            "surface-container": "#e7eefe",
+                            "inverse-surface": "#2a313d",
+                            "on-tertiary-fixed": "#002110",
+                            "surface-container-lowest": "#FFFFFF",
+                            "surface-container-low": "#f0f3ff",
+                            "primary-container": "#008C44",
+                            "tertiary-fixed": "#b3f0c6",
+                            "on-primary-fixed": "#00210b",
+                            "on-secondary-fixed-variant": "#314c42",
+                            "on-secondary-fixed": "#042018",
+                            "background": "#F7F7F2",
+                            "outline-variant": "#bdcabb",
+                            "on-error-container": "#93000a",
+                            "on-tertiary-container": "#f6fff5",
+                            "on-primary-fixed-variant": "#005225",
+                            "accent": "#FFD95A"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "sm": "8px",
+                            "gutter-mobile": "12px",
+                            "margin-mobile": "20px",
+                            "md": "16px",
+                            "unit": "4px",
+                            "lg": "24px",
+                            "xs": "4px",
+                            "xl": "32px"
+                    },
+                    "fontFamily": {
+                            "headline-sm": ["Plus Jakarta Sans"],
+                            "headline-md": ["Plus Jakarta Sans"],
+                            "headline-lg-mobile": ["Plus Jakarta Sans"],
+                            "body-lg": ["Be Vietnam Pro"],
+                            "label-sm": ["Be Vietnam Pro"],
+                            "headline-lg": ["Plus Jakarta Sans"],
+                            "body-md": ["Be Vietnam Pro"],
+                            "label-lg": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                            "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                            "headline-md": ["22px", {"lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                            "body-lg": ["16px", {"lineHeight": "26px", "fontWeight": "400"}],
+                            "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                            "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                            "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #F7F7F2; }
+        .ambient-shadow { box-shadow: 0 4px 20px rgba(24, 51, 42, 0.04); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-md text-[#18332A] antialiased bg-[#F7F7F2] min-h-screen pb-24 md:pb-0 pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-40 bg-surface-container-lowest dark:bg-surface-dim flat no shadows flex items-center justify-start px-margin-mobile h-16 w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="language">language</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">HwaLingo</h1>
+</div>
+<!-- Desktop Nav -->
+<nav class="hidden md:flex ml-8 gap-6 h-full items-center">
+<a class="h-full flex items-center border-b-2 border-primary text-primary dark:text-primary-fixed font-bold font-label-lg text-label-lg hover:opacity-80 transition-opacity duration-200" href="#">
+<span class="material-symbols-outlined mr-2 text-lg">menu_book</span>
+                문장분석
+            </a>
+<a class="h-full flex items-center border-b-2 border-transparent text-[#18332A] dark:text-outline-variant font-label-lg text-label-lg hover:opacity-80 transition-opacity duration-200" href="#">
+<span class="material-symbols-outlined mr-2 text-lg">bookmark</span>
+                단어장
+            </a>
+<a class="h-full flex items-center border-b-2 border-transparent text-[#18332A] dark:text-outline-variant font-label-lg text-label-lg hover:opacity-80 transition-opacity duration-200" href="#">
+<span class="material-symbols-outlined mr-2 text-lg">quiz</span>
+                테스트
+            </a>
+<a class="h-full flex items-center border-b-2 border-transparent text-[#18332A] dark:text-outline-variant font-label-lg text-label-lg hover:opacity-80 transition-opacity duration-200" href="#">
+<span class="material-symbols-outlined mr-2 text-lg">auto_awesome</span>
+                스토리텔링
+            </a>
+<a class="h-full flex items-center border-b-2 border-transparent text-[#18332A] dark:text-outline-variant font-label-lg text-label-lg hover:opacity-80 transition-opacity duration-200" href="#">
+<span class="material-symbols-outlined mr-2 text-lg">person</span>
+                마이페이지
+            </a>
+</nav>
+</header>
+<main class="max-w-4xl mx-auto px-margin-mobile pt-lg flex flex-col gap-lg">
+<!-- Input Section -->
+<section class="bg-[#FFFFFF] rounded-[1rem] p-[20px] ambient-shadow">
+<div class="flex justify-between items-center mb-4">
+<h2 class="font-headline-sm text-headline-sm text-[#18332A]">학습할 언어와 문구를 입력하세요</h2>
+<select class="border border-gray-300 text-sm rounded-lg focus:ring-[#008C44] focus:border-[#008C44] block p-2 text-[#18332A] bg-[#FFFFFF]">
+<option>영어</option>
+</select>
+</div>
+<textarea class="w-full bg-[#FFFFFF] border border-gray-300 rounded-lg p-4 mb-4 focus:ring-[#008C44] focus:border-[#008C44] resize-none h-32 text-[#18332A] font-body-md" placeholder="문장을 입력하세요...">제 월급으로 그 차를 살 수 있을지 모르겠어요. 저는 그런데 차가 너무 갖고 싶어요</textarea>
+<div class="flex justify-end">
+<button class="bg-[#008C44] text-white px-6 py-2 rounded-lg font-label-lg text-label-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+                    AI 분석 시작
+                </button>
+</div>
+</section>
+<!-- Context Insight -->
+<section class="bg-[#FFFFFF] rounded-[1rem] p-[20px] border border-accent flex gap-4 items-start ambient-shadow">
+<span class="material-symbols-outlined text-accent mt-1" data-weight="fill" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+<div>
+<h3 class="font-label-lg text-label-lg text-[#18332A] mb-1">배경 지식</h3>
+<p class="font-body-md text-[#18332A]">이 문장은 개인의 재정 상태와 소비 욕구 사이의 갈등을 나타냅니다. 고가의 물건을 구매하고 싶지만 현재의 수입으로 감당 가능한지에 대한 현실적인 고민을 영어로 표현하고 있습니다.</p>
+</div>
+</section>
+<!-- Analysis Results -->
+<section class="bg-[#FFFFFF] rounded-[1.5rem] p-[20px] ambient-shadow flex flex-col gap-lg">
+<!-- Main Sentence -->
+<div class="flex justify-between items-start border-b border-gray-100 pb-6">
+<h2 class="font-headline-md text-headline-md leading-relaxed text-[#18332A]">
+                    I <span class="text-[#008C44]">don't know</span> if I <span class="text-[#008C44]">can afford</span> that car with my salary
+                </h2>
+<div class="flex gap-2 shrink-0 ml-4">
+<button class="w-10 h-10 rounded-full bg-surface-container-low text-primary flex items-center justify-center hover:bg-opacity-80 transition-opacity border border-gray-200">
+<span class="material-symbols-outlined">headphones</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-surface-container-low text-primary flex items-center justify-center hover:bg-opacity-80 transition-opacity border border-gray-200">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Left Column: Breakdown & Interaction -->
+<div class="md:col-span-2 flex flex-col gap-lg border-r-0 md:border-r border-gray-100 md:pr-lg">
+<!-- Word by Word -->
+<div>
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-label-lg text-label-lg flex items-center gap-2 text-[#18332A]">
+<span class="material-symbols-outlined text-sm text-outline">account_tree</span>
+                                직독직해 연습
+                            </h3>
+<button class="text-[#008C44] font-label-sm text-label-sm">모두 보기</button>
+</div>
+<div class="flex flex-wrap gap-2">
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">I</span>
+<div class="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">don't know</span>
+<div class="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">if</span>
+<div class="w-6 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">I</span>
+<div class="w-6 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">can afford</span>
+<div class="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">that car</span>
+<div class="w-12 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">with</span>
+<div class="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+<div class="flex flex-col items-center gap-1 bg-[#FFFFFF] p-2 rounded-lg border border-gray-200">
+<span class="font-body-md text-[#008C44]">my salary</span>
+<div class="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+</div>
+</div>
+</div>
+<!-- Full Translation Toggle -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<h3 class="font-label-lg text-label-lg flex items-center gap-2 text-[#18332A]">
+<span class="material-symbols-outlined text-sm text-outline">translate</span>
+                                완전한 해석
+                            </h3>
+<button class="text-[#008C44] font-label-sm text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">visibility</span> 보기</button>
+</div>
+<button class="w-full py-3 bg-[#FFFFFF] border border-dashed border-gray-300 rounded-lg text-[#18332A] hover:bg-surface-container-low transition-colors font-body-sm text-sm">
+                            클릭하여 해석 보기
+                        </button>
+</div>
+<!-- Paraphrasing Toggle -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<h3 class="font-label-lg text-label-lg flex items-center gap-2 text-[#18332A]">
+<span class="material-symbols-outlined text-sm text-outline">cycle</span>
+                                수준별 패러프레이징
+                            </h3>
+<button class="text-[#008C44] font-label-sm text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">visibility</span> 보기</button>
+</div>
+<button class="w-full py-3 bg-[#FFFFFF] border border-dashed border-gray-300 rounded-lg text-[#18332A] hover:bg-surface-container-low transition-colors font-body-sm text-sm">
+                            클릭하여 패러프레이징 보기
+                        </button>
+</div>
+<!-- Ask AI -->
+<div class="bg-[#FFFFFF] rounded-xl p-4 border border-gray-200 mt-2">
+<h3 class="font-label-lg text-label-lg flex items-center gap-2 mb-3 text-[#18332A]">
+<span class="material-symbols-outlined text-sm text-primary">chat</span>
+                            이 문장에 대해 질문하기
+                        </h3>
+<div class="flex gap-2">
+<input class="flex-1 bg-[#FFFFFF] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-[#008C44] focus:border-[#008C44] font-body-md text-[#18332A]" placeholder="예: 여기서 왜 이 동사가 쓰였나요?" type="text"/>
+<button class="bg-[#008C44] text-white px-4 py-2 rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity">
+                                질문
+                            </button>
+</div>
+</div>
+</div>
+<!-- Right Column: Vocab Cards -->
+<div class="flex flex-col gap-4">
+<h3 class="font-label-lg text-label-lg flex items-center gap-2 mb-2 text-[#18332A]">
+<span class="material-symbols-outlined text-sm text-outline">menu_book</span>
+                        핵심 어휘
+                    </h3>
+<!-- Vocab Card 1 -->
+<div class="bg-[#FFFFFF] rounded-xl p-4 border border-gray-200 ambient-shadow relative group">
+<button class="absolute top-4 right-4 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">bookmark_border</span>
+</button>
+<div class="flex items-center gap-2 mb-2">
+<h4 class="font-headline-sm text-headline-sm text-[#18332A]">salary</h4>
+<span class="bg-accent text-[#18332A] text-[10px] px-2 py-0.5 rounded-full font-bold">B1</span>
+<span class="material-symbols-outlined text-[16px] text-outline cursor-pointer hover:text-primary">volume_up</span>
+</div>
+<p class="font-body-sm text-sm text-[#18332A] mb-3">기본: 급여, 월급<br/>문맥: 한 달 동안 일하고 받는 보수</p>
+<div class="bg-surface-container-low rounded-lg p-3 text-xs text-[#18332A] flex flex-col gap-2">
+<div class="flex gap-1 items-start">
+<span class="material-symbols-outlined text-[14px] text-outline mt-0.5">history</span>
+<p>어원: 라틴어 'salarium'에서 유래했으며, 고대 로마 병사들에게 소금을 사기 위해 지급된 돈을 의미합니다.</p>
+</div>
+<div class="flex gap-1 items-start text-[#18332A] bg-accent/20 p-2 rounded">
+<span class="material-symbols-outlined text-[14px] mt-0.5 text-accent">lightbulb</span>
+<p>팁: 'Salt'(소금)와 어원이 같다는 점을 기억하세요. 옛날에는 소금이 돈만큼 귀했습니다.</p>
+</div>
+</div>
+</div>
+<!-- Vocab Card 2 -->
+<div class="bg-[#FFFFFF] rounded-xl p-4 border border-gray-200 ambient-shadow relative group">
+<button class="absolute top-4 right-4 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">bookmark_border</span>
+</button>
+<div class="flex items-center gap-2 mb-2">
+<h4 class="font-headline-sm text-headline-sm text-[#18332A]">afford</h4>
+<span class="bg-accent text-[#18332A] text-[10px] px-2 py-0.5 rounded-full font-bold">B1</span>
+<span class="material-symbols-outlined text-[16px] text-outline cursor-pointer hover:text-primary">volume_up</span>
+</div>
+<p class="font-body-sm text-sm text-[#18332A] mb-3">기본: ~할 여유가 되다<br/>문맥: 금전적으로 무언가를 살 능력이 되다</p>
+<div class="bg-surface-container-low rounded-lg p-3 text-xs text-[#18332A] flex flex-col gap-2">
+<div class="flex gap-1 items-start">
+<span class="material-symbols-outlined text-[14px] text-outline mt-0.5">history</span>
+<p>어원: 고대 영어 'geforthian'(진척시키다, 완수하다)에서 유래했습니다.</p>
+</div>
+<div class="flex gap-1 items-start text-[#18332A] bg-accent/20 p-2 rounded">
+<span class="material-symbols-outlined text-[14px] mt-0.5 text-accent">lightbulb</span>
+<p>팁: 'a'+'ford'(강의 얕은 곳)를 건너갈 '여유'가 있다고 연상해 보세요.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface-container-lowest/90 dark:bg-surface-dim/80 backdrop-blur-md shadow-lg fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 border-t border-gray-100">
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed font-bold font-label-sm text-label-sm scale-95 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mb-1">menu_book</span>
+            문장분석
+        </a>
+<a class="flex flex-col items-center justify-center text-[#18332A] dark:text-outline-variant font-label-sm text-label-sm hover:bg-primary/5 p-2 rounded-lg scale-95 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mb-1">bookmark</span>
+            단어장
+        </a>
+<a class="flex flex-col items-center justify-center text-[#18332A] dark:text-outline-variant font-label-sm text-label-sm hover:bg-primary/5 p-2 rounded-lg scale-95 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mb-1">quiz</span>
+            테스트
+        </a>
+<a class="flex flex-col items-center justify-center text-[#18332A] dark:text-outline-variant font-label-sm text-label-sm hover:bg-primary/5 p-2 rounded-lg scale-95 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mb-1">auto_awesome</span>
+            스토리텔링
+        </a>
+<a class="flex flex-col items-center justify-center text-[#18332A] dark:text-outline-variant font-label-sm text-label-sm hover:bg-primary/5 p-2 rounded-lg scale-95 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+            마이페이지
+        </a>
+</nav>
+</body></html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HwaLingo - Text Input</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-container-low": "#f0f3ff",
+                "on-tertiary": "#ffffff",
+                "inverse-primary": "#6cdd8a",
+                "surface-container": "#e7eefe",
+                "secondary": "#486459",
+                "on-secondary-container": "#4d685e",
+                "primary-fixed-dim": "#6cdd8a",
+                "on-primary": "#ffffff",
+                "tertiary": "#2e6746",
+                "primary-fixed": "#89faa4",
+                "on-tertiary-fixed": "#002110",
+                "on-tertiary-container": "#f6fff5",
+                "tertiary-container": "#47805d",
+                "surface-container-high": "#e2e8f8",
+                "on-surface": "#151c27",
+                "surface-container-highest": "#dce2f3",
+                "on-secondary": "#ffffff",
+                "surface-tint": "#006d34",
+                "surface": "#f9f9ff",
+                "secondary-container": "#c8e7d9",
+                "surface-bright": "#f9f9ff",
+                "on-background": "#151c27",
+                "error-container": "#ffdad6",
+                "error": "#ba1a1a",
+                "inverse-on-surface": "#ebf1ff",
+                "background": "#f9f9ff",
+                "surface-container-lowest": "#ffffff",
+                "on-tertiary-fixed-variant": "#155132",
+                "primary-container": "#008741",
+                "surface-variant": "#dce2f3",
+                "on-secondary-fixed": "#042018",
+                "inverse-surface": "#2a313d",
+                "on-error": "#ffffff",
+                "tertiary-fixed-dim": "#98d4ab",
+                "on-primary-container": "#f7fff3",
+                "tertiary-fixed": "#b3f0c6",
+                "on-primary-fixed-variant": "#005225",
+                "on-error-container": "#93000a",
+                "on-primary-fixed": "#00210b",
+                "on-surface-variant": "#3e4a3f",
+                "outline": "#6e7a6e",
+                "secondary-fixed-dim": "#afcdc0",
+                "secondary-fixed": "#cbe9dc",
+                "on-secondary-fixed-variant": "#314c42",
+                "outline-variant": "#bdcabb",
+                "surface-dim": "#d3daea",
+                "primary": "#006b32"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter-mobile": "12px",
+                "unit": "4px",
+                "xs": "4px",
+                "lg": "24px",
+                "margin-mobile": "20px",
+                "md": "16px",
+                "sm": "8px",
+                "xl": "32px"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "label-sm": [
+                        "Be Vietnam Pro"
+                ],
+                "body-md": [
+                        "Be Vietnam Pro"
+                ],
+                "body-lg": [
+                        "Be Vietnam Pro"
+                ],
+                "headline-md": [
+                        "Plus Jakarta Sans"
+                ],
+                "label-lg": [
+                        "Be Vietnam Pro"
+                ],
+                "headline-sm": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-lg-mobile": [
+                        "Plus Jakarta Sans"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "500"
+                        }
+                ],
+                "body-md": [
+                        "14px",
+                        {
+                                "lineHeight": "22px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "26px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-md": [
+                        "22px",
+                        {
+                                "lineHeight": "30px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-lg": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-sm": [
+                        "18px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "700"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body {
+            background-color: #f9f9ff;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-md text-on-surface antialiased min-h-screen flex flex-col bg-background">
+<!-- TopAppBar (Web) -->
+<header class="hidden md:flex bg-surface dark:bg-surface-dim items-center justify-start px-margin-mobile h-16 w-full docked full-width top-0 shadow-sm sticky z-40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="language">language</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">HwaLingo</span>
+</div>
+<nav class="ml-10 flex gap-6">
+<a class="flex items-center gap-1 text-primary dark:text-primary-fixed hover:opacity-80 transition-opacity duration-200 font-label-lg font-bold" href="#">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+                텍스트 학습
+            </a>
+<a class="flex items-center gap-1 text-on-surface-variant dark:text-outline-variant hover:opacity-80 transition-opacity duration-200 font-label-lg" href="#">
+<span class="material-symbols-outlined text-[18px]">bookmark</span>
+                나만의 단어장 (0)
+            </a>
+<a class="flex items-center gap-1 text-on-surface-variant dark:text-outline-variant hover:opacity-80 transition-opacity duration-200 font-label-lg" href="#">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                AI 스토리텔링
+            </a>
+</nav>
+</header>
+<!-- TopAppBar (Mobile) -->
+<header class="flex md:hidden bg-surface dark:bg-surface-dim items-center justify-start px-margin-mobile h-16 w-full docked full-width top-0 sticky z-40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="language">language</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed">HwaLingo</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-4xl mx-auto px-margin-mobile py-lg pb-32 md:pb-lg">
+<!-- Input Card -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(24,51,42,0.04)] ring-1 ring-surface-variant/50">
+<div class="flex items-center justify-between mb-4">
+<h1 class="font-headline-sm text-headline-sm text-on-surface">학습할 언어와 문구를 입력하세요</h1>
+<div class="relative">
+<select class="appearance-none bg-surface-container-low border border-outline-variant rounded-lg pl-3 pr-8 py-1.5 text-sm font-label-lg text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer">
+<option value="en">영어</option>
+<option value="ko">한국어</option>
+<option value="ja">일본어</option>
+<option value="zh">중국어</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-4 min-h-[160px] resize-y text-body-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" placeholder="어떤 언어든 입력하면 선택한 목표 언어로 번역 및 분석해 드립니다."></textarea>
+<div class="flex justify-end mt-4">
+<button class="bg-primary hover:bg-primary/90 text-on-primary font-label-lg px-6 py-2.5 rounded-lg flex items-center gap-2 transition-colors duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+                    AI 분석 시작
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface-container-lowest dark:bg-surface-dim/90 shadow-[0_-1px_10px_rgba(24,51,42,0.04)] fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 pb-safe">
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed font-bold hover:bg-primary/5 p-1 rounded-lg scale-95 active:scale-90 transition-all duration-150 w-full" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="menu_book" data-weight="fill" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-sm text-[10px] sm:text-label-sm truncate">문장분석</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-primary/5 p-1 rounded-lg scale-95 active:scale-90 transition-all duration-150 w-full" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="bookmark">bookmark</span>
+<span class="font-label-sm text-[10px] sm:text-label-sm truncate">단어장</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-primary/5 p-1 rounded-lg scale-95 active:scale-90 transition-all duration-150 w-full" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="quiz">quiz</span>
+<span class="font-label-sm text-[10px] sm:text-label-sm truncate">테스트</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-primary/5 p-1 rounded-lg scale-95 active:scale-90 transition-all duration-150 w-full" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-sm text-[10px] sm:text-label-sm truncate">스토리텔링</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-primary/5 p-1 rounded-lg scale-95 active:scale-90 transition-all duration-150 w-full" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-label-sm text-[10px] sm:text-label-sm truncate">마이페이지</span>
+</a>
+</nav>
+</body></html>
