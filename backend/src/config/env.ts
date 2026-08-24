@@ -23,6 +23,8 @@ export const env = {
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPassword: process.env.SMTP_PASSWORD ?? '',
   mailFrom: process.env.MAIL_FROM ?? '',
+  openaiApiKey: process.env.OPENAI_API_KEY ?? '',
+  openaiModel: process.env.OPENAI_MODEL ?? 'gpt-5-mini',
 }
 
 if (!Number.isInteger(env.port) || env.port < 1 || env.port > 65535) {

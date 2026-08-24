@@ -4,6 +4,7 @@ import express from 'express'
 import helmet from 'helmet'
 import { env } from './config/env.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import { analysisRouter } from './routes/analysis.js'
 import { authRouter } from './routes/auth.js'
 import { healthRouter } from './routes/health.js'
 
@@ -19,6 +20,7 @@ app.get('/api', (_request, response) => {
 })
 app.use('/api/health', healthRouter)
 app.use('/api/auth', authRouter)
+app.use('/api/analysis', analysisRouter)
 
 app.use((_request, response) => {
   response.status(404).json({ status: 'error', message: 'Not found' })
