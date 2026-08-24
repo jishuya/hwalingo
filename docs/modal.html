@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HwaLingo - 학습 설정</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#fafaf5",
+                        "on-primary-fixed-variant": "#005225",
+                        "primary-container": "#008741",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e2e3de",
+                        "on-background": "#1a1c19",
+                        "outline-variant": "#bdcabb",
+                        "on-primary": "#FFFFFF",
+                        "secondary-container": "#fdd758",
+                        "surface-dim": "#dadad5",
+                        "on-secondary": "#18332A",
+                        "on-primary-fixed": "#00210b",
+                        "on-tertiary-fixed-variant": "#314c42",
+                        "surface-container-high": "#e8e8e4",
+                        "on-surface": "#1a1c19",
+                        "tertiary-container": "#5e7b6f",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e2e3de",
+                        "surface": "#FFFFFF",
+                        "primary-fixed": "#89faa4",
+                        "border-subtle": "#E5E5E0",
+                        "outline": "#6e7a6e",
+                        "surface-container-low": "#f4f4ef",
+                        "inverse-on-surface": "#f1f1ec",
+                        "tertiary-fixed": "#cbe9dc",
+                        "on-secondary-fixed-variant": "#564500",
+                        "on-surface-variant": "#3e4a3f",
+                        "on-secondary-container": "#735d00",
+                        "secondary": "#725c00",
+                        "secondary-fixed-dim": "#e8c346",
+                        "primary-fixed-dim": "#6cdd8a",
+                        "primary": "#008C44", /* Brand Primary */
+                        "inverse-surface": "#2f312e",
+                        "secondary-fixed": "#ffe081",
+                        "on-secondary-fixed": "#231b00",
+                        "tertiary-fixed-dim": "#afcdc0",
+                        "inverse-primary": "#6cdd8a",
+                        "on-tertiary-fixed": "#042018",
+                        "surface-container": "#eeeee9",
+                        "on-primary-container": "#f7fff3",
+                        "background": "#F7F7F2", /* Layer 0 */
+                        "tertiary": "#466257",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#f5fff9",
+                        "surface-tint": "#006d34",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "brand-yellow": "#FFD95A", /* Brand Accent */
+                        "brand-dark": "#18332A"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "40px",
+                        "margin-mobile": "20px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "margin-desktop": "64px",
+                        "base": "4px",
+                        "sm": "8px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }]
+                    },
+                    "boxShadow": {
+                        'ambient': '0 10px 30px -10px rgba(24, 51, 42, 0.06)' /* 20-30px blur, 6% dark UI color */
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Hide scrollbar for clean modal look */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        
+        .bottom-sheet-enter {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        .bottom-sheet-enter-active {
+            transform: translateY(0);
+            opacity: 1;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .backdrop-enter {
+            opacity: 0;
+        }
+        .backdrop-enter-active {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Custom Toggle Switch Colors */
+        .toggle-checkbox:checked {
+            background-color: #008C44;
+            border-color: #008C44;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-sans antialiased overflow-hidden selection:bg-brand-yellow/30 h-screen w-full relative">
+<!-- Background Context (AI Storytelling Screen) -->
+<div class="absolute inset-0 z-0">
+<img alt="Background Screen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDh-hFpQn7dRCrmtI9E_JYVPGKJibKAki6bu8MhWWOUhsr3Z39OI1upJvzFX6fegbSZv-O0ZCxMqpI83DvOvmJh5ZxUSNKPsIfG8VkSFrWMScVMUpx6P6BcY7mXERAo9V1Lh2sZthD0Sm9PFRHBYU8yQ25bXnd22ST5v3Y95ElbDTdUUE24gNUyEA_Zs2eyZXnHj-ZQXNxmfeyAX1ge9XanxM2UL_S8vdKDh03A8y212n3b4f13jr3FYg"/>
+</div>
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 bg-brand-dark/20 backdrop-blur-[2px] z-40 backdrop-enter backdrop-enter-active" id="modalBackdrop"></div>
+<!-- Bottom Sheet Modal -->
+<div class="fixed bottom-0 left-0 right-0 z-50 flex justify-center bottom-sheet-enter bottom-sheet-enter-active" id="bottomSheet">
+<!-- Modal Container (Max Width for desktop, full width mobile) -->
+<div class="bg-surface w-full max-w-lg rounded-t-[32px] shadow-ambient pt-sm pb-safe px-margin-mobile md:px-lg border-t border-border-subtle relative overflow-hidden">
+<!-- Drag Handle (Visual indicator) -->
+<div class="w-full flex justify-center py-2 mb-2">
+<div class="w-12 h-1.5 bg-border-subtle rounded-full"></div>
+</div>
+<!-- Header -->
+<div class="flex items-center justify-between mb-lg">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">학습 설정</h2>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Content Area -->
+<div class="flex flex-col gap-xl">
+<!-- Section 1: TTS Speed -->
+<div class="flex flex-col gap-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-brand-yellow/20 flex items-center justify-center text-brand-dark">
+<span class="material-symbols-outlined text-[18px]" data-icon="speed" style="font-variation-settings: 'FILL' 1;">speed</span>
+</div>
+<h3 class="font-label-lg text-label-lg text-on-surface">TTS 속도 조절</h3>
+</div>
+<div class="bg-surface-bright rounded-xl p-md border border-border-subtle/50 flex flex-col gap-md">
+<div class="flex justify-between items-center px-2">
+<span class="font-body-md text-body-md text-on-surface-variant">느림</span>
+<span class="font-body-md text-body-md text-on-surface-variant">보통</span>
+<span class="font-body-md text-body-md text-on-surface-variant">빠름</span>
+</div>
+<input class="w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="50"/>
+</div>
+</div>
+<!-- Section 2: Show Translation -->
+<div class="flex items-center justify-between py-xs">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-brand-yellow/20 flex items-center justify-center text-brand-dark">
+<span class="material-symbols-outlined text-[18px]" data-icon="translate" style="font-variation-settings: 'FILL' 1;">translate</span>
+</div>
+<div class="flex flex-col">
+<h3 class="font-label-lg text-label-lg text-on-surface">번역 표시 여부</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80 text-sm">이야기 하단에 한국어 해석을 보여줍니다</p>
+</div>
+</div>
+<!-- Toggle -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer toggle-checkbox" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- Section 3: Font Size -->
+<div class="flex flex-col gap-md mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-brand-yellow/20 flex items-center justify-center text-brand-dark">
+<span class="material-symbols-outlined text-[18px]" data-icon="format_size" style="font-variation-settings: 'FILL' 1;">format_size</span>
+</div>
+<h3 class="font-label-lg text-label-lg text-on-surface">글자 크기</h3>
+</div>
+<div class="grid grid-cols-3 gap-sm">
+<!-- Option 1 -->
+<label class="cursor-pointer">
+<input class="peer sr-only" name="fontsize" type="radio"/>
+<div class="py-sm rounded-lg border border-border-subtle bg-surface-bright flex items-center justify-center peer-checked:border-primary peer-checked:bg-primary/5 transition-colors">
+<span class="font-body-md text-sm text-on-surface">작게</span>
+</div>
+</label>
+<!-- Option 2 -->
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="fontsize" type="radio"/>
+<div class="py-sm rounded-lg border border-border-subtle bg-surface-bright flex items-center justify-center peer-checked:border-primary peer-checked:bg-primary/5 transition-colors">
+<span class="font-body-md text-base text-on-surface font-semibold">보통</span>
+</div>
+</label>
+<!-- Option 3 -->
+<label class="cursor-pointer">
+<input class="peer sr-only" name="fontsize" type="radio"/>
+<div class="py-sm rounded-lg border border-border-subtle bg-surface-bright flex items-center justify-center peer-checked:border-primary peer-checked:bg-primary/5 transition-colors">
+<span class="font-body-md text-lg text-on-surface">크게</span>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="mt-xl mb-md pb-md">
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-label-lg text-label-lg shadow-sm hover:shadow-ambient hover:bg-surface-tint transition-all active:scale-[0.98]">
+                    설정 적용하기
+                </button>
+</div>
+</div>
+</div>
+</body></html>

@@ -42,6 +42,15 @@ Hwalingo는 영어 문장 분석과 단어 복습을 돕는 웹 애플리케이�
 - `11px` 이하 글자는 저작권이나 중요도가 낮은 보조 정보에만 제한적으로 사용한다.
 - 화면 너비에 따라 제목 크기는 조절할 수 있지만 본문과 입력값의 가독성을 우선한다.
 
+### 공통 Dialog
+
+- 안내, 확인, 상세 설정에는 `frontend/src/components/ui/Dialog.tsx`의 `AlertDialog`, `ConfirmDialog`, `Modal` 공통 컴포넌트를 사용한다.
+- `AlertDialog`의 디자인 기준은 `docs/alert.html`이다.
+- `ConfirmDialog`의 디자인 기준은 `docs/confirm.html`이다.
+- `Modal`의 디자인 기준은 `docs/modal.html`이며 화면 하단에서 올라오는 바텀시트 형태로 사용한다.
+- 세 컴포넌트에서는 일반 타이포그래피 토큰보다 각 `docs` 시안의 제목 `20px`, 설명 `14px`, 버튼 `14px` 기준을 우선한다.
+- 페이지마다 별도의 Alert, Confirm, Modal 스타일을 만들지 말고 공통 컴포넌트를 재사용한다.
+
 ## 개발 원칙
 
 - TypeScript 타입을 명확히 작성한다.
