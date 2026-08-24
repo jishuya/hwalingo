@@ -1,3 +1,4 @@
+import { BellIcon } from '@phosphor-icons/react/dist/csr/Bell'
 import logo from '../../assets/hwalingo_logo.png'
 import type { Page } from '../../types/navigation'
 import { navigationItems } from './navigationItems'
@@ -22,5 +23,8 @@ export default function TopNavigation({ currentPage, onNavigate }: TopNavigation
         </button>
       })}
     </nav>
+    <button className="notification-button" type="button" aria-label="알림 열기">
+      <BellIcon size={23} weight="regular" aria-hidden="true"/>
+    </button>
   </header>
 }
