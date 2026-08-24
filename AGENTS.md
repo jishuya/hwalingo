@@ -48,7 +48,7 @@ Hwalingo는 영어 문장 분석과 단어 복습을 돕는 웹 애플리케이�
 - `AlertDialog`의 디자인 기준은 `docs/alert.html`이다.
 - `ConfirmDialog`의 디자인 기준은 `docs/confirm.html`이다.
 - `Modal`의 디자인 기준은 `docs/modal.html`이며 화면 하단에서 올라오는 바텀시트 형태로 사용한다.
-- 세 컴포넌트에서는 일반 타이포그래피 토큰보다 각 `docs` 시안의 제목 `20px`, 설명 `14px`, 버튼 `14px` 기준을 우선한다.
+- 세 컴포넌트는 공통 타이포그래피 토큰을 사용한다. 제목은 `--font-xl`(`24px`), 설명과 버튼은 `--font-sm`(`14px`)을 적용하되 나머지 시각 디자인은 각 `docs` 시안을 따른다.
 - 페이지마다 별도의 Alert, Confirm, Modal 스타일을 만들지 말고 공통 컴포넌트를 재사용한다.
 
 ## 개발 원칙
