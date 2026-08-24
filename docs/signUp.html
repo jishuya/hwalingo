@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HwaLingo Sign Up</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#cbe9dc",
+                      "on-secondary": "#18332A",
+                      "inverse-surface": "#2f312e",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary": "#FFFFFF",
+                      "primary-fixed-dim": "#6cdd8a",
+                      "primary-fixed": "#89faa4",
+                      "on-primary-container": "#f7fff3",
+                      "on-tertiary-fixed-variant": "#314c42",
+                      "on-tertiary-fixed": "#042018",
+                      "surface-container-high": "#e8e8e4",
+                      "primary": "#008C44", /* Adjusted to specific brand color requested */
+                      "secondary-fixed": "#ffe081",
+                      "outline": "#6e7a6e",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed-variant": "#564500",
+                      "secondary-container": "#fdd758",
+                      "surface-variant": "#e2e3de",
+                      "on-secondary-fixed": "#231b00",
+                      "on-primary-fixed-variant": "#005225",
+                      "on-surface": "#18332A",
+                      "primary-container": "#008741",
+                      "outline-variant": "#bdcabb",
+                      "surface-tint": "#006d34",
+                      "error-container": "#ffdad6",
+                      "on-background": "#1a1c19",
+                      "secondary": "#FFD95A", /* Adjusted to specific brand color requested */
+                      "on-secondary-container": "#735d00",
+                      "surface-dim": "#dadad5",
+                      "inverse-on-surface": "#f1f1ec",
+                      "error": "#ba1a1a",
+                      "surface-container-highest": "#e2e3de",
+                      "surface-bright": "#fafaf5",
+                      "surface": "#FFFFFF",
+                      "tertiary-fixed-dim": "#afcdc0",
+                      "background": "#F4F4EF", /* Adjusted to specific brand color requested */
+                      "on-surface-variant": "#3e4a3f",
+                      "on-tertiary-container": "#f5fff9",
+                      "inverse-primary": "#6cdd8a",
+                      "on-error": "#ffffff",
+                      "tertiary": "#466257",
+                      "tertiary-container": "#5e7b6f",
+                      "border-subtle": "#E5E5E0",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed": "#00210b",
+                      "secondary-fixed-dim": "#e8c346",
+                      "surface-container": "#eeeee9",
+                      "surface-container-low": "#f4f4ef"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "64px",
+                      "gutter": "16px",
+                      "margin-mobile": "20px",
+                      "sm": "8px",
+                      "base": "4px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "xl": "40px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-sm": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "26px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        .bg-pattern {
+            background-image: radial-gradient(var(--tw-colors-border-subtle) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* Modal Animation */
+        @keyframes modalEnter {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        @keyframes backdropEnter {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .modal-animate {
+            animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        .backdrop-animate {
+            animation: backdropEnter 0.3s ease-out forwards;
+        }
+        
+        /* Input Focus Ring Override */
+        .input-glow:focus {
+            box-shadow: 0 0 0 2px rgba(0, 140, 68, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen font-body-lg text-on-surface antialiased overflow-hidden">
+<!-- Mock Background Content (Login Screen) -->
+<div class="fixed inset-0 z-0 bg-pattern flex items-center justify-center p-margin-mobile md:p-margin-desktop opacity-50 blur-sm pointer-events-none">
+<div class="bg-surface p-xl rounded-[1.5rem] shadow-sm max-w-md w-full opacity-40">
+<h1 class="font-headline-lg text-headline-lg text-center mb-xl">HwaLingo</h1>
+<div class="space-y-lg mb-xl">
+<div class="h-12 bg-surface-container rounded-lg w-full"></div>
+<div class="h-12 bg-surface-container rounded-lg w-full"></div>
+</div>
+<div class="h-12 bg-primary rounded-lg w-full"></div>
+</div>
+</div>
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 z-40 bg-on-surface/40 backdrop-blur-sm backdrop-animate flex items-center justify-center p-margin-mobile md:p-margin-desktop">
+<!-- Sign Up Modal Container -->
+<div class="bg-surface w-full max-w-lg rounded-[1.5rem] shadow-[0_8px_30px_rgba(24,51,42,0.08)] relative modal-animate overflow-hidden flex flex-col max-h-[90vh]">
+<!-- Modal Header -->
+<div class="flex items-center justify-between p-lg pb-md border-b border-border-subtle shrink-0">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-xs">회원가입</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">HwaLingo에 오신 것을 환영합니다!</p>
+</div>
+<button aria-label="Close modal" class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-200 self-start">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Modal Body (Scrollable) -->
+<div class="p-lg overflow-y-auto grow custom-scrollbar">
+<form class="space-y-lg">
+<!-- Name Field -->
+<div class="space-y-sm">
+<label class="block font-label-lg text-label-lg text-on-surface" for="name">이름</label>
+<input class="w-full px-4 py-3 bg-surface border border-border-subtle rounded-lg text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary input-glow transition-all duration-200" id="name" name="name" placeholder="홍길동" required="" type="text"/>
+</div>
+<!-- Email Field -->
+<div class="space-y-sm">
+<label class="block font-label-lg text-label-lg text-on-surface" for="email">이메일 주소</label>
+<input class="w-full px-4 py-3 bg-surface border border-border-subtle rounded-lg text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary input-glow transition-all duration-200" id="email" name="email" placeholder="example@email.com" required="" type="email"/>
+</div>
+<!-- Password Field -->
+<div class="space-y-sm">
+<label class="block font-label-lg text-label-lg text-on-surface" for="password">비밀번호</label>
+<div class="relative">
+<input class="w-full px-4 py-3 pr-10 bg-surface border border-border-subtle rounded-lg text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary input-glow transition-all duration-200" id="password" name="password" placeholder="8자 이상 영문, 숫자, 특수문자 포함" required="" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Confirm Password Field -->
+<div class="space-y-sm">
+<label class="block font-label-lg text-label-lg text-on-surface" for="confirm-password">비밀번호 확인</label>
+<input class="w-full px-4 py-3 bg-surface border border-border-subtle rounded-lg text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary input-glow transition-all duration-200" id="confirm-password" name="confirm-password" placeholder="비밀번호를 다시 입력해주세요" required="" type="password"/>
+</div>
+<!-- Terms Checkbox -->
+<div class="pt-sm">
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-center mt-1">
+<input class="peer appearance-none w-5 h-5 border border-border-subtle rounded-md checked:bg-primary checked:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1 bg-surface transition-colors cursor-pointer" required="" type="checkbox"/>
+<span class="material-symbols-outlined absolute text-on-primary text-[16px] pointer-events-none opacity-0 peer-checked:opacity-100 left-[2px] top-[2px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-on-surface transition-colors pt-0.5">
+                                약관 동의 및 개인정보 처리방침에 동의합니다 <span class="text-error">*</span>
+</span>
+</label>
+</div>
+</form>
+</div>
+<!-- Modal Footer -->
+<div class="p-lg pt-md border-t border-border-subtle shrink-0 bg-surface/50 backdrop-blur-sm">
+<button class="w-full py-4 bg-primary text-on-primary font-label-lg text-label-lg rounded-lg hover:bg-primary-container hover:text-on-primary-container shadow-[0_4px_12px_rgba(0,140,68,0.15)] hover:shadow-[0_6px_16px_rgba(0,140,68,0.25)] transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2" type="submit">
+                    가입하기
+                    <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

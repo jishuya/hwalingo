@@ -14,6 +14,7 @@ export const env = {
   pgDatabase: required('PGDATABASE', 'hwalingo'),
   pgUser: required('PGUSER', 'postgres'),
   pgPassword: required('PGPASSWORD', 'postgres'),
+  jwtSecret: required('JWT_SECRET'),
   dbSsl: process.env.DB_SSL === 'true',
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
 }

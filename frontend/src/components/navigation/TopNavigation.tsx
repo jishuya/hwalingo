@@ -1,5 +1,6 @@
 import { BellIcon } from '@phosphor-icons/react/dist/csr/Bell'
 import logo from '../../assets/hwalingo_logo.png'
+import wordmark from '../../assets/wordmarks/hwalingo-wordmark-01-rounded.png'
 import type { Page } from '../../types/navigation'
 import { navigationItems } from './navigationItems'
 
@@ -12,7 +13,7 @@ export default function TopNavigation({ currentPage, onNavigate }: TopNavigation
   return <header className="topbar">
     <button className="brand" onClick={() => onNavigate('study')} aria-label="HwaLingo 홈으로 이동">
       <img src={logo} alt=""/>
-      <span>HwaLingo</span>
+      <img className="brand-wordmark" src={wordmark} alt="Hwalingo"/>
     </button>
     <nav className="desktop-nav" aria-label="주요 메뉴">
       {navigationItems.map(item => {
