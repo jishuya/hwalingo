@@ -53,18 +53,34 @@ authRouter.post('/signup', async (request, response, next) => {
   try {
     const email = typeof request.body.email === 'string' ? request.body.email.trim().toLowerCase() : ''
     const password = typeof request.body.password === 'string' ? request.body.password : ''
-    const displayName = typeof request.body.displayName === 'string' ? request.body.displayName.trim() : ''
+    const displayName = typeof request.body.displayName === 'string' ? request.body.displayName : ''
 
+    if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(email)) {
+      response.status(400).json({ status: 'error', message: '이메일 주소에는 한글을 사용할 수 없습니다.' })
+      return
+    }
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       response.status(400).json({ status: 'error', message: '올바른 이메일을 입력해주세요.' })
       return
     }
-    if (password.length < 8 || password.length > 72) {
-      response.status(400).json({ status: 'error', message: '비밀번호는 8자 이상 72자 이하로 입력해주세요.' })
+    if (password.length < 8 || password.length > 72 || !/[^A-Za-z0-9\s]/.test(password)) {
+      response.status(400).json({ status: 'error', message: '비밀번호는 8자 이상이며 특수문자를 1개 이상 포함해야 합니다.' })
       return
     }
-    if (displayName.length < 2 || displayName.length > 100) {
-      response.status(400).json({ status: 'error', message: '이름은 2자 이상 100자 이하로 입력해주세요.' })
+    if (!displayName) {
+      response.status(400).json({ status: 'error', message: '이름을 입력해주세요.' })
+      return
+    }
+    if (/\s/.test(displayName)) {
+      response.status(400).json({ status: 'error', message: '이름에는 띄어쓰기를 사용할 수 없습니다.' })
+      return
+    }
+    if (displayName.length < 2 || displayName.length > 20) {
+      response.status(400).json({ status: 'error', message: '이름은 2자 이상 20자 이하로 입력해주세요.' })
+      return
+    }
+    if (!/^[A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+$/.test(displayName)) {
+      response.status(400).json({ status: 'error', message: '이름에는 한글과 영문만 사용할 수 있습니다.' })
       return
     }
 

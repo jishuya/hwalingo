@@ -64,7 +64,7 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
           <button className="auth-submit" disabled={submitting}>{submitting ? '잠시만 기다려주세요' : '로그인하기'}<ArrowRight weight="bold"/></button>
         </form>
 
-        <p className="auth-switch">처음 방문하셨나요? <button type="button" onClick={() => setSignupOpen(true)}>무료로 시작하기</button></p>
+        <p className="auth-switch">처음 방문하셨나요? <button type="button" onClick={() => setSignupOpen(true)}>회원가입</button></p>
         <div className="auth-divider"><span>간편 로그인</span></div>
         <div className="auth-socials">
           <button type="button" className="auth-social-google" onClick={() => setError('Google 로그인은 준비 중입니다.')}><b>G</b><span>Google</span></button>
