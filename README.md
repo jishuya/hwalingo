@@ -42,3 +42,20 @@ npm run lint           # 전체 정적 검사
 DB 연결은 `backend/.env`의 `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`,
 `PGPASSWORD`로 설정합니다. 운영 환경에서 TLS가 필요하면 `DB_SSL=true`를
 추가하세요.
+
+## 비밀번호 재설정 이메일
+
+비밀번호 재설정 인증코드는 SMTP로 발송됩니다. `backend/.env`에 다음 값을
+설정한 후 백엔드를 다시 시작하세요.
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+MAIL_FROM="Hwalingo <your-email@gmail.com>"
+```
+
+Gmail을 사용하는 경우 일반 계정 비밀번호가 아니라 Google 계정에서 만든
+앱 비밀번호를 `SMTP_PASSWORD`에 입력해야 합니다.

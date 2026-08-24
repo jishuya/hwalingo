@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs'
+import { createHash, randomInt } from 'node:crypto'
 import { Router, type CookieOptions, type Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { pool } from '../config/database.js'
 import { env } from '../config/env.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { isMailConfigured, sendPasswordResetCode } from '../services/mail.js'
 
 interface UserRow {
   id: string
@@ -20,11 +22,26 @@ interface PublicUser {
   profileImageUrl: string | null
 }
 
+interface PasswordResetRow {
+  id: string
+  user_id: string
+}
+
 const SESSION_COOKIE = 'hwalingo_session'
 const SHORT_SESSION_SECONDS = 60 * 60 * 24
 const LONG_SESSION_SECONDS = 60 * 60 * 24 * 30
 
 export const authRouter = Router()
+
+function passwordValidationMessage(password: string): string | undefined {
+  if (password.length < 8 || password.length > 72 || !/[^A-Za-z0-9\s]/.test(password)) {
+    return '비밀번호는 8자 이상이며 특수문자를 1개 이상 포함해야 합니다.'
+  }
+}
+
+function hashResetCode(code: string): string {
+  return createHash('sha256').update(code).digest('hex')
+}
 
 function publicUser(user: UserRow): PublicUser {
   return {
@@ -63,8 +80,9 @@ authRouter.post('/signup', async (request, response, next) => {
       response.status(400).json({ status: 'error', message: '올바른 이메일을 입력해주세요.' })
       return
     }
-    if (password.length < 8 || password.length > 72 || !/[^A-Za-z0-9\s]/.test(password)) {
-      response.status(400).json({ status: 'error', message: '비밀번호는 8자 이상이며 특수문자를 1개 이상 포함해야 합니다.' })
+    const passwordError = passwordValidationMessage(password)
+    if (passwordError) {
+      response.status(400).json({ status: 'error', message: passwordError })
       return
     }
     if (!displayName) {
@@ -123,6 +141,106 @@ authRouter.post('/login', async (request, response, next) => {
 
     setSessionCookie(response, user.id, rememberMe)
     response.json({ user: publicUser(user) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+authRouter.post('/forgot-password', async (request, response, next) => {
+  try {
+    if (!isMailConfigured) {
+      response.status(503).json({ status: 'error', message: '이메일 발송 설정이 완료되지 않았습니다.' })
+      return
+    }
+
+    const email = typeof request.body.email === 'string' ? request.body.email.trim().toLowerCase() : ''
+    const result = await pool.query<Pick<UserRow, 'id'>>('SELECT id FROM users WHERE email = $1', [email])
+    const user = result.rows[0]
+
+    if (!user) {
+      response.json({ message: '가입된 이메일이라면 재설정 코드를 전송했습니다.' })
+      return
+    }
+
+    const resetCode = randomInt(100000, 1000000).toString()
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      await client.query('DELETE FROM password_reset_tokens WHERE user_id = $1 OR expires_at <= NOW()', [user.id])
+      await client.query(
+        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, NOW() + INTERVAL '15 minutes')`,
+        [user.id, hashResetCode(resetCode)],
+      )
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+
+    try {
+      await sendPasswordResetCode(email, resetCode)
+    } catch (error) {
+      await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1 AND token_hash = $2', [user.id, hashResetCode(resetCode)])
+      console.error('Password reset email delivery failed', error)
+      response.status(502).json({ status: 'error', message: '인증코드 이메일을 보내지 못했습니다. 잠시 후 다시 시도해주세요.' })
+      return
+    }
+
+    response.json({ message: '가입된 이메일이라면 재설정 코드를 전송했습니다.' })
+  } catch (error) {
+    next(error)
+  }
+})
+
+authRouter.post('/reset-password', async (request, response, next) => {
+  try {
+    const email = typeof request.body.email === 'string' ? request.body.email.trim().toLowerCase() : ''
+    const resetCode = typeof request.body.resetCode === 'string' ? request.body.resetCode.trim() : ''
+    const password = typeof request.body.password === 'string' ? request.body.password : ''
+    const passwordError = passwordValidationMessage(password)
+
+    if (passwordError) {
+      response.status(400).json({ status: 'error', message: passwordError })
+      return
+    }
+    if (!/^\d{6}$/.test(resetCode)) {
+      response.status(400).json({ status: 'error', message: '6자리 재설정 코드를 입력해주세요.' })
+      return
+    }
+
+    const tokenResult = await pool.query<PasswordResetRow>(
+      `SELECT prt.id, prt.user_id
+       FROM password_reset_tokens prt
+       JOIN users u ON u.id = prt.user_id
+       WHERE u.email = $1 AND prt.token_hash = $2
+         AND prt.used_at IS NULL AND prt.expires_at > NOW()
+       ORDER BY prt.created_at DESC LIMIT 1`,
+      [email, hashResetCode(resetCode)],
+    )
+    const token = tokenResult.rows[0]
+    if (!token) {
+      response.status(400).json({ status: 'error', message: '재설정 코드가 올바르지 않거나 만료되었습니다.' })
+      return
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12)
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      await client.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [passwordHash, token.user_id])
+      await client.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [token.id])
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+
+    response.json({ message: '비밀번호가 변경되었습니다.' })
   } catch (error) {
     next(error)
   }

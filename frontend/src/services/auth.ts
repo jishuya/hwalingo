@@ -13,6 +13,12 @@ interface ErrorResponse {
   message?: string
 }
 
+interface MessageResponse {
+  message: string
+}
+
+export type ForgotPasswordResponse = MessageResponse
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...options,
@@ -43,6 +49,20 @@ export function signup(email: string, password: string, displayName: string): Pr
   return request('/api/auth/signup', {
     method: 'POST',
     body: JSON.stringify({ email, password, displayName }),
+  })
+}
+
+export function forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+  return request('/api/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function resetPassword(email: string, resetCode: string, password: string): Promise<MessageResponse> {
+  return request('/api/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, resetCode, password }),
   })
 }
 

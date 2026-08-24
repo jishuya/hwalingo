@@ -17,6 +17,12 @@ export const env = {
   jwtSecret: required('JWT_SECRET'),
   dbSsl: process.env.DB_SSL === 'true',
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  smtpHost: process.env.SMTP_HOST ?? '',
+  smtpPort: Number(process.env.SMTP_PORT ?? 587),
+  smtpSecure: process.env.SMTP_SECURE === 'true',
+  smtpUser: process.env.SMTP_USER ?? '',
+  smtpPassword: process.env.SMTP_PASSWORD ?? '',
+  mailFrom: process.env.MAIL_FROM ?? '',
 }
 
 if (!Number.isInteger(env.port) || env.port < 1 || env.port > 65535) {
@@ -25,4 +31,8 @@ if (!Number.isInteger(env.port) || env.port < 1 || env.port > 65535) {
 
 if (!Number.isInteger(env.pgPort) || env.pgPort < 1 || env.pgPort > 65535) {
   throw new Error('PGPORT must be a valid TCP port')
+}
+
+if (!Number.isInteger(env.smtpPort) || env.smtpPort < 1 || env.smtpPort > 65535) {
+  throw new Error('SMTP_PORT must be a valid TCP port')
 }
