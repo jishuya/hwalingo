@@ -39,4 +39,6 @@ npm run build          # 전체 빌드
 npm run lint           # 전체 정적 검사
 ```
 
-운영 DB를 사용할 때는 `backend/.env`의 `DATABASE_URL`과 필요시 `DB_SSL=true`를 설정하세요.
+DB 연결은 `backend/.env`의 `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`,
+`PGPASSWORD`로 설정합니다. 운영 환경에서 TLS가 필요하면 `DB_SSL=true`를
+추가하세요.

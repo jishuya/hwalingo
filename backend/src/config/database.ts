@@ -4,7 +4,11 @@ import { env } from './env.js'
 const { Pool } = pg
 
 export const pool = new Pool({
-  connectionString: env.databaseUrl,
+  host: env.pgHost,
+  port: env.pgPort,
+  database: env.pgDatabase,
+  user: env.pgUser,
+  password: env.pgPassword,
   ssl: env.dbSsl ? { rejectUnauthorized: false } : false,
 })
 
