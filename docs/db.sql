@@ -74,7 +74,43 @@ CREATE INDEX idx_favorite_vocabularies_vocabulary_id
 
 
 -- =========================================================
--- 4. 퀴즈 기록
+-- 4. 사용자별 단어 학습 진행도
+-- =========================================================
+CREATE TABLE vocabulary_progress (
+    id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id             BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    vocabulary_id       BIGINT NOT NULL REFERENCES vocabularies (id) ON DELETE CASCADE,
+    mastery_level       SMALLINT NOT NULL DEFAULT 0 CHECK (mastery_level BETWEEN 0 AND 7),
+    mastery_score       NUMERIC(5, 2) NOT NULL DEFAULT 0 CHECK (mastery_score BETWEEN 0 AND 100),
+    total_attempts      INTEGER NOT NULL DEFAULT 0,
+    correct_count       INTEGER NOT NULL DEFAULT 0,
+    incorrect_count     INTEGER NOT NULL DEFAULT 0,
+    correct_streak      INTEGER NOT NULL DEFAULT 0,
+    incorrect_streak    INTEGER NOT NULL DEFAULT 0,
+    last_reviewed_at    TIMESTAMPTZ,
+    next_review_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    mastered_at         TIMESTAMPTZ,
+    algorithm_version   VARCHAR(30) NOT NULL DEFAULT 'fixed-v1',
+    algorithm_state     JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, vocabulary_id),
+    CHECK (
+        total_attempts >= 0 AND correct_count >= 0 AND incorrect_count >= 0
+        AND correct_streak >= 0 AND incorrect_streak >= 0
+        AND total_attempts = correct_count + incorrect_count
+    )
+);
+
+CREATE INDEX idx_vocabulary_progress_due
+    ON vocabulary_progress (user_id, next_review_at);
+
+CREATE INDEX idx_vocabulary_progress_mastery
+    ON vocabulary_progress (user_id, mastery_level);
+
+
+-- =========================================================
+-- 5. 퀴즈 기록
 -- =========================================================
 CREATE TABLE quizzes (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -113,7 +149,7 @@ CREATE INDEX idx_quizzes_vocabulary_result
 
 
 -- =========================================================
--- 5. 학습 활동
+-- 6. 학습 활동
 -- =========================================================
 CREATE TABLE learning_activities (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -147,7 +183,7 @@ CREATE INDEX idx_learning_activities_user_activity_at
 
 
 -- =========================================================
--- 6. AI 스토리
+-- 7. AI 스토리
 -- =========================================================
 CREATE TABLE ai_stories (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -170,7 +206,7 @@ CREATE INDEX idx_ai_stories_user_created_at
 
 
 -- =========================================================
--- 7. 사용자 설정
+-- 8. 사용자 설정
 -- =========================================================
 CREATE TABLE user_settings (
     user_id                 BIGINT PRIMARY KEY,

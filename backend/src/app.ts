@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler.js'
 import { analysisRouter } from './routes/analysis.js'
 import { authRouter } from './routes/auth.js'
 import { healthRouter } from './routes/health.js'
+import { vocabulariesRouter } from './routes/vocabularies.js'
 
 export const app = express()
 
@@ -21,6 +22,7 @@ app.get('/api', (_request, response) => {
 app.use('/api/health', healthRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/analysis', analysisRouter)
+app.use('/api/vocabularies', vocabulariesRouter)
 
 app.use((_request, response) => {
   response.status(404).json({ status: 'error', message: 'Not found' })
