@@ -12,6 +12,17 @@ export interface FavoriteVocabulary {
   memoryTip: string | null
   exampleSentence: string | null
   savedAt: string
+  progress: {
+    masteryLevel: number
+    masteryScore: number
+    totalAttempts: number
+    correctCount: number
+    incorrectCount: number
+    correctStreak: number
+    incorrectStreak: number
+    lastReviewedAt: string | null
+    nextReviewAt: string
+  }
 }
 
 export interface SaveVocabularyInput {

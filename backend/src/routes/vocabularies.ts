@@ -15,6 +15,15 @@ interface FavoriteVocabularyRow {
   memory_tip: string | null
   example_sentence: string | null
   saved_at: string
+  mastery_level: number
+  mastery_score: string
+  total_attempts: number
+  correct_count: number
+  incorrect_count: number
+  correct_streak: number
+  incorrect_streak: number
+  last_reviewed_at: string | null
+  next_review_at: string
 }
 
 interface VocabularyInput {
@@ -74,6 +83,17 @@ function serializeFavorite(row: FavoriteVocabularyRow) {
     memoryTip: row.memory_tip,
     exampleSentence: row.example_sentence,
     savedAt: row.saved_at,
+    progress: {
+      masteryLevel: row.mastery_level,
+      masteryScore: Number(row.mastery_score),
+      totalAttempts: row.total_attempts,
+      correctCount: row.correct_count,
+      incorrectCount: row.incorrect_count,
+      correctStreak: row.correct_streak,
+      incorrectStreak: row.incorrect_streak,
+      lastReviewedAt: row.last_reviewed_at,
+      nextReviewAt: row.next_review_at,
+    },
   }
 }
 
@@ -82,9 +102,13 @@ vocabulariesRouter.get('/favorites', requireAuth, async (request, response, next
     const result = await pool.query<FavoriteVocabularyRow>(
       `SELECT f.id AS favorite_id, v.id AS vocabulary_id, v.language_code, v.word,
               v.meaning, v.context_meaning, v.cefr_level, v.etymology,
-              v.memory_tip, v.example_sentence, f.saved_at
+              v.memory_tip, v.example_sentence, f.saved_at,
+              p.mastery_level, p.mastery_score, p.total_attempts,
+              p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
+              p.last_reviewed_at, p.next_review_at
        FROM favorite_vocabularies f
        JOIN vocabularies v ON v.id = f.vocabulary_id
+       JOIN vocabulary_progress p ON p.user_id = f.user_id AND p.vocabulary_id = f.vocabulary_id
        WHERE f.user_id = $1
        ORDER BY f.saved_at DESC`,
       [request.auth!.userId],
@@ -121,20 +145,34 @@ vocabulariesRouter.post('/favorites', requireAuth, async (request, response, nex
         vocabulary.cefrLevel, vocabulary.etymology, vocabulary.memoryTip, vocabulary.exampleSentence],
     )
     const vocabularyId = vocabularyResult.rows[0].id
-    const favoriteResult = await client.query<FavoriteVocabularyRow>(
+    const favoriteResult = await client.query<{ favorite_id: string }>(
       `INSERT INTO favorite_vocabularies (user_id, vocabulary_id)
        VALUES ($1, $2)
        ON CONFLICT (user_id, vocabulary_id) DO UPDATE SET saved_at = favorite_vocabularies.saved_at
-       RETURNING id AS favorite_id, vocabulary_id, $3::varchar AS language_code,
-                 $4::varchar AS word, $5::text AS meaning, $6::text AS context_meaning,
-                 $7::varchar AS cefr_level, $8::text AS etymology, $9::text AS memory_tip,
-                 $10::text AS example_sentence, saved_at`,
-      [request.auth!.userId, vocabularyId, vocabulary.languageCode, vocabulary.word, vocabulary.meaning,
-        vocabulary.contextMeaning || null, vocabulary.cefrLevel, vocabulary.etymology,
-        vocabulary.memoryTip, vocabulary.exampleSentence],
+       RETURNING id AS favorite_id`,
+      [request.auth!.userId, vocabularyId],
+    )
+    await client.query(
+      `INSERT INTO vocabulary_progress (user_id, vocabulary_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, vocabulary_id) DO NOTHING`,
+      [request.auth!.userId, vocabularyId],
+    )
+    const savedResult = await client.query<FavoriteVocabularyRow>(
+      `SELECT f.id AS favorite_id, v.id AS vocabulary_id, v.language_code, v.word,
+              v.meaning, v.context_meaning, v.cefr_level, v.etymology,
+              v.memory_tip, v.example_sentence, f.saved_at,
+              p.mastery_level, p.mastery_score, p.total_attempts,
+              p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
+              p.last_reviewed_at, p.next_review_at
+       FROM favorite_vocabularies f
+       JOIN vocabularies v ON v.id = f.vocabulary_id
+       JOIN vocabulary_progress p ON p.user_id = f.user_id AND p.vocabulary_id = f.vocabulary_id
+       WHERE f.id = $1 AND f.user_id = $2`,
+      [favoriteResult.rows[0].favorite_id, request.auth!.userId],
     )
     await client.query('COMMIT')
-    response.status(201).json({ vocabulary: serializeFavorite(favoriteResult.rows[0]) })
+    response.status(201).json({ vocabulary: serializeFavorite(savedResult.rows[0]) })
   } catch (error) {
     await client.query('ROLLBACK')
     next(error)
