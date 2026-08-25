@@ -7,7 +7,10 @@ export default function BottomNavigation({ currentPage, onNavigate }: { currentP
       const NavigationIcon = item.icon
       const active = currentPage === item.id
       return <button key={item.id} className={active ? 'active' : ''} onClick={() => onNavigate(item.id)} aria-current={active ? 'page' : undefined}>
-        <NavigationIcon className="nav-icon" size={22} weight={active ? 'fill' : 'regular'} aria-hidden="true"/><span>{item.label}</span>
+        <span className="nav-icon-wrap" aria-hidden="true">
+          <NavigationIcon className="nav-icon" size={24} weight={active ? 'fill' : 'regular'}/>
+        </span>
+        <span className="nav-label">{item.label}</span>
       </button>
     })}
   </nav>

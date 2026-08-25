@@ -1,27 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { analyzeSentence, type SentenceAnalysis } from '../services/analysis'
 
 const initialText = '제 월급으로 그 차를 살 수 있을지 모르겠어요. 저는 그런데 차가 너무 갖고 싶어요.'
 
-export default function AnalysisPage() {
-  const [text, setText] = useState(initialText)
+export default function AnalysisPage({ initialText: requestedText = '' }: { initialText?: string }) {
+  const [text, setText] = useState(requestedText || initialText)
   const [analysis, setAnalysis] = useState<SentenceAnalysis>()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(Boolean(requestedText))
   const [error, setError] = useState('')
+  const startedAutomatically = useRef(false)
 
-  const submit = async () => {
-    if (!text.trim() || isLoading) return
+  const runAnalysis = async (sentence: string) => {
     setIsLoading(true)
     setError('')
     try {
-      setAnalysis(await analyzeSentence(text.trim()))
+      setAnalysis(await analyzeSentence(sentence))
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
     } finally {
       setIsLoading(false)
     }
   }
+
+  const submit = () => {
+    const sentence = text.trim()
+    if (!sentence || isLoading) return
+    void runAnalysis(sentence)
+  }
+
+  useEffect(() => {
+    if (!requestedText || startedAutomatically.current) return
+    startedAutomatically.current = true
+    void runAnalysis(requestedText)
+  }, [requestedText])
 
   return <div className="page analysis-page">
     <section className="card mini-input">

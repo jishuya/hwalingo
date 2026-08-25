@@ -14,6 +14,7 @@ import './App.css'
 
 export default function App() {
   const [page, setPage] = useState<Page>(readRoute)
+  const [analysisText, setAnalysisText] = useState('')
   const queryClient = useQueryClient()
   const authQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -47,10 +48,15 @@ export default function App() {
   if (authQuery.isPending) return <div className="auth-loading">Hwalingo 불러오는 중...</div>
   if (!authQuery.data || page === 'login') return <LoginPage done={finishAuth}/>
 
+  const startAnalysis = (text: string) => {
+    setAnalysisText(text)
+    go('analysis')
+  }
+
   const content = page === 'study'
-    ? <StudyPage analyze={() => go('analysis')}/>
+    ? <StudyPage analyze={startAnalysis}/>
     : page === 'analysis'
-      ? <AnalysisPage/>
+      ? <AnalysisPage initialText={analysisText}/>
       : page === 'vocabulary'
         ? <VocabularyPage/>
         : page === 'quiz'
