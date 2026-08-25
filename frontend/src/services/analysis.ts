@@ -18,27 +18,18 @@ export interface SentenceAnalysis {
   sourceLanguage: LanguageCode
   targetLanguage: LanguageCode
   detectedSourceLanguage: string
+  backgroundKnowledge: string
+  sentences: AnalyzedSentence[]
+  warnings: string[]
+}
+
+export interface AnalyzedSentence {
   sourceText: string
   targetSentence: string
-  naturalSourceMeaning: string
-  backgroundKnowledge: string
   keyExpressions: Array<{ text: string; meaning: string }>
-  chunks: Array<{ targetText: string; sourceMeaning: string }>
-  paraphrases: Array<{
-    level: 'beginner' | 'intermediate' | 'advanced'
-    targetText: string
-    sourceMeaning: string
-  }>
-  vocabulary: Array<{
-    word: string
-    partOfSpeech: string
-    level: string
-    basicMeaning: string
-    contextualMeaning: string
-    etymology: string
-    memoryTip: string
-  }>
-  warnings: string[]
+  chunks: Array<{ targetText: string; sourceMeaning: string; role: 'subject' | 'verb' | 'other' }>
+  paraphrases: Array<{ level: 'B1' | 'B2' | 'C1' | 'C2'; targetText: string; sourceMeaning: string }>
+  vocabulary: Array<{ word: string; partOfSpeech: string; level: string; basicMeaning: string; contextualMeaning: string; etymology: string; memoryTip: string }>
 }
 
 export async function analyzeSentence(request: AnalysisRequest): Promise<SentenceAnalysis> {

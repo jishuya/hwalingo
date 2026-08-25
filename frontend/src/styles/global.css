@@ -2,8 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-xs: 11px;
+  --font-sm: 13px;
+  --font-md: 15px;
+  --font-lg: 17px;
+  --font-xl: 22px;
+  --font-2xl: 28px;
+}
+
 html, body, #root {
   height: 100%;
+}
+
+body {
+  margin: 0;
+  font-size: var(--font-md);
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 /* Safe area for mobile notches */
