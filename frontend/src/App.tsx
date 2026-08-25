@@ -9,12 +9,13 @@ import StoryPage from './pages/StoryPage'
 import StudyPage from './pages/StudyPage'
 import VocabularyPage from './pages/VocabularyPage'
 import { getCurrentUser, logout, type AuthUser } from './services/auth'
+import type { AnalysisRequest } from './services/analysis'
 import { readRoute, type Page } from './types/navigation'
 import './App.css'
 
 export default function App() {
   const [page, setPage] = useState<Page>(readRoute)
-  const [analysisText, setAnalysisText] = useState('')
+  const [analysisRequest, setAnalysisRequest] = useState<AnalysisRequest>()
   const queryClient = useQueryClient()
   const authQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -48,15 +49,15 @@ export default function App() {
   if (authQuery.isPending) return <div className="auth-loading">Hwalingo 불러오는 중...</div>
   if (!authQuery.data || page === 'login') return <LoginPage done={finishAuth}/>
 
-  const startAnalysis = (text: string) => {
-    setAnalysisText(text)
+  const startAnalysis = (request: AnalysisRequest) => {
+    setAnalysisRequest(request)
     go('analysis')
   }
 
   const content = page === 'study'
     ? <StudyPage analyze={startAnalysis}/>
     : page === 'analysis'
-      ? <AnalysisPage initialText={analysisText}/>
+      ? <AnalysisPage initialRequest={analysisRequest}/>
       : page === 'vocabulary'
         ? <VocabularyPage/>
         : page === 'quiz'
