@@ -13,53 +13,23 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
-import { analyzeSentence, languageOptions, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
+import { analyzeSentence, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 
-const initialText = '제 월급으로 그 차를 살 수 있을지 모르겠어요. 저는 그런데 차가 너무 갖고 싶어요.'
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
 const grammarRoleColors = { subject: '#2563D9', verb: '#008C44', other: '#18332A' } as const
 
-function languageLabel(code: LanguageCode) {
-  return languageOptions.find(language => language.code === code)?.label ?? code.toUpperCase()
-}
-
-export default function AnalysisPage({ initialRequest }: { initialRequest?: AnalysisRequest }) {
-  const fallbackRequest: AnalysisRequest = { text: initialText, sourceLanguage: 'ko', targetLanguage: 'en' }
-  const request = initialRequest ?? fallbackRequest
-  const [text, setText] = useState(request.text)
+export default function AnalysisPage({ request, requestId, onLoadingChange }: { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void }) {
   const [analysis, setAnalysis] = useState<SentenceAnalysis>()
-  const [isLoading, setIsLoading] = useState(Boolean(initialRequest))
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [revealedChunks, setRevealedChunks] = useState<Set<string>>(new Set())
   const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set())
   const [openParaphrases, setOpenParaphrases] = useState<Set<number>>(new Set())
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set())
   const [recordingSentence, setRecordingSentence] = useState<number>()
-  const startedAutomatically = useRef(false)
+  const lastRequestId = useRef(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
-
-  const runAnalysis = async (nextRequest: AnalysisRequest) => {
-    setIsLoading(true)
-    setError('')
-    setAnalysis(undefined)
-    setRevealedChunks(new Set())
-    setOpenTranslations(new Set())
-    setOpenParaphrases(new Set())
-    try {
-      setAnalysis(await analyzeSentence(nextRequest))
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const submit = () => {
-    const sentence = text.trim()
-    if (!sentence || isLoading) return
-    void runAnalysis({ ...request, text: sentence })
-  }
 
   const speak = (content: string, language: LanguageCode, rate = 1) => {
     if (!('speechSynthesis' in window)) return
@@ -129,22 +99,34 @@ export default function AnalysisPage({ initialRequest }: { initialRequest?: Anal
   })
 
   useEffect(() => {
-    if (!initialRequest || startedAutomatically.current) return
-    startedAutomatically.current = true
-    void runAnalysis(initialRequest)
-  }, [initialRequest])
+    if (lastRequestId.current === requestId) return
+    lastRequestId.current = requestId
+    const run = async () => {
+      setIsLoading(true)
+      onLoadingChange(true)
+      setError('')
+      try {
+        const nextAnalysis = await analyzeSentence(request)
+        setAnalysis(nextAnalysis)
+        setRevealedChunks(new Set())
+        setOpenTranslations(new Set())
+        setOpenParaphrases(new Set())
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
+      } finally {
+        setIsLoading(false)
+        onLoadingChange(false)
+      }
+    }
+    void run()
+  }, [onLoadingChange, request, requestId])
 
-  return <div className="page analysis-page analysis-page-v2">
-    <section className="card analysis-input-card">
-      <div className="analysis-input-head"><h2>학습할 언어와 문구를 입력하세요</h2><span className="analysis-language-pair">{languageLabel(request.sourceLanguage)} <b>→</b> {languageLabel(request.targetLanguage)}</span></div>
-      <textarea value={text} maxLength={500} onChange={(event) => setText(event.target.value)} />
-      <div className="analysis-submit-row"><span>{text.length} / 500</span><button className="primary" disabled={isLoading || !text.trim()} onClick={submit}><Icon>✦</Icon> {isLoading ? 'AI 분석 중...' : 'AI 분석 시작'}</button></div>
-      {error && <p role="alert" className="form-error">{error}</p>}
-    </section>
+  return <div className="analysis-page analysis-page-v2 analysis-results-root">
+    {error && <p role="alert" className="analysis-result-error">{error}</p>}
+    {isLoading && !analysis && <section className="analysis-loading" aria-live="polite"><div className="analysis-loading-orb"><Icon>✦</Icon></div><strong>문장을 학습하기 좋게 분석하고 있어요</strong><span>자연스러운 표현과 핵심 어휘를 정리하는 중입니다.</span><div className="analysis-loading-bar"><i /></div></section>}
+    {isLoading && analysis && <div className="analysis-refreshing" aria-live="polite"><Icon>✦</Icon><span>새 문장을 분석하고 있어요. 기존 결과는 잠시 유지됩니다.</span></div>}
 
-    {isLoading && <section className="analysis-loading" aria-live="polite"><div className="analysis-loading-orb"><Icon>✦</Icon></div><strong>문장을 학습하기 좋게 분석하고 있어요</strong><span>자연스러운 표현과 핵심 어휘를 정리하는 중입니다.</span><div className="analysis-loading-bar"><i /></div></section>}
-
-    {analysis && <div className="analysis-content-v2">
+    {analysis && <div className={`analysis-content-v2${isLoading ? ' refreshing' : ''}`}>
       {analysis.warnings.map((warning, index) => <div className="analysis-warning" role="status" key={`${warning}-${index}`}><WarningCircleIcon weight="fill"/><span>{warning}</span></div>)}
 
       <section className="analysis-background-v2"><LightbulbIcon weight="fill"/><div><h3>배경 지식</h3><p>{analysis.backgroundKnowledge}</p></div></section>

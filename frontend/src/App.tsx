@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import AppShell from './components/AppShell'
-import AnalysisPage from './pages/AnalysisPage'
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 import QuizPage from './pages/QuizPage'
@@ -9,13 +8,11 @@ import StoryPage from './pages/StoryPage'
 import StudyPage from './pages/StudyPage'
 import VocabularyPage from './pages/VocabularyPage'
 import { getCurrentUser, logout, type AuthUser } from './services/auth'
-import type { AnalysisRequest } from './services/analysis'
 import { readRoute, type Page } from './types/navigation'
 import './App.css'
 
 export default function App() {
   const [page, setPage] = useState<Page>(readRoute)
-  const [analysisRequest, setAnalysisRequest] = useState<AnalysisRequest>()
   const queryClient = useQueryClient()
   const authQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -49,15 +46,8 @@ export default function App() {
   if (authQuery.isPending) return <div className="auth-loading">Hwalingo 불러오는 중...</div>
   if (!authQuery.data || page === 'login') return <LoginPage done={finishAuth}/>
 
-  const startAnalysis = (request: AnalysisRequest) => {
-    setAnalysisRequest(request)
-    go('analysis')
-  }
-
   const content = page === 'study'
-    ? <StudyPage analyze={startAnalysis}/>
-    : page === 'analysis'
-      ? <AnalysisPage initialRequest={analysisRequest}/>
+    ? <StudyPage/>
       : page === 'vocabulary'
         ? <VocabularyPage/>
         : page === 'quiz'
