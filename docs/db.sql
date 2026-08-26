@@ -19,6 +19,7 @@ CREATE TABLE users (
 -- =========================================================
 CREATE TABLE vocabularies (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id         BIGINT NOT NULL,
     language_code   VARCHAR(10) NOT NULL DEFAULT 'en',
     word            VARCHAR(255) NOT NULL,
     meaning         TEXT NOT NULL,
@@ -28,6 +29,12 @@ CREATE TABLE vocabularies (
     memory_tip      TEXT,
     example_sentence TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    archived_at     TIMESTAMPTZ,
+
+    CONSTRAINT vocabularies_user_fk
+        FOREIGN KEY (user_id)
+        REFERENCES users (id)
+        ON DELETE CASCADE,
 
     CONSTRAINT vocabularies_cefr_level_check
         CHECK (
@@ -35,8 +42,8 @@ CREATE TABLE vocabularies (
             OR cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')
         ),
 
-    CONSTRAINT vocabularies_language_word_unique
-        UNIQUE (language_code, word)
+    CONSTRAINT vocabularies_user_language_word_unique
+        UNIQUE (user_id, language_code, word)
 );
 
 -- 단어 검색용
@@ -49,26 +56,19 @@ CREATE INDEX idx_vocabularies_word
 -- =========================================================
 CREATE TABLE favorite_vocabularies (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_id         BIGINT NOT NULL,
     vocabulary_id   BIGINT NOT NULL,
     saved_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT favorite_vocabularies_user_fk
-        FOREIGN KEY (user_id)
-        REFERENCES users (id)
-        ON DELETE CASCADE,
 
     CONSTRAINT favorite_vocabularies_vocabulary_fk
         FOREIGN KEY (vocabulary_id)
         REFERENCES vocabularies (id)
         ON DELETE CASCADE,
 
-    CONSTRAINT favorite_vocabularies_unique
-        UNIQUE (user_id, vocabulary_id)
+    CONSTRAINT favorite_vocabularies_vocabulary_unique
+        UNIQUE (vocabulary_id)
 );
 
--- UNIQUE(user_id, vocabulary_id)가 사용자별 단어장 조회 인덱스 역할도 수행
--- 특정 단어를 즐겨찾기한 사용자 조회 및 FK 삭제 성능용
+-- vocabulary_id가 사용자 소유 vocabularies를 가리키므로 별도 user_id는 저장하지 않는다.
 CREATE INDEX idx_favorite_vocabularies_vocabulary_id
     ON favorite_vocabularies (vocabulary_id);
 

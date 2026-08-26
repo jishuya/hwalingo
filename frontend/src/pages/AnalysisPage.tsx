@@ -15,7 +15,7 @@ import {
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
 import { analyzeSentence, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
-import { deleteFavoriteVocabulary, getFavoriteVocabularies, saveFavoriteVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
+import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
 const grammarRoleColors = { subject: '#2563D9', verb: '#008C44', other: '#18332A' } as const
@@ -29,15 +29,15 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [openParaphrases, setOpenParaphrases] = useState<Set<number>>(new Set())
   const [recordingSentence, setRecordingSentence] = useState<number>()
   const queryClient = useQueryClient()
-  const favoritesQuery = useQuery({ queryKey: ['vocabularies', 'favorites'], queryFn: getFavoriteVocabularies })
-  const saveFavorite = useMutation({
-    mutationFn: (input: SaveVocabularyInput) => saveFavoriteVocabulary(input),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies', 'favorites'] }),
+  const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
+  const saveWord = useMutation({
+    mutationFn: (input: SaveVocabularyInput) => saveVocabulary(input),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
     onError: caught => setError(caught instanceof Error ? caught.message : '단어를 저장하지 못했습니다.'),
   })
-  const deleteFavorite = useMutation({
-    mutationFn: deleteFavoriteVocabulary,
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies', 'favorites'] }),
+  const removeWord = useMutation({
+    mutationFn: deleteVocabulary,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
     onError: caught => setError(caught instanceof Error ? caught.message : '저장된 단어를 삭제하지 못했습니다.'),
   })
   const lastRequestId = useRef(0)
@@ -180,15 +180,15 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
               <h3><BookOpenIcon />핵심 어휘</h3>
               {sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">추출된 주요 어휘가 없습니다.</div> : sentence.vocabulary.map(word => {
                 const wordKey = `${sentenceIndex}-${word.word}`
-                const favorite = favoritesQuery.data?.find(item => item.languageCode === analysis.targetLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
-                const saved = Boolean(favorite)
-                const saving = (saveFavorite.isPending && saveFavorite.variables.word === word.word)
-                  || (deleteFavorite.isPending && deleteFavorite.variables === favorite?.favoriteId)
+                const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.targetLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
+                const saved = Boolean(savedVocabulary)
+                const saving = (saveWord.isPending && saveWord.variables.word === word.word)
+                  || (removeWord.isPending && removeWord.variables === savedVocabulary?.vocabularyId)
                 return <article className="sentence-vocab-card" key={wordKey}>
                   <button className={saved ? 'saved' : ''} disabled={saving} aria-label={saved ? '단어 저장 취소' : '단어장에 저장'} aria-pressed={saved} onClick={() => {
                     setError('')
-                    if (favorite) deleteFavorite.mutate(favorite.favoriteId)
-                    else saveFavorite.mutate({ languageCode: analysis.targetLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: sentence.targetSentence })
+                    if (savedVocabulary) removeWord.mutate(savedVocabulary.vocabularyId)
+                    else saveWord.mutate({ languageCode: analysis.targetLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence })
                   }}><BookmarkSimpleIcon weight={saved ? 'fill' : 'regular'}/></button>
                   <div className="sentence-vocab-title"><h4>{word.word}</h4><span>{word.level}</span><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.targetLanguage)}><SpeakerHighIcon/></button></div>
                   <p><b>기본:</b> {word.basicMeaning}</p><p><b>문맥:</b> {word.contextualMeaning}</p>

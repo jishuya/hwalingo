@@ -4,9 +4,9 @@ import { requireAuth } from '../middleware/requireAuth.js'
 import { languageNames, type LanguageCode } from '../services/openai.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
 
-interface FavoriteVocabularyRow {
-  favorite_id: string
+interface VocabularyRow {
   vocabulary_id: string
+  favorite_id: string | null
   language_code: string
   word: string
   meaning: string
@@ -25,6 +25,8 @@ interface FavoriteVocabularyRow {
   incorrect_streak: number
   last_reviewed_at: string | null
   next_review_at: string
+  is_due: boolean
+  next_review_in_days: number
 }
 
 interface VocabularyInput {
@@ -39,7 +41,6 @@ interface VocabularyInput {
 }
 
 const cefrLevels = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])
-
 export const vocabulariesRouter = Router()
 
 function optionalText(value: unknown): string | null {
@@ -55,26 +56,16 @@ function parseVocabularyInput(body: Record<string, unknown>): VocabularyInput | 
   const meaning = typeof body.meaning === 'string' ? body.meaning.trim() : ''
   const contextMeaning = typeof body.contextMeaning === 'string' ? body.contextMeaning.trim() : ''
   const cefrLevel = optionalText(body.cefrLevel)?.toUpperCase() ?? null
-
   if (!(languageCode in languageNames) || !word || !meaning || word.length > 255) return undefined
   if (cefrLevel && !cefrLevels.has(cefrLevel)) return undefined
-
-  return {
-    languageCode,
-    word,
-    meaning,
-    contextMeaning,
-    cefrLevel,
-    etymology: optionalText(body.etymology),
-    memoryTip: optionalText(body.memoryTip),
-    exampleSentence: optionalText(body.exampleSentence),
-  }
+  return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence: optionalText(body.exampleSentence) }
 }
 
-function serializeFavorite(row: FavoriteVocabularyRow) {
+function serializeVocabulary(row: VocabularyRow) {
   return {
-    favoriteId: row.favorite_id,
     vocabularyId: row.vocabulary_id,
+    favoriteId: row.favorite_id,
+    isFavorite: Boolean(row.favorite_id),
     languageCode: row.language_code,
     word: row.word,
     meaning: row.meaning,
@@ -94,109 +85,107 @@ function serializeFavorite(row: FavoriteVocabularyRow) {
       incorrectStreak: row.incorrect_streak,
       lastReviewedAt: row.last_reviewed_at,
       nextReviewAt: row.next_review_at,
+      isDue: row.is_due,
+      nextReviewInDays: row.next_review_in_days,
     },
   }
 }
 
-vocabulariesRouter.get('/favorites', requireAuth, async (request, response, next) => {
+const vocabularySelect = `SELECT v.id AS vocabulary_id, f.id AS favorite_id, v.language_code, v.word,
+  v.meaning, v.context_meaning, v.cefr_level, v.etymology, v.memory_tip, v.example_sentence,
+  v.created_at AS saved_at, p.mastery_level, p.mastery_score, p.total_attempts,
+  p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
+  p.last_reviewed_at, p.next_review_at,
+  (p.total_attempts > 0 AND p.next_review_at <= CURRENT_TIMESTAMP) AS is_due,
+  GREATEST(0, CEIL(EXTRACT(EPOCH FROM (p.next_review_at - CURRENT_TIMESTAMP)) / 86400))::integer AS next_review_in_days
+  FROM vocabularies v
+  JOIN vocabulary_progress p ON p.user_id = v.user_id AND p.vocabulary_id = v.id
+  LEFT JOIN favorite_vocabularies f ON f.vocabulary_id = v.id`
+
+vocabulariesRouter.get('/', requireAuth, async (request, response, next) => {
   try {
-    const result = await pool.query<FavoriteVocabularyRow>(
-      `SELECT f.id AS favorite_id, v.id AS vocabulary_id, v.language_code, v.word,
-              v.meaning, v.context_meaning, v.cefr_level, v.etymology,
-              v.memory_tip, v.example_sentence, f.saved_at,
-              p.mastery_level, p.mastery_score, p.total_attempts,
-              p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
-              p.last_reviewed_at, p.next_review_at
-       FROM favorite_vocabularies f
-       JOIN vocabularies v ON v.id = f.vocabulary_id
-       JOIN vocabulary_progress p ON p.user_id = f.user_id AND p.vocabulary_id = f.vocabulary_id
-       WHERE f.user_id = $1
-       ORDER BY f.saved_at DESC`,
+    const onlyFavorites = request.query.favorite === 'true'
+    const result = await pool.query<VocabularyRow>(
+      `${vocabularySelect}
+       WHERE v.user_id = $1 AND v.archived_at IS NULL ${onlyFavorites ? 'AND f.id IS NOT NULL' : ''}
+       ORDER BY v.created_at DESC`,
       [request.auth!.userId],
     )
-    response.json({ vocabularies: result.rows.map(serializeFavorite) })
-  } catch (error) {
-    next(error)
-  }
+    response.json({ vocabularies: result.rows.map(serializeVocabulary) })
+  } catch (error) { next(error) }
 })
 
-vocabulariesRouter.post('/favorites', requireAuth, async (request, response, next) => {
+vocabulariesRouter.post('/', requireAuth, async (request, response, next) => {
   const vocabulary = parseVocabularyInput(request.body as Record<string, unknown>)
   if (!vocabulary) {
     response.status(400).json({ status: 'error', message: '저장할 단어 정보가 올바르지 않습니다.' })
     return
   }
-
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    const vocabularyResult = await client.query<{ id: string }>(
+    const saved = await client.query<{ id: string }>(
       `INSERT INTO vocabularies
-         (language_code, word, meaning, context_meaning, cefr_level, etymology, memory_tip, example_sentence)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (language_code, word) DO UPDATE SET
-         meaning = EXCLUDED.meaning,
-         context_meaning = EXCLUDED.context_meaning,
-         cefr_level = COALESCE(EXCLUDED.cefr_level, vocabularies.cefr_level),
-         etymology = COALESCE(EXCLUDED.etymology, vocabularies.etymology),
-         memory_tip = COALESCE(EXCLUDED.memory_tip, vocabularies.memory_tip),
-         example_sentence = COALESCE(EXCLUDED.example_sentence, vocabularies.example_sentence)
+         (user_id, language_code, word, meaning, context_meaning, cefr_level, etymology, memory_tip, example_sentence)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT (user_id, language_code, word) DO UPDATE SET
+         meaning=EXCLUDED.meaning, context_meaning=EXCLUDED.context_meaning,
+         cefr_level=COALESCE(EXCLUDED.cefr_level,vocabularies.cefr_level),
+         etymology=COALESCE(EXCLUDED.etymology,vocabularies.etymology),
+         memory_tip=COALESCE(EXCLUDED.memory_tip,vocabularies.memory_tip),
+         example_sentence=COALESCE(EXCLUDED.example_sentence,vocabularies.example_sentence), archived_at=NULL
        RETURNING id`,
-      [vocabulary.languageCode, vocabulary.word, vocabulary.meaning, vocabulary.contextMeaning || null,
-        vocabulary.cefrLevel, vocabulary.etymology, vocabulary.memoryTip, vocabulary.exampleSentence],
+      [request.auth!.userId, vocabulary.languageCode, vocabulary.word, vocabulary.meaning,
+        vocabulary.contextMeaning || null, vocabulary.cefrLevel, vocabulary.etymology, vocabulary.memoryTip, vocabulary.exampleSentence],
     )
-    const vocabularyId = vocabularyResult.rows[0].id
-    const favoriteResult = await client.query<{ favorite_id: string }>(
-      `INSERT INTO favorite_vocabularies (user_id, vocabulary_id)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id, vocabulary_id) DO UPDATE SET saved_at = favorite_vocabularies.saved_at
-       RETURNING id AS favorite_id`,
-      [request.auth!.userId, vocabularyId],
-    )
-    await client.query(
-      `INSERT INTO vocabulary_progress (user_id, vocabulary_id)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id, vocabulary_id) DO NOTHING`,
-      [request.auth!.userId, vocabularyId],
-    )
-    const savedResult = await client.query<FavoriteVocabularyRow>(
-      `SELECT f.id AS favorite_id, v.id AS vocabulary_id, v.language_code, v.word,
-              v.meaning, v.context_meaning, v.cefr_level, v.etymology,
-              v.memory_tip, v.example_sentence, f.saved_at,
-              p.mastery_level, p.mastery_score, p.total_attempts,
-              p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
-              p.last_reviewed_at, p.next_review_at
-       FROM favorite_vocabularies f
-       JOIN vocabularies v ON v.id = f.vocabulary_id
-       JOIN vocabulary_progress p ON p.user_id = f.user_id AND p.vocabulary_id = f.vocabulary_id
-       WHERE f.id = $1 AND f.user_id = $2`,
-      [favoriteResult.rows[0].favorite_id, request.auth!.userId],
-    )
+    const vocabularyId = saved.rows[0].id
+    await client.query(`INSERT INTO vocabulary_progress (user_id,vocabulary_id) VALUES ($1,$2) ON CONFLICT (user_id,vocabulary_id) DO NOTHING`, [request.auth!.userId, vocabularyId])
+    const result = await client.query<VocabularyRow>(`${vocabularySelect} WHERE v.id=$1 AND v.user_id=$2`, [vocabularyId, request.auth!.userId])
     await recordLearningActivity(client, request.auth!.userId, 'vocabulary')
     await client.query('COMMIT')
-    response.status(201).json({ vocabulary: serializeFavorite(savedResult.rows[0]) })
+    response.status(201).json({ vocabulary: serializeVocabulary(result.rows[0]) })
   } catch (error) {
-    await client.query('ROLLBACK')
-    next(error)
-  } finally {
-    client.release()
-  }
+    await client.query('ROLLBACK'); next(error)
+  } finally { client.release() }
 })
 
-vocabulariesRouter.delete('/favorites/:favoriteId', requireAuth, async (request, response, next) => {
+vocabulariesRouter.delete('/:vocabularyId', requireAuth, async (request, response, next) => {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const result = await client.query(`UPDATE vocabularies SET archived_at=CURRENT_TIMESTAMP WHERE id=$1 AND user_id=$2 AND archived_at IS NULL RETURNING id`, [request.params.vocabularyId, request.auth!.userId])
+    if (!result.rowCount) {
+      await client.query('ROLLBACK'); response.status(404).json({ status: 'error', message: '단어를 찾을 수 없습니다.' }); return
+    }
+    await client.query(`DELETE FROM favorite_vocabularies WHERE vocabulary_id=$1`, [request.params.vocabularyId])
+    await client.query('COMMIT'); response.status(204).send()
+  } catch (error) { await client.query('ROLLBACK'); next(error) } finally { client.release() }
+})
+
+vocabulariesRouter.post('/:vocabularyId/favorite', requireAuth, async (request, response, next) => {
   try {
     const result = await pool.query(
-      `DELETE FROM favorite_vocabularies
-       WHERE id = $1 AND user_id = $2
-       RETURNING id`,
-      [request.params.favoriteId, request.auth!.userId],
+      `INSERT INTO favorite_vocabularies (vocabulary_id)
+       SELECT id FROM vocabularies WHERE id=$1 AND user_id=$2 AND archived_at IS NULL
+       ON CONFLICT (vocabulary_id) DO NOTHING RETURNING id`,
+      [request.params.vocabularyId, request.auth!.userId],
     )
     if (!result.rowCount) {
-      response.status(404).json({ status: 'error', message: '저장된 단어를 찾을 수 없습니다.' })
-      return
+      const owned = await pool.query(`SELECT 1 FROM vocabularies WHERE id=$1 AND user_id=$2 AND archived_at IS NULL`, [request.params.vocabularyId, request.auth!.userId])
+      if (!owned.rowCount) { response.status(404).json({ status: 'error', message: '단어를 찾을 수 없습니다.' }); return }
     }
     response.status(204).send()
-  } catch (error) {
-    next(error)
-  }
+  } catch (error) { next(error) }
+})
+
+vocabulariesRouter.delete('/:vocabularyId/favorite', requireAuth, async (request, response, next) => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM favorite_vocabularies f USING vocabularies v
+       WHERE f.vocabulary_id=v.id AND v.id=$1 AND v.user_id=$2 RETURNING f.id`,
+      [request.params.vocabularyId, request.auth!.userId],
+    )
+    if (!result.rowCount) { response.status(404).json({ status: 'error', message: '즐겨찾기한 단어를 찾을 수 없습니다.' }); return }
+    response.status(204).send()
+  } catch (error) { next(error) }
 })

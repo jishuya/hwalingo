@@ -147,10 +147,9 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
               p.mastery_level, p.mastery_score, p.total_attempts, p.correct_count,
               p.incorrect_count, p.correct_streak, p.incorrect_streak,
               p.last_reviewed_at, p.next_review_at, p.mastered_at
-       FROM favorite_vocabularies f
-       JOIN vocabularies v ON v.id = f.vocabulary_id
-       JOIN vocabulary_progress p ON p.user_id = f.user_id AND p.vocabulary_id = f.vocabulary_id
-       WHERE f.user_id = $1`,
+       FROM vocabularies v
+       JOIN vocabulary_progress p ON p.user_id = v.user_id AND p.vocabulary_id = v.id
+       WHERE v.user_id = $1 AND v.archived_at IS NULL`,
       [request.auth!.userId],
     )
     if (!candidatesResult.rowCount) {

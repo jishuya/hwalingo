@@ -18,13 +18,13 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
     }>(
       `SELECT COALESCE(up.total_xp, 0) AS total_xp,
               COALESCE(up.prestige_level, 0) AS prestige_level,
-              count(f.id) AS saved_words,
-              count(f.id) FILTER (WHERE vp.mastery_level >= 6) AS mastered_words,
-              count(f.id) FILTER (WHERE vp.total_attempts > 0 AND vp.next_review_at <= CURRENT_TIMESTAMP) AS due_words
+              count(v.id) FILTER (WHERE v.archived_at IS NULL) AS saved_words,
+              count(v.id) FILTER (WHERE v.archived_at IS NULL AND vp.mastery_level >= 6) AS mastered_words,
+              count(v.id) FILTER (WHERE v.archived_at IS NULL AND vp.total_attempts > 0 AND vp.next_review_at <= CURRENT_TIMESTAMP) AS due_words
        FROM users u
        LEFT JOIN user_progress up ON up.user_id = u.id
-       LEFT JOIN favorite_vocabularies f ON f.user_id = u.id
-       LEFT JOIN vocabulary_progress vp ON vp.user_id = f.user_id AND vp.vocabulary_id = f.vocabulary_id
+       LEFT JOIN vocabularies v ON v.user_id = u.id
+       LEFT JOIN vocabulary_progress vp ON vp.user_id = v.user_id AND vp.vocabulary_id = v.id
        WHERE u.id = $1
        GROUP BY up.total_xp, up.prestige_level`,
       [request.auth!.userId],
