@@ -15,6 +15,7 @@ interface VocabularyRow {
   etymology: string | null
   memory_tip: string | null
   example_sentence: string | null
+  example_translation: string | null
   saved_at: string
   mastery_level: number
   mastery_score: string
@@ -38,6 +39,7 @@ interface VocabularyInput {
   etymology: string | null
   memoryTip: string | null
   exampleSentence: string | null
+  exampleTranslation: string | null
 }
 
 const cefrLevels = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])
@@ -58,7 +60,7 @@ function parseVocabularyInput(body: Record<string, unknown>): VocabularyInput | 
   const cefrLevel = optionalText(body.cefrLevel)?.toUpperCase() ?? null
   if (!(languageCode in languageNames) || !word || !meaning || word.length > 255) return undefined
   if (cefrLevel && !cefrLevels.has(cefrLevel)) return undefined
-  return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence: optionalText(body.exampleSentence) }
+  return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence: optionalText(body.exampleSentence), exampleTranslation: optionalText(body.exampleTranslation) }
 }
 
 function serializeVocabulary(row: VocabularyRow) {
@@ -74,6 +76,7 @@ function serializeVocabulary(row: VocabularyRow) {
     etymology: row.etymology,
     memoryTip: row.memory_tip,
     exampleSentence: row.example_sentence,
+    exampleTranslation: row.example_translation,
     savedAt: row.saved_at,
     progress: {
       masteryLevel: row.mastery_level,
@@ -92,7 +95,7 @@ function serializeVocabulary(row: VocabularyRow) {
 }
 
 const vocabularySelect = `SELECT v.id AS vocabulary_id, f.id AS favorite_id, v.language_code, v.word,
-  v.meaning, v.context_meaning, v.cefr_level, v.etymology, v.memory_tip, v.example_sentence,
+  v.meaning, v.context_meaning, v.cefr_level, v.etymology, v.memory_tip, v.example_sentence, v.example_translation,
   v.created_at AS saved_at, p.mastery_level, p.mastery_score, p.total_attempts,
   p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
   p.last_reviewed_at, p.next_review_at,
@@ -126,17 +129,18 @@ vocabulariesRouter.post('/', requireAuth, async (request, response, next) => {
     await client.query('BEGIN')
     const saved = await client.query<{ id: string }>(
       `INSERT INTO vocabularies
-         (user_id, language_code, word, meaning, context_meaning, cefr_level, etymology, memory_tip, example_sentence)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+         (user_id, language_code, word, meaning, context_meaning, cefr_level, etymology, memory_tip, example_sentence, example_translation)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        ON CONFLICT (user_id, language_code, word) DO UPDATE SET
          meaning=EXCLUDED.meaning, context_meaning=EXCLUDED.context_meaning,
          cefr_level=COALESCE(EXCLUDED.cefr_level,vocabularies.cefr_level),
          etymology=COALESCE(EXCLUDED.etymology,vocabularies.etymology),
          memory_tip=COALESCE(EXCLUDED.memory_tip,vocabularies.memory_tip),
-         example_sentence=COALESCE(EXCLUDED.example_sentence,vocabularies.example_sentence), archived_at=NULL
+         example_sentence=COALESCE(EXCLUDED.example_sentence,vocabularies.example_sentence),
+         example_translation=COALESCE(EXCLUDED.example_translation,vocabularies.example_translation), archived_at=NULL
        RETURNING id`,
       [request.auth!.userId, vocabulary.languageCode, vocabulary.word, vocabulary.meaning,
-        vocabulary.contextMeaning || null, vocabulary.cefrLevel, vocabulary.etymology, vocabulary.memoryTip, vocabulary.exampleSentence],
+        vocabulary.contextMeaning || null, vocabulary.cefrLevel, vocabulary.etymology, vocabulary.memoryTip, vocabulary.exampleSentence, vocabulary.exampleTranslation],
     )
     const vocabularyId = saved.rows[0].id
     await client.query(`INSERT INTO vocabulary_progress (user_id,vocabulary_id) VALUES ($1,$2) ON CONFLICT (user_id,vocabulary_id) DO NOTHING`, [request.auth!.userId, vocabularyId])

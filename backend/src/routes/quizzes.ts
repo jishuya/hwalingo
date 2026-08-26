@@ -46,6 +46,13 @@ interface SessionItemRow {
   answered_at: string | null
   word: string
   cefr_level: string | null
+  language_code: string
+  meaning: string
+  context_meaning: string | null
+  example_sentence: string | null
+  example_translation: string | null
+  etymology: string | null
+  memory_tip: string | null
 }
 
 export const quizzesRouter = Router()
@@ -75,7 +82,7 @@ function buildQuestion(candidate: CandidateRow, allCandidates: CandidateRow[]) {
       .slice(0, QUIZ_RULES.choiceCount - 1)
     return {
       questionType: type,
-      prompt: `${candidate.word}의 뜻은?`,
+      prompt: candidate.word,
       correctAnswer: candidate.meaning,
       choices: shuffled([candidate.meaning, ...distractors]),
       acceptableAnswers: [],
@@ -106,7 +113,8 @@ async function getSession(userId: string, sessionId: string) {
     `SELECT i.id, i.session_id, i.vocabulary_id, i.position, i.selection_group,
             i.question_type, i.prompt, i.correct_answer, i.acceptable_answers, i.choices,
             i.explanation, i.generation_source, i.result, i.answered_at,
-            v.word, v.cefr_level
+            v.word, v.cefr_level, v.language_code, v.meaning, v.context_meaning,
+            v.example_sentence, v.example_translation, v.etymology, v.memory_tip
      FROM quiz_session_items i
      JOIN vocabularies v ON v.id = i.vocabulary_id
      WHERE i.session_id = $1 ORDER BY i.position`,
@@ -131,6 +139,13 @@ async function getSession(userId: string, sessionId: string) {
       answeredAt: item.answered_at,
       word: item.word,
       cefrLevel: item.cefr_level,
+      languageCode: item.language_code,
+      meaning: item.meaning,
+      contextMeaning: item.context_meaning,
+      exampleSentence: item.example_sentence,
+      exampleTranslation: item.example_translation,
+      etymology: item.etymology,
+      memoryTip: item.memory_tip,
       generationSource: item.generation_source,
       ...(item.result ? { correctAnswer: item.correct_answer, explanation: item.explanation } : {}),
     })),
@@ -243,9 +258,10 @@ quizzesRouter.get('/sessions/:sessionId', requireAuth, async (request, response,
 
 quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, async (request, response, next) => {
   const submittedAnswer = typeof request.body.answer === 'string' ? request.body.answer.trim() : ''
+  const selfReportedCorrect = typeof request.body.selfReportedCorrect === 'boolean' ? request.body.selfReportedCorrect : undefined
   const usedHint = request.body.usedHint === true
   const responseTimeMs = Number.isInteger(request.body.responseTimeMs) && request.body.responseTimeMs >= 0 ? request.body.responseTimeMs : null
-  if (!submittedAnswer) {
+  if (!submittedAnswer && selfReportedCorrect === undefined) {
     response.status(400).json({ status: 'error', message: '답을 입력해주세요.' })
     return
   }
@@ -283,7 +299,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
       [request.auth!.userId, item.vocabulary_id],
     )
     const progress = progressResult.rows[0]
-    const correct = isCorrectAnswer(submittedAnswer, [item.correct_answer, ...item.acceptable_answers])
+    const correct = selfReportedCorrect ?? isCorrectAnswer(submittedAnswer, [item.correct_answer, ...item.acceptable_answers])
     const reviewedAt = new Date()
     const state: VocabularyProgressState = {
       masteryLevel: progress.mastery_level,
@@ -331,7 +347,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
           mastery_level_before, mastery_level_after, next_review_at, xp_earned)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING id`,
-      [request.auth!.userId, item.vocabulary_id, submittedAnswer, correct ? 'correct' : 'incorrect',
+      [request.auth!.userId, item.vocabulary_id, submittedAnswer || (correct ? 'self_reported_correct' : 'self_reported_incorrect'), correct ? 'correct' : 'incorrect',
         usedHint, responseTimeMs, reviewedAt, item.session_id, item.id, item.question_type,
         state.masteryLevel, outcome.masteryLevel, outcome.nextReviewAt, xpEarned],
     )
@@ -377,7 +393,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
     })
     await client.query('COMMIT')
     let aiFeedback
-    if (!correct) {
+    if (!correct && selfReportedCorrect === undefined) {
       try {
         aiFeedback = await analyzeWrongAnswer({
           questionType: item.question_type,

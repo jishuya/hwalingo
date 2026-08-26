@@ -12,6 +12,7 @@ export interface Vocabulary {
   etymology: string | null
   memoryTip: string | null
   exampleSentence: string | null
+  exampleTranslation: string | null
   savedAt: string
   progress: {
     masteryLevel: number; masteryScore: number; totalAttempts: number; correctCount: number
@@ -30,6 +31,7 @@ export interface SaveVocabularyInput {
   etymology: string
   memoryTip: string
   exampleSentence?: string
+  exampleTranslation?: string
 }
 
 interface ErrorResponse { message?: string }

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { BookmarkSimpleIcon, CaretDownIcon, CheckIcon, ClockCounterClockwiseIcon, HeartIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
+import { BookmarkSimpleIcon, CaretDownIcon, CheckIcon, ClockCounterClockwiseIcon, HeartIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TranslateIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ConfirmDialog } from '../components/ui/Dialog'
-import { deleteVocabulary, getVocabularies, setVocabularyFavorite, type Vocabulary } from '../services/vocabulary'
+import { deleteVocabulary, getVocabularies, setVocabularyFavorite } from '../services/vocabulary'
 
 type VocabularyFilter = 'all' | 'favorite' | 'due' | 'mastered'
 type VocabularyView = 'word' | 'meaning' | 'both'
@@ -13,13 +12,13 @@ export default function VocabularyPage() {
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [expandedId, setExpandedId] = useState<string>()
-  const [deleteTarget, setDeleteTarget] = useState<Vocabulary>()
+  const [translatedExamples, setTranslatedExamples] = useState<Set<string>>(() => new Set())
   const queryClient = useQueryClient()
   const viewMenuRef = useRef<HTMLDivElement>(null)
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
   const removeVocabulary = useMutation({
     mutationFn: deleteVocabulary,
-    onSuccess: () => { setDeleteTarget(undefined); void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }) },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
   })
   const toggleFavorite = useMutation({
     mutationFn: ({ vocabularyId, favorite }: { vocabularyId: string; favorite: boolean }) => setVocabularyFavorite(vocabularyId, favorite),
@@ -31,6 +30,14 @@ export default function VocabularyPage() {
     const utterance = new SpeechSynthesisUtterance(word)
     utterance.lang = languageCode === 'en' ? 'en-US' : languageCode === 'fr' ? 'fr-FR' : languageCode
     window.speechSynthesis.speak(utterance)
+  }
+  const toggleExampleTranslation = (vocabularyId: string) => {
+    setTranslatedExamples(previous => {
+      const next = new Set(previous)
+      if (next.has(vocabularyId)) next.delete(vocabularyId)
+      else next.add(vocabularyId)
+      return next
+    })
   }
   const saved = vocabulariesQuery.data ?? []
   const normalizedSearch = search.trim().toLocaleLowerCase()
@@ -76,12 +83,11 @@ export default function VocabularyPage() {
             : <div className="word-grid compact-word-grid">{visibleWords.map(word => {
               const expanded = expandedId === word.vocabularyId
               return <article className={`word-card compact-word-card${expanded ? ' expanded' : ''}`} key={word.vocabularyId}>
-                <div className="compact-word-top"><div className={`compact-word-name${view === 'meaning' ? ' meaning-primary' : ''}`}><div><h2>{view === 'meaning' ? word.meaning : word.word}</h2>{view !== 'meaning' && word.cefrLevel && <span>{word.cefrLevel}</span>}<button className="word-inline-expand" aria-label={`${word.word} 상세 정보 ${expanded ? '접기' : '보기'}`} aria-expanded={expanded} onClick={() => setExpandedId(expanded ? undefined : word.vocabularyId)}><CaretDownIcon weight="bold"/></button></div>{view !== 'meaning' && <small>{word.languageCode.toUpperCase()}</small>}</div><div className="compact-word-actions"><button className={`favorite-heart${word.isFavorite ? ' active' : ''}`} disabled={toggleFavorite.isPending && toggleFavorite.variables?.vocabularyId === word.vocabularyId} aria-label={word.isFavorite ? `${word.word} 즐겨찾기 해제` : `${word.word} 즐겨찾기 추가`} aria-pressed={word.isFavorite} onClick={() => toggleFavorite.mutate({ vocabularyId: word.vocabularyId, favorite: !word.isFavorite })}><HeartIcon weight={word.isFavorite ? 'fill' : 'regular'}/></button><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, word.languageCode)}><SpeakerHighIcon/></button><button className="compact-delete" aria-label={`${word.word} 단어장에서 삭제`} onClick={() => setDeleteTarget(word)}><TrashIcon/></button></div></div>
+                <div className="compact-word-top"><div className={`compact-word-name${view === 'meaning' ? ' meaning-primary' : ''}`}><div><h2>{view === 'meaning' ? word.meaning : word.word}</h2>{view !== 'meaning' && word.cefrLevel && <span>{word.cefrLevel}</span>}<button className="word-inline-expand" aria-label={`${word.word} 상세 정보 ${expanded ? '접기' : '보기'}`} aria-expanded={expanded} onClick={() => setExpandedId(expanded ? undefined : word.vocabularyId)}><CaretDownIcon weight="bold"/></button></div>{view !== 'meaning' && <small>{word.languageCode.toUpperCase()}</small>}</div><div className="compact-word-actions"><button className={`favorite-heart${word.isFavorite ? ' active' : ''}`} disabled={toggleFavorite.isPending && toggleFavorite.variables?.vocabularyId === word.vocabularyId} aria-label={word.isFavorite ? `${word.word} 즐겨찾기 해제` : `${word.word} 즐겨찾기 추가`} aria-pressed={word.isFavorite} onClick={() => toggleFavorite.mutate({ vocabularyId: word.vocabularyId, favorite: !word.isFavorite })}><HeartIcon weight={word.isFavorite ? 'fill' : 'regular'}/></button><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, word.languageCode)}><SpeakerHighIcon/></button><button className="compact-delete" disabled={removeVocabulary.isPending && removeVocabulary.variables === word.vocabularyId} aria-label={`${word.word} 단어장에서 삭제`} onClick={() => removeVocabulary.mutate(word.vocabularyId)}><TrashIcon/></button></div></div>
                 {view === 'both' && <p className="compact-word-meaning">{word.meaning}</p>}
-                {expanded && <div className="word-details">{word.contextMeaning && <div><b>문맥 뜻</b><p>{word.contextMeaning}</p></div>}{word.exampleSentence && <div><div className="word-detail-heading"><b>예문</b><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence!, word.languageCode)}><SpeakerHighIcon/></button></div><blockquote>{word.exampleSentence}</blockquote></div>}{word.etymology && <div><b>어원</b><p>{word.etymology}</p></div>}{word.memoryTip && <div className="word-memory-tip"><b>암기 팁</b><p>💡 {word.memoryTip}</p></div>}</div>}
+                {expanded && <div className="word-details">{word.contextMeaning && <div><b>문맥 뜻</b><p>{word.contextMeaning}</p></div>}{word.exampleSentence && <div><div className="word-detail-heading"><b>예문</b><div>{word.exampleTranslation && <button type="button" className={translatedExamples.has(word.vocabularyId) ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${translatedExamples.has(word.vocabularyId) ? '숨기기' : '보기'}`} aria-pressed={translatedExamples.has(word.vocabularyId)} onClick={() => toggleExampleTranslation(word.vocabularyId)}><TranslateIcon/></button>}<button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence!, word.languageCode)}><SpeakerHighIcon/></button></div></div><blockquote>{word.exampleSentence}</blockquote>{translatedExamples.has(word.vocabularyId) && word.exampleTranslation && <p className="word-example-translation">{word.exampleTranslation}</p>}</div>}{word.etymology && <div><b>어원</b><p>{word.etymology}</p></div>}{word.memoryTip && <div className="word-memory-tip"><b>암기 팁</b><p>💡 {word.memoryTip}</p></div>}</div>}
               </article>
             })}</div>}
     {(removeVocabulary.isError || toggleFavorite.isError) && <p className="vocabulary-error" role="alert">{removeVocabulary.error?.message ?? toggleFavorite.error?.message}</p>}
-    <ConfirmDialog open={Boolean(deleteTarget)} title="단어장에서 삭제할까요?" message={deleteTarget ? `“${deleteTarget.word}”을 단어장에서 숨깁니다. 학습 기록은 유지됩니다.` : ''} confirmLabel="삭제" cancelLabel="취소" tone="danger" loading={removeVocabulary.isPending} onCancel={() => setDeleteTarget(undefined)} onConfirm={() => deleteTarget && removeVocabulary.mutate(deleteTarget.vocabularyId)}/>
   </div>
 }

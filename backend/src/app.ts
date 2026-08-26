@@ -9,6 +9,7 @@ import { authRouter } from './routes/auth.js'
 import { healthRouter } from './routes/health.js'
 import { quizzesRouter } from './routes/quizzes.js'
 import { progressRouter } from './routes/progress.js'
+import { storiesRouter } from './routes/stories.js'
 import { vocabulariesRouter } from './routes/vocabularies.js'
 
 export const app = express()
@@ -27,6 +28,7 @@ app.use('/api/analysis', analysisRouter)
 app.use('/api/vocabularies', vocabulariesRouter)
 app.use('/api/quizzes', quizzesRouter)
 app.use('/api/progress', progressRouter)
+app.use('/api/stories', storiesRouter)
 
 app.use((_request, response) => {
   response.status(404).json({ status: 'error', message: 'Not found' })

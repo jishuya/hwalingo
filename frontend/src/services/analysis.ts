@@ -29,7 +29,7 @@ export interface AnalyzedSentence {
   keyExpressions: Array<{ text: string; meaning: string }>
   chunks: Array<{ targetText: string; sourceMeaning: string; role: 'subject' | 'verb' | 'other' }>
   paraphrases: Array<{ level: 'B1' | 'B2' | 'C1' | 'C2'; targetText: string; sourceMeaning: string }>
-  vocabulary: Array<{ word: string; partOfSpeech: string; level: string; basicMeaning: string; contextualMeaning: string; etymology: string; memoryTip: string; exampleSentence: string }>
+  vocabulary: Array<{ word: string; partOfSpeech: string; level: string; basicMeaning: string; contextualMeaning: string; etymology: string; memoryTip: string; exampleSentence: string; exampleMeaning: string }>
 }
 
 export async function analyzeSentence(request: AnalysisRequest): Promise<SentenceAnalysis> {

@@ -11,6 +11,13 @@ export interface QuizItem {
   answeredAt: string | null
   word: string
   cefrLevel: string | null
+  languageCode: string
+  meaning: string
+  contextMeaning: string | null
+  exampleSentence: string | null
+  exampleTranslation: string | null
+  etymology: string | null
+  memoryTip: string | null
   correctAnswer?: string
   explanation?: string | null
   generationSource: 'deterministic' | 'ai'
@@ -76,9 +83,9 @@ export async function getQuizSession(sessionId: string): Promise<QuizSession> {
   return result.session
 }
 
-export function submitQuizAnswer(sessionId: string, itemId: string, answer: string, responseTimeMs: number): Promise<AnswerResult> {
+export function submitQuizAnswer(sessionId: string, itemId: string, correct: boolean, responseTimeMs: number): Promise<AnswerResult> {
   return request(`/api/quizzes/sessions/${sessionId}/items/${itemId}/answer`, {
     method: 'POST',
-    body: JSON.stringify({ answer, responseTimeMs, usedHint: false }),
+    body: JSON.stringify({ selfReportedCorrect: correct, responseTimeMs, usedHint: false }),
   })
 }

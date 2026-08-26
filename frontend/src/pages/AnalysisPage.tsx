@@ -188,10 +188,11 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                   <button className={saved ? 'saved' : ''} disabled={saving} aria-label={saved ? '단어 저장 취소' : '단어장에 저장'} aria-pressed={saved} onClick={() => {
                     setError('')
                     if (savedVocabulary) removeWord.mutate(savedVocabulary.vocabularyId)
-                    else saveWord.mutate({ languageCode: analysis.targetLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence })
+                    else saveWord.mutate({ languageCode: analysis.targetLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence, exampleTranslation: word.exampleMeaning })
                   }}><BookmarkSimpleIcon weight={saved ? 'fill' : 'regular'}/></button>
                   <div className="sentence-vocab-title"><h4>{word.word}</h4><span>{word.level}</span><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.targetLanguage)}><SpeakerHighIcon/></button></div>
                   <p><b>기본:</b> {word.basicMeaning}</p><p><b>문맥:</b> {word.contextualMeaning}</p>
+                  {word.exampleSentence && <div className="vocab-example"><div><b><span aria-hidden="true">💬</span> 예문</b><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.targetLanguage)}><SpeakerHighIcon/></button></div><p>{word.exampleSentence}</p>{word.exampleMeaning && <p className="vocab-example-meaning">{word.exampleMeaning}</p>}</div>}
                   {word.etymology && <p className="vocab-etymology">↪ {word.etymology}</p>}
                   {word.memoryTip && <div className="vocab-tip"><LightbulbIcon weight="fill"/><span><b>팁:</b> {word.memoryTip}</span></div>}
                 </article>
