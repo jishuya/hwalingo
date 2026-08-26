@@ -11,6 +11,7 @@ import {
   LightbulbIcon,
   MicrophoneIcon,
   SpeakerHighIcon,
+  TranslateIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
@@ -27,6 +28,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [revealedChunks, setRevealedChunks] = useState<Set<string>>(new Set())
   const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set())
   const [openParaphrases, setOpenParaphrases] = useState<Set<number>>(new Set())
+  const [openExampleTranslations, setOpenExampleTranslations] = useState<Set<string>>(new Set())
   const [recordingSentence, setRecordingSentence] = useState<number>()
   const queryClient = useQueryClient()
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
@@ -124,6 +126,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         setRevealedChunks(new Set())
         setOpenTranslations(new Set())
         setOpenParaphrases(new Set())
+        setOpenExampleTranslations(new Set())
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
       } finally {
@@ -180,6 +183,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
               <h3><BookOpenIcon />핵심 어휘</h3>
               {sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">추출된 주요 어휘가 없습니다.</div> : sentence.vocabulary.map(word => {
                 const wordKey = `${sentenceIndex}-${word.word}`
+                const exampleTranslationOpen = openExampleTranslations.has(wordKey)
                 const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.targetLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
                 const saved = Boolean(savedVocabulary)
                 const saving = (saveWord.isPending && saveWord.variables.word === word.word)
@@ -192,7 +196,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                   }}><BookmarkSimpleIcon weight={saved ? 'fill' : 'regular'}/></button>
                   <div className="sentence-vocab-title"><h4>{word.word}</h4><span>{word.level}</span><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.targetLanguage)}><SpeakerHighIcon/></button></div>
                   <p><b>기본:</b> {word.basicMeaning}</p><p><b>문맥:</b> {word.contextualMeaning}</p>
-                  {word.exampleSentence && <div className="vocab-example"><div><b><span aria-hidden="true">💬</span> 예문</b><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.targetLanguage)}><SpeakerHighIcon/></button></div><p>{word.exampleSentence}</p>{word.exampleMeaning && <p className="vocab-example-meaning">{word.exampleMeaning}</p>}</div>}
+                  {word.exampleSentence && <div className="vocab-example"><div><b>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.targetLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><p>{word.exampleSentence}</p>{exampleTranslationOpen && word.exampleMeaning && <p className="vocab-example-meaning">{word.exampleMeaning}</p>}</div>}
                   {word.etymology && <p className="vocab-etymology">↪ {word.etymology}</p>}
                   {word.memoryTip && <div className="vocab-tip"><LightbulbIcon weight="fill"/><span><b>팁:</b> {word.memoryTip}</span></div>}
                 </article>

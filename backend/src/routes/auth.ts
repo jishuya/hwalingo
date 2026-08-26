@@ -12,14 +12,12 @@ interface UserRow {
   email: string
   password_hash: string
   display_name: string
-  profile_image_url: string | null
 }
 
 interface PublicUser {
   id: string
   email: string
   displayName: string
-  profileImageUrl: string | null
 }
 
 interface PasswordResetRow {
@@ -48,7 +46,6 @@ function publicUser(user: UserRow): PublicUser {
     id: user.id,
     email: user.email,
     displayName: user.display_name,
-    profileImageUrl: user.profile_image_url,
   }
 }
 
@@ -106,7 +103,7 @@ authRouter.post('/signup', async (request, response, next) => {
     const result = await pool.query<UserRow>(
       `INSERT INTO users (email, password_hash, display_name)
        VALUES ($1, $2, $3)
-       RETURNING id, email, password_hash, display_name, profile_image_url`,
+       RETURNING id, email, password_hash, display_name`,
       [email, passwordHash, displayName],
     )
     const user = result.rows[0]
@@ -128,7 +125,7 @@ authRouter.post('/login', async (request, response, next) => {
     const rememberMe = request.body.rememberMe === true
 
     const result = await pool.query<UserRow>(
-      `SELECT id, email, password_hash, display_name, profile_image_url
+      `SELECT id, email, password_hash, display_name
        FROM users WHERE email = $1`,
       [email],
     )
@@ -249,7 +246,7 @@ authRouter.post('/reset-password', async (request, response, next) => {
 authRouter.get('/me', requireAuth, async (request, response, next) => {
   try {
     const result = await pool.query<UserRow>(
-      `SELECT id, email, password_hash, display_name, profile_image_url
+      `SELECT id, email, password_hash, display_name
        FROM users WHERE id = $1`,
       [request.auth!.userId],
     )
