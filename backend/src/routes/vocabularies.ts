@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { pool } from '../config/database.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { languageNames, type LanguageCode } from '../services/openai.js'
+import { recordLearningActivity } from '../services/learningActivity.js'
 
 interface FavoriteVocabularyRow {
   favorite_id: string
@@ -171,6 +172,7 @@ vocabulariesRouter.post('/favorites', requireAuth, async (request, response, nex
        WHERE f.id = $1 AND f.user_id = $2`,
       [favoriteResult.rows[0].favorite_id, request.auth!.userId],
     )
+    await recordLearningActivity(client, request.auth!.userId, 'vocabulary')
     await client.query('COMMIT')
     response.status(201).json({ vocabulary: serializeFavorite(savedResult.rows[0]) })
   } catch (error) {

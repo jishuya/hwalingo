@@ -19,8 +19,13 @@ export default function VocabularyPage() {
     window.speechSynthesis.speak(utterance)
   }
   const saved = favoritesQuery.data ?? []
+  const startQuiz = () => {
+    history.pushState(null, '', '/quiz')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    window.scrollTo(0, 0)
+  }
 
-  return <div className="page"><section className="card vocab-head"><h1><BookmarkSimpleIcon weight="fill"/> 총 {saved.length}개의 단어</h1><div><button>⇩ 엑셀 다운로드</button><button className="primary" disabled={!saved.length}>✓ 퀴즈 시작하기</button></div></section>
+  return <div className="page"><section className="card vocab-head"><h1><BookmarkSimpleIcon weight="fill"/> 총 {saved.length}개의 단어</h1><div><button>⇩ 엑셀 다운로드</button><button className="primary" disabled={!saved.length} onClick={startQuiz}>✓ 퀴즈 시작하기</button></div></section>
     {favoritesQuery.isPending ? <div className="empty-state"><p>단어장을 불러오고 있어요.</p></div>
       : favoritesQuery.isError ? <div className="empty-state"><p>{favoritesQuery.error.message}</p><button className="primary" onClick={() => void favoritesQuery.refetch()}>다시 시도</button></div>
         : !saved.length ? <div className="empty-state vocabulary-empty"><BookmarkSimpleIcon/><h2>아직 저장한 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘에서 북마크를 누르면<br/>이곳에서 다시 학습할 수 있어요.</p></div>

@@ -13,4 +13,4 @@ export const QUIZ_RULES = {
 } as const
 
 export type SelectionGroup = keyof typeof QUIZ_RULES.selectionWeights | 'fallback'
-export type QuestionType = 'multiple_choice' | 'recall' | 'context'
+export type QuestionType = 'multiple_choice' | 'recall' | 'context' | 'translation'
