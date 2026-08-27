@@ -10,6 +10,8 @@ import { healthRouter } from './routes/health.js'
 import { quizzesRouter } from './routes/quizzes.js'
 import { progressRouter } from './routes/progress.js'
 import { storiesRouter } from './routes/stories.js'
+import { settingsRouter } from './routes/settings.js'
+import { supportRouter } from './routes/support.js'
 import { vocabulariesRouter } from './routes/vocabularies.js'
 
 export const app = express()
@@ -29,6 +31,8 @@ app.use('/api/vocabularies', vocabulariesRouter)
 app.use('/api/quizzes', quizzesRouter)
 app.use('/api/progress', progressRouter)
 app.use('/api/stories', storiesRouter)
+app.use('/api/settings', settingsRouter)
+app.use('/api/support', supportRouter)
 
 app.use((_request, response) => {
   response.status(404).json({ status: 'error', message: 'Not found' })

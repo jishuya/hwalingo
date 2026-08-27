@@ -14,6 +14,11 @@ export interface UserProgress {
   weeklyCompletedDays: number
   weeklyGoalDays: number
   timezone: string
+  masteryDistribution: Array<{ masteryLevel: number; wordCount: number }>
+  totalAnswers: number
+  correctAnswers: number
+  accuracyPercent: number
+  recentLearningDays: Array<{ date: string; activityCount: number; earnedXp: number; reviewedWordCount: number }>
 }
 
 export async function getUserProgress(): Promise<UserProgress> {

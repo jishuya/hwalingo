@@ -36,3 +36,14 @@ export async function sendPasswordResetCode(to: string, resetCode: string): Prom
     `,
   })
 }
+
+export async function sendSupportInquiry(input: { userName: string; userEmail: string; category: string; message: string }): Promise<void> {
+  if (!transporter) throw new Error('SMTP is not configured')
+  await transporter.sendMail({
+    from: env.mailFrom,
+    to: 'jishuya3015@naver.com',
+    replyTo: input.userEmail,
+    subject: `[Hwalingo 문의] ${input.category} · ${input.userName}`,
+    text: `문의 유형: ${input.category}\n사용자: ${input.userName}\n이메일: ${input.userEmail}\n\n문의 내용\n${input.message}`,
+  })
+}

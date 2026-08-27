@@ -263,6 +263,62 @@ authRouter.get('/me', requireAuth, async (request, response, next) => {
   }
 })
 
+authRouter.patch('/me', requireAuth, async (request, response, next) => {
+  try {
+    const displayName = typeof request.body.displayName === 'string' ? request.body.displayName.trim() : ''
+    if (displayName.length < 2 || displayName.length > 20 || /\s/.test(displayName) || !/^[A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+$/.test(displayName)) {
+      response.status(400).json({ status: 'error', message: '이름은 띄어쓰기 없이 한글과 영문 2~20자로 입력해주세요.' })
+      return
+    }
+    const result = await pool.query<UserRow>(
+      `UPDATE users SET display_name = $1, updated_at = NOW() WHERE id = $2
+       RETURNING id, email, password_hash, display_name`,
+      [displayName, request.auth!.userId],
+    )
+    response.json({ user: publicUser(result.rows[0]) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+authRouter.patch('/password', requireAuth, async (request, response, next) => {
+  try {
+    const currentPassword = typeof request.body.currentPassword === 'string' ? request.body.currentPassword : ''
+    const newPassword = typeof request.body.newPassword === 'string' ? request.body.newPassword : ''
+    const passwordError = passwordValidationMessage(newPassword)
+    if (passwordError) {
+      response.status(400).json({ status: 'error', message: passwordError })
+      return
+    }
+    const result = await pool.query<Pick<UserRow, 'password_hash'>>('SELECT password_hash FROM users WHERE id = $1', [request.auth!.userId])
+    if (!result.rows[0] || !(await bcrypt.compare(currentPassword, result.rows[0].password_hash))) {
+      response.status(400).json({ status: 'error', message: '현재 비밀번호가 올바르지 않습니다.' })
+      return
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 12)
+    await pool.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [passwordHash, request.auth!.userId])
+    response.json({ message: '비밀번호가 변경되었습니다.' })
+  } catch (error) {
+    next(error)
+  }
+})
+
+authRouter.delete('/me', requireAuth, async (request, response, next) => {
+  try {
+    const password = typeof request.body.password === 'string' ? request.body.password : ''
+    const result = await pool.query<Pick<UserRow, 'password_hash'>>('SELECT password_hash FROM users WHERE id = $1', [request.auth!.userId])
+    if (!result.rows[0] || !(await bcrypt.compare(password, result.rows[0].password_hash))) {
+      response.status(400).json({ status: 'error', message: '현재 비밀번호가 올바르지 않습니다.' })
+      return
+    }
+    await pool.query('DELETE FROM users WHERE id = $1', [request.auth!.userId])
+    response.clearCookie(SESSION_COOKIE, { path: '/' })
+    response.status(204).send()
+  } catch (error) {
+    next(error)
+  }
+})
+
 authRouter.post('/logout', (_request, response) => {
   response.clearCookie(SESSION_COOKIE, { path: '/' })
   response.status(204).send()

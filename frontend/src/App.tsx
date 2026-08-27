@@ -8,6 +8,7 @@ import StoryPage from './pages/StoryPage'
 import StudyPage from './pages/StudyPage'
 import VocabularyPage from './pages/VocabularyPage'
 import { getCurrentUser, logout, type AuthUser } from './services/auth'
+import { getUserSettings } from './services/settings'
 import { readRoute, type Page } from './types/navigation'
 import './App.css'
 
@@ -19,6 +20,17 @@ export default function App() {
     queryFn: getCurrentUser,
     retry: false,
   })
+  const settingsQuery = useQuery({ queryKey: ['settings', 'me'], queryFn: getUserSettings, enabled: Boolean(authQuery.data) })
+
+  useEffect(() => {
+    const theme = settingsQuery.data?.theme
+    if (!theme) return
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const applyTheme = () => { document.documentElement.dataset.theme = theme === 'system' ? (media.matches ? 'dark' : 'light') : theme }
+    applyTheme()
+    if (theme === 'system') media.addEventListener('change', applyTheme)
+    return () => media.removeEventListener('change', applyTheme)
+  }, [settingsQuery.data?.theme])
 
   useEffect(() => {
     const syncRoute = () => setPage(readRoute())
@@ -54,7 +66,7 @@ export default function App() {
           ? <QuizPage/>
         : page === 'story'
           ? <StoryPage/>
-          : <ProfilePage user={authQuery.data.user} logout={finishLogout}/>
+          : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>
 
   return <AppShell page={page} go={go}>{content}</AppShell>
 }

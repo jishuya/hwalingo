@@ -68,3 +68,15 @@ export function resetPassword(email: string, resetCode: string, password: string
 export function logout(): Promise<void> {
   return request('/api/auth/logout', { method: 'POST' })
 }
+
+export function updateProfile(displayName: string): Promise<AuthResponse> {
+  return request('/api/auth/me', { method: 'PATCH', body: JSON.stringify({ displayName }) })
+}
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<MessageResponse> {
+  return request('/api/auth/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) })
+}
+
+export function deleteAccount(password: string): Promise<void> {
+  return request('/api/auth/me', { method: 'DELETE', body: JSON.stringify({ password }) })
+}
