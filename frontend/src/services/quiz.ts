@@ -58,6 +58,13 @@ export interface AnswerResult {
   }
 }
 
+export interface VocabularyDeepAnalysis {
+  synonyms: Array<{ word: string; meaning: string }>
+  antonyms: Array<{ word: string; meaning: string }>
+  nuance: string
+  usageTip: string
+}
+
 interface ErrorResponse { message?: string }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -88,4 +95,14 @@ export function submitQuizAnswer(sessionId: string, itemId: string, correct: boo
     method: 'POST',
     body: JSON.stringify({ selfReportedCorrect: correct, responseTimeMs, usedHint: false }),
   })
+}
+
+export async function getVocabularyDeepAnalysis(sessionId: string, itemId: string): Promise<VocabularyDeepAnalysis> {
+  const result = await request<{ analysis: VocabularyDeepAnalysis }>(`/api/quizzes/sessions/${sessionId}/items/${itemId}/deep-analysis`, { method: 'POST' })
+  return result.analysis
+}
+
+export async function generateVocabularyImage(sessionId: string, itemId: string): Promise<string> {
+  const result = await request<{ imageDataUrl: string }>(`/api/quizzes/sessions/${sessionId}/items/${itemId}/image`, { method: 'POST' })
+  return result.imageDataUrl
 }

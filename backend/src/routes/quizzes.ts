@@ -11,6 +11,7 @@ import { rankForLevel } from '../domain/learning/rank.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
 import { analyzeWrongAnswer, generateAdvancedQuizQuestions, type GeneratedQuestion } from '../services/quizAI.js'
+import { generateVocabularyDeepAnalysis, generateVocabularyImage, type VocabularyInsightInput } from '../services/vocabularyInsightsAI.js'
 
 interface CandidateRow {
   vocabulary_id: string
@@ -56,6 +57,21 @@ interface SessionItemRow {
 }
 
 export const quizzesRouter = Router()
+
+type VocabularyInsightRow = VocabularyInsightInput
+
+async function getVocabularyInsightRow(userId: string, sessionId: string, itemId: string): Promise<VocabularyInsightRow | undefined> {
+  const result = await pool.query<VocabularyInsightRow>(
+    `SELECT v.id AS vocabulary_id, v.word, v.meaning, v.context_meaning AS "contextMeaning",
+            v.example_sentence AS "exampleSentence", v.language_code AS "languageCode"
+     FROM quiz_session_items i
+     JOIN quiz_sessions s ON s.id = i.session_id
+     JOIN vocabularies v ON v.id = i.vocabulary_id
+     WHERE i.id = $1 AND i.session_id = $2 AND s.user_id = $3 AND v.user_id = $3`,
+    [itemId, sessionId, userId],
+  )
+  return result.rows[0]
+}
 
 function normalizeAnswer(value: string): string {
   return value.normalize('NFKC').trim().toLocaleLowerCase().replace(/[.!?。！？]+$/u, '').replace(/\s+/g, ' ')
@@ -254,6 +270,30 @@ quizzesRouter.get('/sessions/:sessionId', requireAuth, async (request, response,
   } catch (error) {
     next(error)
   }
+})
+
+quizzesRouter.post('/sessions/:sessionId/items/:itemId/deep-analysis', requireAuth, async (request, response, next) => {
+  try {
+    const vocabulary = await getVocabularyInsightRow(request.auth!.userId, String(request.params.sessionId), String(request.params.itemId))
+    if (!vocabulary) {
+      response.status(404).json({ status: 'error', message: '분석할 단어를 찾을 수 없습니다.' })
+      return
+    }
+    const analysis = await generateVocabularyDeepAnalysis(vocabulary)
+    response.json({ analysis })
+  } catch (error) { next(error) }
+})
+
+quizzesRouter.post('/sessions/:sessionId/items/:itemId/image', requireAuth, async (request, response, next) => {
+  try {
+    const vocabulary = await getVocabularyInsightRow(request.auth!.userId, String(request.params.sessionId), String(request.params.itemId))
+    if (!vocabulary) {
+      response.status(404).json({ status: 'error', message: '그림을 만들 단어를 찾을 수 없습니다.' })
+      return
+    }
+    const image = await generateVocabularyImage(vocabulary)
+    response.json({ imageDataUrl: `data:${image.mimeType};base64,${image.base64}` })
+  } catch (error) { next(error) }
 })
 
 quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, async (request, response, next) => {

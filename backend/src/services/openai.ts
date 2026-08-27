@@ -65,7 +65,8 @@ Success criteria:
 - Assign every chunk exactly one grammatical role: subject for the grammatical subject, verb for verbs and verb phrases, and other for everything else. Do not label objects, complements, or modifiers as subject or verb.
 - For each sentence, return 0-3 key expressions that occur verbatim in its target sentence.
 - For each sentence, return exactly four meaning-preserving paraphrases labeled B1, B2, C1, and C2.
-- For each sentence, return 0-3 genuinely useful vocabulary items. Return an empty array when no word is worth teaching. Keep etymology empty when uncertain rather than inventing facts.
+- For each sentence, return 0-3 genuinely useful vocabulary items. Return an empty array when no word is worth teaching.
+- For every vocabulary item, provide a concise etymology in the source language. Explain the word's reliable origin or meaningful word-part structure and explicitly connect it to the current meaning (for example, "up(위로) + set(두다)에서 유래해 마음이 뒤집힌 상태를 뜻함"). Prefer one or two short sentences suitable for an etymology hint card. Do not confuse a mnemonic pun with etymology. If no reliable etymology or meaningful decomposition is known, return an empty string rather than inventing one.
 - For every vocabulary item, exampleSentence must be a short, natural, frequently used standalone example in the target language that clearly demonstrates basicMeaning. Create it like a learner's dictionary example: use common vocabulary and an everyday situation. It must not copy or lightly rewrite the user's input or targetSentence, and it must match basicMeaning rather than a rare or incidental sense. Translate that example naturally into the source language in exampleMeaning.
 - Keep explanations concise enough for a mobile learning interface.
 - If the selected source language does not match the detected input language, continue but add a warning.

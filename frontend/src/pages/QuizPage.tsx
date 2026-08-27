@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BookOpenIcon, CheckCircleIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createQuizSession, getQuizSession, submitQuizAnswer } from '../services/quiz'
+import { createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
+import './QuizPage.css'
 
 type DetailPanel = 'etymology' | 'memory' | 'deep' | 'image' | null
 
@@ -9,6 +10,7 @@ const speechLocales: Record<string, string> = { en: 'en-US', ko: 'ko-KR', ja: 'j
 
 export default function QuizPage() {
   const queryClient = useQueryClient()
+  const [showSwipeGuide, setShowSwipeGuide] = useState(true)
   const [revealed, setRevealed] = useState(false)
   const [detailPanel, setDetailPanel] = useState<DetailPanel>(null)
   const [showExampleTranslation, setShowExampleTranslation] = useState(false)
@@ -28,7 +30,7 @@ export default function QuizPage() {
     setDragOffset(0)
     setDragging(false)
     dragStart.current = null
-    questionStartedAt.current = Date.now()
+    questionStartedAt.current = 0
   }
 
   const next = async () => {
@@ -39,19 +41,37 @@ export default function QuizPage() {
   }
 
   const answerMutation = useMutation({
-    mutationFn: (correct: boolean) => submitQuizAnswer(session!.id, current!.id, correct, Date.now() - questionStartedAt.current),
+    mutationFn: (correct: boolean) => submitQuizAnswer(session!.id, current!.id, correct, questionStartedAt.current ? Date.now() - questionStartedAt.current : 0),
     onSuccess: async () => {
       await new Promise(resolve => window.setTimeout(resolve, 180))
       await next()
     },
     onError: () => setDragOffset(0),
   })
+  const answerPending = answerMutation.isPending
+  const mutateAnswer = answerMutation.mutate
+  const deepAnalysisMutation = useMutation({ mutationFn: ({ sessionId, itemId }: { sessionId: string; itemId: string }) => getVocabularyDeepAnalysis(sessionId, itemId) })
+  const imageMutation = useMutation({ mutationFn: ({ sessionId, itemId }: { sessionId: string; itemId: string }) => generateVocabularyImage(sessionId, itemId) })
 
   const grade = (correct: boolean) => {
-    if (!revealed || answerMutation.isPending) return
+    if (answerMutation.isPending) return
     setDragOffset(correct ? window.innerWidth : -window.innerWidth)
     answerMutation.mutate(correct)
   }
+
+  useEffect(() => {
+    const handleArrowGrade = (event: KeyboardEvent) => {
+      const target = event.target
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target instanceof HTMLElement && target.isContentEditable)) return
+      if (answerPending || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
+      event.preventDefault()
+      const correct = event.key === 'ArrowRight'
+      setDragOffset(correct ? window.innerWidth : -window.innerWidth)
+      mutateAnswer(correct)
+    }
+    window.addEventListener('keydown', handleArrowGrade)
+    return () => window.removeEventListener('keydown', handleArrowGrade)
+  }, [answerPending, mutateAnswer])
 
   const speak = () => {
     if (!current || !('speechSynthesis' in window)) return
@@ -62,9 +82,21 @@ export default function QuizPage() {
     window.speechSynthesis.speak(utterance)
   }
 
-  const togglePanel = (panel: Exclude<DetailPanel, null>) => setDetailPanel(previous => previous === panel ? null : panel)
+  const togglePanel = (panel: Exclude<DetailPanel, null>) => {
+    const opening = detailPanel !== panel
+    setDetailPanel(opening ? panel : null)
+    if (!opening || !session || !current) return
+    if (panel === 'deep' && (deepAnalysisMutation.variables?.itemId !== current.id || !deepAnalysisMutation.data)) deepAnalysisMutation.mutate({ sessionId: session.id, itemId: current.id })
+    if (panel === 'image' && (imageMutation.variables?.itemId !== current.id || !imageMutation.isSuccess)) imageMutation.mutate({ sessionId: session.id, itemId: current.id })
+  }
+  const toggleMeaning = () => {
+    setRevealed(previous => {
+      if (!previous) questionStartedAt.current = Date.now()
+      return !previous
+    })
+  }
   const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
-    if (!revealed || answerMutation.isPending) return
+    if (answerMutation.isPending) return
     dragStart.current = event.clientX
     setDragging(true)
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -90,19 +122,23 @@ export default function QuizPage() {
   const tilt = Math.max(-7, Math.min(7, dragOffset / 28))
 
   return <div className="quiz-page quiz-flash-page page">
+    {showSwipeGuide && <div className="quiz-swipe-guide-overlay" role="presentation" onPointerDown={() => setShowSwipeGuide(false)}>
+      <div className="quiz-swipe-guide" role="dialog" aria-label="테스트 사용 안내" onPointerDown={event => event.stopPropagation()}>
+        <button type="button" aria-label="안내 닫기" onClick={() => setShowSwipeGuide(false)}><XIcon weight="bold"/></button>
+        <p>아는 단어는 <strong>오른쪽</strong>으로<br/>모르는 단어는 <strong>왼쪽</strong>으로 스와이프하세요.</p>
+      </div>
+    </div>}
     <div className="quiz-progress"><div><span>오늘의 테스트</span><b>{answeredCount + 1}/{session.totalCount}</b></div><div className="progress-track"><span style={{ width: `${progress}%` }}/></div></div>
     <div className="quiz-swipe-stage">
-      <span className={`swipe-verdict wrong ${dragOffset < -35 ? 'visible' : ''}`}><XIcon weight="bold"/> 몰라요</span>
-      <span className={`swipe-verdict correct ${dragOffset > 35 ? 'visible' : ''}`}><CheckCircleIcon weight="bold"/> 알아요</span>
-      <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        {current.cefrLevel && <span className="quiz-level">Level: {current.cefrLevel}</span>}
-        <button className="quiz-word-reveal" type="button" onClick={() => { if (!revealed) questionStartedAt.current = Date.now(); setRevealed(true) }} aria-label={revealed ? `${current.word}, 뜻 공개됨` : `${current.word} 뜻 보기`}>
+      <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''} ${dragOffset < -15 ? 'swipe-wrong' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+        {current.cefrLevel && <span className={`quiz-level level-${current.cefrLevel.toLowerCase()}`}>Lv.{current.cefrLevel}</span>}
+        <button className="quiz-word-reveal" type="button" onClick={toggleMeaning} aria-label={revealed ? `${current.word} 뜻 숨기기` : `${current.word} 뜻 보기`} aria-pressed={revealed}>
           <strong>{current.word}</strong>
           {!revealed && <small>단어를 눌러 뜻을 확인하세요</small>}
           {revealed && <span className="quiz-meaning">{current.meaning}</span>}
         </button>
         <button className="quiz-sound" type="button" onClick={event => { event.stopPropagation(); speak() }} aria-label={`${current.word} 발음 듣기`}><SpeakerHighIcon weight="fill"/></button>
-        <div className="quiz-example"><div><b>EXAMPLE</b>{current.exampleTranslation && <button type="button" className={showExampleTranslation ? 'active' : ''} aria-label={`예문 해석 ${showExampleTranslation ? '숨기기' : '보기'}`} aria-pressed={showExampleTranslation} onClick={() => setShowExampleTranslation(value => !value)}><TranslateIcon/> 해석</button>}</div><p>{current.exampleSentence || '저장된 예문이 아직 없어요.'}</p>{showExampleTranslation && current.exampleTranslation && <p className="quiz-example-translation">{current.exampleTranslation}</p>}</div>
+        <div className="quiz-example"><div><b>EXAMPLE</b>{current.exampleTranslation && <button type="button" className={showExampleTranslation ? 'active' : ''} aria-label={`예문 해석 ${showExampleTranslation ? '숨기기' : '보기'}`} aria-pressed={showExampleTranslation} onClick={() => setShowExampleTranslation(value => !value)}><TranslateIcon/></button>}</div><p>{current.exampleSentence || '저장된 예문이 아직 없어요.'}</p>{showExampleTranslation && current.exampleTranslation && <p className="quiz-example-translation">{current.exampleTranslation}</p>}</div>
         <div className="quiz-detail-tabs">
           <button className={detailPanel === 'etymology' ? 'active' : ''} onClick={() => togglePanel('etymology')} type="button"><BookOpenIcon weight="fill"/>어원 힌트</button>
           <button className={detailPanel === 'memory' ? 'active' : ''} onClick={() => togglePanel('memory')} type="button"><LightbulbIcon weight="fill"/>암기 팁</button>
@@ -111,11 +147,23 @@ export default function QuizPage() {
         </div>
         {detailPanel === 'etymology' && <div className="quiz-detail-panel"><b><BookOpenIcon/> 어원 힌트</b><p>{current.etymology || '저장된 어원 정보가 아직 없어요.'}</p></div>}
         {detailPanel === 'memory' && <div className="quiz-detail-panel memory"><b><LightbulbIcon/> 암기 팁</b><p>{current.memoryTip || '저장된 암기 팁이 아직 없어요.'}</p></div>}
-        {detailPanel === 'deep' && <div className="quiz-detail-panel deep"><b><MagicWandIcon/> AI 심화 분석</b><p><strong>유의어:</strong> AI 분석 데이터가 아직 없어요.</p><p><strong>반의어:</strong> AI 분석 데이터가 아직 없어요.</p><p><strong>뉘앙스 노트:</strong> {current.contextMeaning || 'AI 분석 데이터가 아직 없어요.'}</p></div>}
-        {detailPanel === 'image' && <div className="quiz-detail-panel image"><ImageIcon weight="duotone"/><div><b>AI 그림</b><p>이 단어에 연결된 AI 그림이 아직 없어요.</p></div></div>}
+        {detailPanel === 'deep' && <div className="quiz-detail-panel deep"><b><MagicWandIcon/> AI 심화 분석</b>
+          {deepAnalysisMutation.isPending && <p className="quiz-ai-status">단어의 뉘앙스를 분석하고 있어요…</p>}
+          {deepAnalysisMutation.isError && <p className="quiz-ai-error">{deepAnalysisMutation.error.message}</p>}
+          {deepAnalysisMutation.data && deepAnalysisMutation.variables?.itemId === current.id && <>
+            <p><strong>유의어:</strong> {deepAnalysisMutation.data.synonyms.length ? deepAnalysisMutation.data.synonyms.map(item => `${item.word} (${item.meaning})`).join(', ') : '뚜렷한 유의어가 없어요.'}</p>
+            <p><strong>반의어:</strong> {deepAnalysisMutation.data.antonyms.length ? deepAnalysisMutation.data.antonyms.map(item => `${item.word} (${item.meaning})`).join(', ') : '뚜렷한 반의어가 없어요.'}</p>
+            <p><strong>뉘앙스:</strong> {deepAnalysisMutation.data.nuance}</p>
+            <p><strong>사용 팁:</strong> {deepAnalysisMutation.data.usageTip}</p>
+          </>}
+        </div>}
+        {detailPanel === 'image' && <div className="quiz-detail-panel image">
+          {imageMutation.isPending && <div className="quiz-ai-image-status"><ImageIcon weight="duotone"/><div><b>AI 그림</b><p>기억에 남을 그림을 만들고 있어요…</p></div></div>}
+          {imageMutation.isError && <div className="quiz-ai-image-status"><ImageIcon weight="duotone"/><div><b>AI 그림을 만들지 못했어요</b><p className="quiz-ai-error">{imageMutation.error.message}</p></div></div>}
+          {imageMutation.data && imageMutation.variables?.itemId === current.id && <figure><img src={imageMutation.data} alt={`${current.word}의 의미를 표현한 AI 학습 그림`}/><figcaption>{current.word} · {current.meaning}</figcaption></figure>}
+        </div>}
       </section>
     </div>
-    {revealed ? <div className="quiz-grade-actions"><button type="button" onClick={() => grade(false)} disabled={answerMutation.isPending}><XIcon weight="bold"/>몰랐어요 <small>왼쪽으로 스와이프</small></button><button type="button" onClick={() => grade(true)} disabled={answerMutation.isPending}><CheckCircleIcon weight="bold"/>알았어요 <small>오른쪽으로 스와이프</small></button></div> : <p className="quiz-reveal-guide">먼저 뜻을 떠올린 다음 단어를 눌러보세요.</p>}
     {answerMutation.isError && <p className="quiz-answer-error" role="alert">{answerMutation.error.message}</p>}
   </div>
 }

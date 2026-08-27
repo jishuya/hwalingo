@@ -197,7 +197,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                   <div className="sentence-vocab-title"><h4>{word.word}</h4><span>{word.level}</span><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.targetLanguage)}><SpeakerHighIcon/></button></div>
                   <p><b>기본:</b> {word.basicMeaning}</p><p><b>문맥:</b> {word.contextualMeaning}</p>
                   {word.exampleSentence && <div className="vocab-example"><div><b>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.targetLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><p>{word.exampleSentence}</p>{exampleTranslationOpen && word.exampleMeaning && <p className="vocab-example-meaning">{word.exampleMeaning}</p>}</div>}
-                  {word.etymology && <p className="vocab-etymology">↪ {word.etymology}</p>}
+                  {word.etymology && <div className="vocab-etymology"><BookOpenIcon weight="duotone"/><span><b>어원:</b> {word.etymology}</span></div>}
                   {word.memoryTip && <div className="vocab-tip"><LightbulbIcon weight="fill"/><span><b>팁:</b> {word.memoryTip}</span></div>}
                 </article>
               })}

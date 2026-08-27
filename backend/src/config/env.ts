@@ -25,6 +25,7 @@ export const env = {
   mailFrom: process.env.MAIL_FROM ?? '',
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-5-mini',
+  openaiImageModel: process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-1-mini',
 }
 
 if (!Number.isInteger(env.port) || env.port < 1 || env.port > 65535) {

@@ -41,7 +41,7 @@ export default function StoryPage() {
   }
 
   return <div className="page story-page">
-    <section className="story-hero"><SparkleIcon weight="fill"/><div><h1>내 단어로 스토리 만들기</h1><p>단어장에서 단어를 선택하면 AI가 자연스러운 이야기로 만들어 드려요.</p></div></section>
+    <header className="page-title"><span className="page-title-icon"><SparkleIcon weight="fill"/></span><h1>AI 스토리텔링</h1></header>
     {vocabulariesQuery.isPending ? <div className="card story-state"><p>단어장을 불러오고 있어요.</p></div>
       : vocabulariesQuery.isError ? <div className="card story-state"><p>{vocabulariesQuery.error.message}</p><button className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 시도</button></div>
         : !words.length ? <div className="card story-state"><BookOpenTextIcon/><h2>스토리에 사용할 단어가 없어요</h2><p>문장 분석에서 단어를 저장하면 이곳에서 이야기로 복습할 수 있어요.</p></div>
