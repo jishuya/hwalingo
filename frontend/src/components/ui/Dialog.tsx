@@ -1,5 +1,5 @@
 import { CheckCircle, Question, Warning, X } from '@phosphor-icons/react'
-import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 type DialogTone = 'success' | 'info' | 'warning' | 'danger'
@@ -26,6 +26,7 @@ export function Modal({ open, title, description, children, footer, onClose, clo
   const titleId = useId()
   const descriptionId = useId()
   const dialogRef = useRef<HTMLElement>(null)
+  const closeDialog = useEffectEvent(onClose)
 
   useEffect(() => {
     if (!open) return
@@ -36,7 +37,7 @@ export function Modal({ open, title, description, children, footer, onClose, clo
       preferred?.focus()
     })
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') closeDialog()
       if (event.key !== 'Tab' || !dialogRef.current) return
       const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [href], [tabindex]:not([tabindex="-1"])')]
       if (!focusable.length) return
@@ -58,7 +59,7 @@ export function Modal({ open, title, description, children, footer, onClose, clo
       document.body.style.overflow = previousOverflow
       previouslyFocused?.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
