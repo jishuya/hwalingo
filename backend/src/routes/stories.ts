@@ -3,6 +3,8 @@ import { pool } from '../config/database.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { generateStory, type StoryDifficulty, type StoryGenre, type StoryLength, type StoryVocabulary } from '../services/storyAI.js'
 import type { LanguageCode } from '../services/openai.js'
+import { AI_RULES } from '../config/aiRules.js'
+import { readAIResponseCache, writeAIResponseCache } from '../services/aiResponseCache.js'
 
 export const storiesRouter = Router()
 const genres = new Set<StoryGenre>(['daily', 'adventure', 'fantasy', 'mystery', 'comedy'])
@@ -17,6 +19,7 @@ storiesRouter.post('/', requireAuth, async (request, response, next) => {
     const genre = request.body.genre as StoryGenre
     const length = request.body.length as StoryLength
     const difficulty = request.body.difficulty as StoryDifficulty
+    const forceRegenerate = request.body.forceRegenerate === true
     if (!ids.length || ids.length > 10) {
       response.status(400).json({ message: '단어를 1개 이상 10개 이하로 선택해주세요.' }); return
     }
@@ -35,7 +38,32 @@ storiesRouter.post('/', requireAuth, async (request, response, next) => {
     if (result.rows.some(word => word.language_code !== languageCode)) {
       response.status(400).json({ message: '같은 언어의 단어만 함께 선택해주세요.' }); return
     }
+    const cacheIdentity = {
+      userId: request.auth!.userId,
+      operation: 'vocabulary_story_v1',
+      keyParts: { vocabularyIds: [...ids].sort(), languageCode, genre, length, difficulty },
+    }
+    if (!forceRegenerate) {
+      const cachedStory = await readAIResponseCache<Awaited<ReturnType<typeof generateStory>>>(cacheIdentity)
+      if (cachedStory) {
+        response.json({ story: cachedStory, source: 'cache' })
+        return
+      }
+    }
+
     const story = await generateStory({ vocabularies: result.rows, languageCode, genre, length, difficulty })
-    response.json({ story })
+    await Promise.all([
+      writeAIResponseCache({ ...cacheIdentity, value: story, ttlMs: AI_RULES.cache.storyTtlMs }),
+      pool.query(
+        `INSERT INTO ai_stories
+           (user_id, title, english_content, korean_translation, used_words, story_data,
+            vocabulary_ids, language_code, genre, story_length, difficulty)
+         VALUES ($1, $2, $3, $4, $5::text[], $6::jsonb, $7::bigint[], $8, $9, $10, $11)`,
+        [request.auth!.userId, story.title, story.story, story.translation,
+          result.rows.map(item => item.word), JSON.stringify(story), ids,
+          languageCode, genre, length, difficulty],
+      ),
+    ])
+    response.json({ story, source: 'generated' })
   } catch (error) { next(error) }
 })

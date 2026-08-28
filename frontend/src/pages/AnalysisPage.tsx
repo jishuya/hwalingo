@@ -15,7 +15,7 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
-import { analyzeSentence, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
+import { analyzeSentence, getSentenceParaphrases, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
@@ -28,6 +28,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [revealedChunks, setRevealedChunks] = useState<Set<string>>(new Set())
   const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set())
   const [openParaphrases, setOpenParaphrases] = useState<Set<number>>(new Set())
+  const [loadingParaphrases, setLoadingParaphrases] = useState<Set<number>>(new Set())
   const [openExampleTranslations, setOpenExampleTranslations] = useState<Set<string>>(new Set())
   const [recordingSentence, setRecordingSentence] = useState<number>()
   const queryClient = useQueryClient()
@@ -45,6 +46,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const lastRequestId = useRef(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
+  const paraphraseControllersRef = useRef<Map<number, AbortController>>(new Map())
 
   const speak = (content: string, language: LanguageCode, rate = 1) => {
     if (!('speechSynthesis' in window)) return
@@ -113,28 +115,72 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     return next
   })
 
+  const toggleParaphrases = async (sentenceIndex: number) => {
+    if (openParaphrases.has(sentenceIndex)) {
+      toggleInSet(setOpenParaphrases, sentenceIndex)
+      return
+    }
+    const sentence = analysis?.sentences[sentenceIndex]
+    if (!sentence) return
+    if (!sentence.paraphrases.length) {
+      paraphraseControllersRef.current.get(sentenceIndex)?.abort()
+      const controller = new AbortController()
+      paraphraseControllersRef.current.set(sentenceIndex, controller)
+      setLoadingParaphrases(current => new Set(current).add(sentenceIndex))
+      try {
+        const paraphrases = await getSentenceParaphrases({
+          sourceLanguage: analysis.sourceLanguage,
+          targetLanguage: analysis.targetLanguage,
+          targetSentence: sentence.targetSentence,
+        }, controller.signal)
+        setAnalysis(current => current && current.sentences[sentenceIndex]?.targetSentence === sentence.targetSentence ? {
+          ...current,
+          sentences: current.sentences.map((item, index) => index === sentenceIndex ? { ...item, paraphrases } : item),
+        } : current)
+      } catch (caught) {
+        if (controller.signal.aborted) return
+        setError(caught instanceof Error ? caught.message : '패러프레이징을 불러오지 못했습니다.')
+        return
+      } finally {
+        if (paraphraseControllersRef.current.get(sentenceIndex) === controller) paraphraseControllersRef.current.delete(sentenceIndex)
+        setLoadingParaphrases(current => { const next = new Set(current); next.delete(sentenceIndex); return next })
+      }
+    }
+    setOpenParaphrases(current => new Set(current).add(sentenceIndex))
+  }
+
   useEffect(() => {
     if (lastRequestId.current === requestId) return
     lastRequestId.current = requestId
+    paraphraseControllersRef.current.forEach(controller => controller.abort())
+    paraphraseControllersRef.current.clear()
+    const controller = new AbortController()
     const run = async () => {
       setIsLoading(true)
       onLoadingChange(true)
       setError('')
       try {
-        const nextAnalysis = await analyzeSentence(request)
+        const nextAnalysis = await analyzeSentence(request, controller.signal)
         setAnalysis(nextAnalysis)
         setRevealedChunks(new Set())
         setOpenTranslations(new Set())
         setOpenParaphrases(new Set())
+        setLoadingParaphrases(new Set())
         setOpenExampleTranslations(new Set())
       } catch (caught) {
+        if (controller.signal.aborted) return
         setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
       } finally {
+        if (controller.signal.aborted) return
         setIsLoading(false)
         onLoadingChange(false)
       }
     }
     void run()
+    return () => {
+      controller.abort()
+      onLoadingChange(false)
+    }
   }, [onLoadingChange, request, requestId])
 
   return <div className="analysis-page analysis-page-v2 analysis-results-root">
@@ -150,6 +196,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       {analysis.sentences.map((sentence, sentenceIndex) => {
         const translationOpen = openTranslations.has(sentenceIndex)
         const paraphrasesOpen = openParaphrases.has(sentenceIndex)
+        const paraphrasesLoading = loadingParaphrases.has(sentenceIndex)
         const allChunksVisible = sentence.chunks.every((_, chunkIndex) => revealedChunks.has(`${sentenceIndex}-${chunkIndex}`))
         return <article className="sentence-analysis-card" key={`${sentence.sourceText}-${sentenceIndex}`}>
           <header className="sentence-analysis-header">
@@ -174,8 +221,8 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
               </section>
 
               <section className="sentence-study-section">
-                <div className="sentence-section-heading"><h3><ArrowsClockwiseIcon />수준별 패러프레이징</h3><button onClick={() => toggleInSet(setOpenParaphrases, sentenceIndex)}>{paraphrasesOpen ? <EyeSlashIcon /> : <EyeIcon />}{paraphrasesOpen ? '숨기기' : '보기'}</button></div>
-                {paraphrasesOpen ? <div className="level-paraphrases">{sentence.paraphrases.map(item => <article className={`level-${item.level.toLowerCase()}`} key={item.level}><b><span className="level-code">{item.level}</span><span className="level-name">{item.level === 'B1' ? '중급' : item.level === 'B2' ? '중고급' : item.level === 'C1' ? '고급' : '최상급'}</span></b><p>{item.targetText}</p></article>)}</div> : <button className="section-placeholder" onClick={() => toggleInSet(setOpenParaphrases, sentenceIndex)}>클릭하여 패러프레이징 보기</button>}
+                <div className="sentence-section-heading"><h3><ArrowsClockwiseIcon />수준별 패러프레이징</h3><button disabled={paraphrasesLoading} onClick={() => void toggleParaphrases(sentenceIndex)}>{paraphrasesOpen ? <EyeSlashIcon /> : <EyeIcon />}{paraphrasesLoading ? '생성 중…' : paraphrasesOpen ? '숨기기' : '보기'}</button></div>
+                {paraphrasesOpen ? <div className="level-paraphrases">{sentence.paraphrases.map(item => <article className={`level-${item.level.toLowerCase()}`} key={item.level}><b><span className="level-code">{item.level}</span><span className="level-name">{item.level === 'B1' ? '중급' : item.level === 'B2' ? '중고급' : item.level === 'C1' ? '고급' : '최상급'}</span></b><p>{item.targetText}</p></article>)}</div> : <button className="section-placeholder" disabled={paraphrasesLoading} onClick={() => void toggleParaphrases(sentenceIndex)}>{paraphrasesLoading ? '수준별 표현을 생성하고 있어요…' : '클릭하여 패러프레이징 보기'}</button>}
               </section>
             </div>
 

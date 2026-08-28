@@ -15,6 +15,7 @@ export interface CreateStoryInput {
   genre: StoryGenre
   length: StoryLength
   difficulty: StoryDifficulty
+  forceRegenerate?: boolean
 }
 
 export async function createStory(input: CreateStoryInput): Promise<GeneratedStory> {

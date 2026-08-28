@@ -10,10 +10,11 @@ import { calculateLevelProgress } from '../domain/learning/level.js'
 import { hwarangGradeForLevel } from '../domain/learning/hwarangGrade.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
-import { analyzeWrongAnswer, generateAdvancedQuizQuestions, type GeneratedQuestion } from '../services/quizAI.js'
+import { analyzeWrongAnswer } from '../services/quizAI.js'
 import { generateVocabularyDeepAnalysis, generateVocabularyImage, type VocabularyInsightInput } from '../services/vocabularyInsightsAI.js'
 import { withAIResponseCache } from '../services/aiResponseCache.js'
 import { AI_RULES } from '../config/aiRules.js'
+import { getCachedAdvancedQuizQuestions, warmAdvancedQuizQuestionCache } from '../services/quizQuestionCache.js'
 
 interface CandidateRow {
   vocabulary_id: string
@@ -207,24 +208,8 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       exampleSentence: candidate.example_sentence!,
       questionType: questionTypeForLevel(candidate.mastery_level, true) as 'context' | 'translation',
     }))
-    let generatedByVocabularyId = new Map<string, GeneratedQuestion>()
-    if (advancedRequests.length) {
-      try {
-        const generated = await generateAdvancedQuizQuestions(advancedRequests)
-        const requestedById = new Map(advancedRequests.map(item => [item.vocabularyId, item]))
-        generatedByVocabularyId = new Map(generated.filter(item => {
-        const requestedItem = requestedById.get(item.vocabularyId)
-          if (!requestedItem || requestedItem.questionType !== item.questionType || !item.prompt.trim() || !item.correctAnswer.trim()) return false
-          if (item.questionType === 'context') {
-            return (item.prompt.match(/_____/g)?.length ?? 0) === 1
-              && normalizeAnswer(item.correctAnswer) === normalizeAnswer(requestedItem.word)
-          }
-          return normalizeAnswer(item.correctAnswer).includes(normalizeAnswer(requestedItem.word))
-        }).map(item => [item.vocabularyId, item]))
-      } catch (error) {
-        console.error('AI quiz generation failed; using deterministic fallback', error)
-      }
-    }
+    const generatedByVocabularyId = await getCachedAdvancedQuizQuestions(request.auth!.userId, advancedRequests)
+    const uncachedAdvancedRequests = advancedRequests.filter(item => !generatedByVocabularyId.has(item.vocabularyId))
 
     await client.query('BEGIN')
     await client.query(`UPDATE quiz_sessions SET status = 'abandoned' WHERE user_id = $1 AND status = 'active'`, [request.auth!.userId])
@@ -253,6 +238,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
     }
     await client.query('COMMIT')
     response.status(201).json({ session: await getSession(request.auth!.userId, sessionId) })
+    void warmAdvancedQuizQuestionCache(request.auth!.userId, uncachedAdvancedRequests)
   } catch (error) {
     try { await client.query('ROLLBACK') } catch { /* transaction may not have started */ }
     next(error)

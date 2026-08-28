@@ -85,7 +85,7 @@ export default function StoryPage() {
       setAlert({ title: '단어를 3개 이상 선택해주세요', message: '단어 선택 또는 변경 버튼을 눌러 같은 언어의 단어를 골라주세요.' })
       return
     }
-    storyMutation.mutate({ vocabularyIds: selectedIds, genre, length, difficulty })
+    storyMutation.mutate({ vocabularyIds: selectedIds, genre, length, difficulty, forceRegenerate: Boolean(storyMutation.data) })
   }
   const speak = (text: string) => {
     if (!selectedLanguage || !('speechSynthesis' in window)) return

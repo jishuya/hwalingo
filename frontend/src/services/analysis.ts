@@ -32,11 +32,22 @@ export interface AnalyzedSentence {
   vocabulary: Array<{ word: string; partOfSpeech: string; level: string; basicMeaning: string; contextualMeaning: string; etymology: string; memoryTip: string; exampleSentence: string; exampleMeaning: string }>
 }
 
-export async function analyzeSentence(request: AnalysisRequest): Promise<SentenceAnalysis> {
+export type SentenceParaphrase = AnalyzedSentence['paraphrases'][number]
+
+export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSignal): Promise<SentenceAnalysis> {
   const response = await fetch('/api/analysis', {
-    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request),
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request), signal,
   })
   const result = await response.json().catch(() => ({})) as { analysis?: SentenceAnalysis; message?: string }
   if (!response.ok || !result.analysis) throw new Error(result.message ?? 'AI 분석을 완료하지 못했습니다.')
   return result.analysis
+}
+
+export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'sourceLanguage' | 'targetLanguage'> & { targetSentence: string }, signal?: AbortSignal): Promise<SentenceParaphrase[]> {
+  const response = await fetch('/api/analysis/paraphrases', {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
+  })
+  const result = await response.json().catch(() => ({})) as { paraphrases?: SentenceParaphrase[]; message?: string }
+  if (!response.ok || !result.paraphrases) throw new Error(result.message ?? '패러프레이징을 불러오지 못했습니다.')
+  return result.paraphrases
 }
