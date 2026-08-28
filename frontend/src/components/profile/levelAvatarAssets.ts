@@ -3,7 +3,7 @@ const avatarModules = import.meta.glob('../../assets/level-avatars/lv-*.png', {
   import: 'default',
 }) as Record<string, string>
 
-export const AVAILABLE_AVATAR_LEVELS = Array.from({ length: 40 }, (_, index) => index + 1)
+export const AVAILABLE_AVATAR_LEVELS = Array.from({ length: 50 }, (_, index) => index + 1)
 
 export function levelAvatarSrc(level: number): string {
   const safeLevel = Math.min(AVAILABLE_AVATAR_LEVELS.length, Math.max(1, Math.floor(level)))

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ArrowClockwiseIcon, BookOpenTextIcon, CaretDownIcon, CheckCircleIcon, CheckIcon, MagnifyingGlassIcon, PencilSimpleIcon, SpeakerHighIcon, SparkleIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
+import { ArrowClockwiseIcon, BookOpenTextIcon, CheckCircleIcon, CheckIcon, MagnifyingGlassIcon, PencilSimpleIcon, SlidersHorizontalIcon, SpeakerHighIcon, SparkleIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { AlertDialog, Modal } from '../components/ui/Dialog'
 import { getVocabularies } from '../services/vocabulary'
 import { createStory, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
@@ -20,6 +20,10 @@ export default function StoryPage() {
   const [genre, setGenre] = useState<StoryGenre>('daily')
   const [length, setLength] = useState<StoryLength>('short')
   const [difficulty, setDifficulty] = useState<StoryDifficulty>('normal')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [draftGenre, setDraftGenre] = useState<StoryGenre>('daily')
+  const [draftLength, setDraftLength] = useState<StoryLength>('short')
+  const [draftDifficulty, setDraftDifficulty] = useState<StoryDifficulty>('normal')
   const [translationVisible, setTranslationVisible] = useState(false)
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
   const storyMutation = useMutation({ mutationFn: createStory, onSuccess: () => { setTranslationVisible(false); window.setTimeout(() => document.querySelector('.story-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) } })
@@ -74,7 +78,8 @@ export default function StoryPage() {
   const selectRecommended = () => { setSelectedIds(recommendedIds()); storyMutation.reset() }
   const selectDraftRecommended = () => { setDraftSelectedIds(recommendedIds()); setRecommendSparkling(true) }
   const removeSelectedWord = (vocabularyId: string) => { setSelectedIds(current => current.filter(id => id !== vocabularyId)); storyMutation.reset() }
-  const resetSettings = () => { setGenre('daily'); setLength('short'); setDifficulty('normal'); storyMutation.reset() }
+  const openSettings = () => { setDraftGenre(genre); setDraftLength(length); setDraftDifficulty(difficulty); setSettingsOpen(true) }
+  const applySettings = () => { setGenre(draftGenre); setLength(draftLength); setDifficulty(draftDifficulty); setSettingsOpen(false); storyMutation.reset() }
   const generate = () => {
     if (selectedIds.length < minimum) {
       setAlert({ title: '단어를 3개 이상 선택해주세요', message: '단어 선택 또는 변경 버튼을 눌러 같은 언어의 단어를 골라주세요.' })
@@ -113,11 +118,7 @@ export default function StoryPage() {
               <div className="story-section-heading"><div className="story-step-title"><span className="story-step-number">1</span><h2>단어 선택</h2>{selectedIds.length > 0 && <small className="story-word-count">{selectedIds.length}/10</small>}</div>{selectedIds.length > 0 && <button type="button" className="story-word-refresh" aria-label="단어 선택 초기화" title="단어 다시 선택" onClick={resetWordSelection}><ArrowClockwiseIcon weight="bold"/></button>}</div>
               {selectedWords.length ? <div className="story-selection-summary"><div className="selected-word-chips">{selectedWords.map(word => <span key={word.vocabularyId}>{word.word}<button type="button" aria-label={`${word.word} 선택 해제`} onClick={() => removeSelectedWord(word.vocabularyId)}><XIcon weight="bold"/></button></span>)}</div><button type="button" className="story-change-words" onClick={openSelector}><PencilSimpleIcon/> 변경</button></div>
                 : <div className="story-selection-empty"><div><button type="button" className="story-recommend-button" onClick={selectRecommended}><SparkleIcon weight="fill"/> 추천 단어 5개 선택</button><button type="button" onClick={openSelector}>직접 선택</button></div></div>}
-              <div className="story-options"><div className="story-section-heading"><div className="story-step-title"><span className="story-step-number">2</span><h2>스토리 설정</h2></div><button type="button" className="story-settings-refresh" aria-label="스토리 설정 초기화" title="기본 설정으로 되돌리기" onClick={resetSettings}><ArrowClockwiseIcon weight="bold"/></button></div><div className="story-inline-settings">
-                <StorySelect label="장르" value={genre} options={genres} onChange={value => { setGenre(value); storyMutation.reset() }}/>
-                <StorySelect label="길이" value={length} options={lengths} onChange={value => { setLength(value); storyMutation.reset() }}/>
-                <StorySelect label="난이도" value={difficulty} options={difficulties} onChange={value => { setDifficulty(value); storyMutation.reset() }}/>
-              </div></div>
+              <div className="story-options"><div className="story-section-heading"><div className="story-step-title"><span className="story-step-number">2</span><h2>스토리 설정</h2></div></div><div className="story-settings-summary"><button type="button" className="story-settings-card story-settings-selected" aria-label="스토리 설정 변경" onClick={openSettings}><span className="story-settings-edit"><SlidersHorizontalIcon weight="bold"/></span><span className="story-setting-value"><small>장르</small><b>{genres.find(item => item.value === genre)?.label}</b></span><span className="story-setting-value"><small>길이</small><b>{lengths.find(item => item.value === length)?.label}</b></span><span className="story-setting-value"><small>난이도</small><b>{difficulties.find(item => item.value === difficulty)?.label}</b></span></button></div></div>
               <button className={`primary story-generate${storyMutation.isPending ? ' loading' : ''}`} disabled={storyMutation.isPending} onClick={generate}>{storyMutation.isPending ? <><span className="story-loading-sparkles" aria-hidden="true"><SparkleIcon weight="fill"/><SparkleIcon weight="fill"/><SparkleIcon weight="fill"/></span><span>이야기를 만들고 있어요…</span></> : <><SparkleIcon weight="fill"/><span>선택한 {selectedIds.length}개 단어로 스토리 만들기</span></>}</button>
               {storyMutation.isError && <p className="story-error" role="alert">{storyMutation.error.message} 선택한 단어는 그대로 유지됩니다.</p>}
             </section>
@@ -129,6 +130,9 @@ export default function StoryPage() {
               <div className="story-result-actions"><button onClick={generate} disabled={storyMutation.isPending}><ArrowClockwiseIcon/> 같은 단어로 다시 만들기</button><button onClick={startWithNewWords}>새 단어 선택</button></div>
             </article>}
           </>}
+    <Modal open={settingsOpen} title="스토리 설정" onClose={() => setSettingsOpen(false)} size="medium" footer={<><button className="ui-dialog-secondary" type="button" onClick={() => setSettingsOpen(false)}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySettings}>설정 적용</button></>}>
+      <div className="story-option-grid story-settings-fields"><OptionGroup label="장르" options={genres} value={draftGenre} setValue={setDraftGenre}/><OptionGroup label="길이" options={lengths} value={draftLength} setValue={setDraftLength}/><OptionGroup label="난이도" options={difficulties} value={draftDifficulty} setValue={setDraftDifficulty}/></div>
+    </Modal>
     <Modal open={selectorOpen} title="단어 선택" description={`같은 언어의 단어를 선택해주세요. (${draftSelectedIds.length}/10)`} onClose={closeSelector} size="large" footer={<><button className="ui-dialog-secondary" type="button" onClick={closeSelector}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySelection}>선택한 {draftSelectedIds.length}개 적용</button></>}>
       <div className="story-selector">
         <label className="story-selector-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻 검색" aria-label="스토리 단어 검색"/></label>
@@ -144,17 +148,6 @@ export default function StoryPage() {
   </div>
 }
 
-function StorySelect<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: Array<{ value: T; label: string }>; onChange: (value: T) => void }) {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const selected = options.find(option => option.value === value) ?? options[0]
-  useEffect(() => {
-    if (!open) return
-    const closeOnOutside = (event: MouseEvent) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false) }
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', closeOnOutside)
-    document.addEventListener('keydown', closeOnEscape)
-    return () => { document.removeEventListener('mousedown', closeOnOutside); document.removeEventListener('keydown', closeOnEscape) }
-  }, [open])
-  return <div className={`story-custom-select${open ? ' open' : ''}`} ref={rootRef}><span>{label}</span><button type="button" className="story-custom-select-trigger" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(current => !current)}><b>{selected.label}</b><CaretDownIcon weight="bold"/></button>{open && <div className="story-custom-select-menu" role="listbox" aria-label={label}>{options.map(option => <button type="button" role="option" aria-selected={value === option.value} className={value === option.value ? 'selected' : ''} onClick={() => { onChange(option.value); setOpen(false) }} key={option.value}><span>{option.label}</span>{value === option.value && <CheckIcon weight="bold"/>}</button>)}</div>}</div>
+function OptionGroup<T extends string>({ label, options, value, setValue }: { label: string; options: Array<{ value: T; label: string }>; value: T; setValue: (value: T) => void }) {
+  return <fieldset><legend>{label}</legend><div>{options.map(option => <button type="button" className={value === option.value ? 'active' : ''} aria-pressed={value === option.value} onClick={() => setValue(option.value)} key={option.value}>{option.label}</button>)}</div></fieldset>
 }
