@@ -12,6 +12,8 @@ import { requireAuth } from '../middleware/requireAuth.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
 import { analyzeWrongAnswer, generateAdvancedQuizQuestions, type GeneratedQuestion } from '../services/quizAI.js'
 import { generateVocabularyDeepAnalysis, generateVocabularyImage, type VocabularyInsightInput } from '../services/vocabularyInsightsAI.js'
+import { withAIResponseCache } from '../services/aiResponseCache.js'
+import { AI_RULES } from '../config/aiRules.js'
 
 interface CandidateRow {
   vocabulary_id: string
@@ -279,7 +281,13 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/deep-analysis', requireAu
       response.status(404).json({ status: 'error', message: '분석할 단어를 찾을 수 없습니다.' })
       return
     }
-    const analysis = await generateVocabularyDeepAnalysis(vocabulary)
+    const analysis = await withAIResponseCache({
+      userId: request.auth!.userId,
+      operation: 'vocabulary_deep_analysis_v1',
+      keyParts: vocabulary,
+      ttlMs: AI_RULES.cache.vocabularyAnalysisTtlMs,
+      generate: () => generateVocabularyDeepAnalysis(vocabulary),
+    })
     response.json({ analysis })
   } catch (error) { next(error) }
 })

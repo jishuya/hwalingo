@@ -67,7 +67,19 @@ export function Modal({ open, title, description, children, footer, onClose, clo
     if (closeOnBackdrop && event.target === event.currentTarget) onClose()
   }
 
-  return createPortal(<div className={`ui-dialog-backdrop ui-dialog-backdrop-${presentation}`} onMouseDown={handleBackdrop}>
+  return createPortal(<div
+    className={`ui-dialog-backdrop ui-dialog-backdrop-${presentation}`}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      width: '100vw',
+      height: '100dvh',
+      display: 'flex',
+      alignItems: presentation === 'sheet' ? 'flex-end' : 'center',
+      justifyContent: 'center',
+    }}
+    onMouseDown={handleBackdrop}
+  >
     <section ref={dialogRef} className={`ui-dialog ui-dialog-${size} ui-dialog-${presentation} ui-dialog-${tone}`} role={role} aria-modal="true" aria-labelledby={ariaLabel ? undefined : titleId} aria-label={ariaLabel} aria-describedby={description ? descriptionId : undefined}>
       {presentation === 'sheet' && <div className="ui-dialog-handle" aria-hidden="true"><span/></div>}
       <header className="ui-dialog-header">
@@ -87,11 +99,12 @@ interface AlertDialogProps {
   onClose: () => void
   confirmLabel?: string
   tone?: Exclude<DialogTone, 'danger'>
+  icon?: ReactNode
 }
 
-export function AlertDialog({ open, title, message, onClose, confirmLabel = '확인', tone = 'info' }: AlertDialogProps) {
-  const Icon = tone === 'success' ? CheckCircle : tone === 'warning' ? Warning : Question
-  return <Modal open={open} title={title} description={message} icon={<Icon weight="fill"/>} tone={tone} onClose={onClose} size="small" role="alertdialog" presentation="compact" hideClose closeOnBackdrop={false} footer={<button className="ui-dialog-primary" type="button" onClick={onClose} autoFocus>{confirmLabel}</button>}/>
+export function AlertDialog({ open, title, message, onClose, confirmLabel = '확인', tone = 'info', icon }: AlertDialogProps) {
+  const DefaultIcon = tone === 'success' ? CheckCircle : tone === 'warning' ? Warning : Question
+  return <Modal open={open} title={title} description={message} icon={icon ?? <DefaultIcon weight="fill"/>} tone={tone} onClose={onClose} size="small" role="alertdialog" presentation="compact" hideClose closeOnBackdrop={false} footer={<button className="ui-dialog-primary" type="button" onClick={onClose} autoFocus>{confirmLabel}</button>}/>
 }
 
 interface ConfirmDialogProps {

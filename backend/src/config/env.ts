@@ -9,7 +9,7 @@ function required(name: string, fallback?: string): string {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   host: process.env.HOST ?? '127.0.0.1',
-  port: Number(process.env.PORT ?? 4000),
+  port: Number(process.env.PORT ?? 5002),
   pgHost: required('PGHOST', 'localhost'),
   pgPort: Number(process.env.PGPORT ?? 5434),
   pgDatabase: required('PGDATABASE', 'hwalingo'),

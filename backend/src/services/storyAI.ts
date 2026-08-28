@@ -1,6 +1,8 @@
 import { env } from '../config/env.js'
 import { getOpenAIClient } from '../config/openai.js'
 import { languageNames, type LanguageCode } from './openai.js'
+import { AI_RULES } from '../config/aiRules.js'
+import { observeAIRequest } from './aiTelemetry.js'
 
 export type StoryGenre = 'daily' | 'adventure' | 'fantasy' | 'mystery' | 'comedy'
 export type StoryLength = 'short' | 'medium' | 'long'
@@ -50,8 +52,10 @@ export async function generateStory(input: {
   length: StoryLength
   difficulty: StoryDifficulty
 }): Promise<GeneratedStory> {
-  const response = await getOpenAIClient().responses.create({
+  const response = await observeAIRequest('story_generation', () => getOpenAIClient().responses.create({
     model: env.openaiModel,
+    reasoning: { effort: AI_RULES.reasoningEffort },
+    max_output_tokens: AI_RULES.storyGeneration.maxOutputTokens,
     instructions: `You create safe, engaging language-learning stories for Hwalingo.
 Use every supplied vocabulary item naturally at least once in the story. Inflected forms are allowed, but do not replace the requested word with an unrelated synonym.
 Write the title and story in the requested learning language and the translation in natural Korean.
@@ -66,6 +70,11 @@ Return exactly one vocabularyUsages entry per supplied vocabulary item, using it
       vocabularies: input.vocabularies,
     }),
     text: { format: { type: 'json_schema', name: 'vocabulary_story', strict: true, schema: storySchema } },
+  }, { timeout: AI_RULES.storyGeneration.timeoutMs, maxRetries: AI_RULES.storyGeneration.maxRetries }), {
+    vocabularyCount: input.vocabularies.length,
+    genre: input.genre,
+    length: input.length,
+    difficulty: input.difficulty,
   })
   if (!response.output_text) throw new Error('OpenAI returned an empty story')
   const story = JSON.parse(response.output_text) as GeneratedStory

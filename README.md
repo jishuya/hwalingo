@@ -24,10 +24,10 @@ npm run dev
 ```
 
 - 프론트엔드: http://localhost:5173
-- 백엔드: http://localhost:4000/api
-- DB 상태 확인: http://localhost:4000/api/health
+- 백엔드: http://localhost:5002/api
+- DB 상태 확인: http://localhost:5002/api/health
 
-개발 중 프론트엔드의 `/api` 요청은 Vite 프록시를 통해 백엔드(4000번 포트)로 전달됩니다.
+개발 중 프론트엔드의 `/api` 요청은 Vite 프록시를 통해 백엔드(5002번 포트)로 전달됩니다.
 
 ## 명령어
 
@@ -73,7 +73,7 @@ Gmail을 사용하는 경우 일반 계정 비밀번호가 아니라 Google 계�
 ```env
 NODE_ENV=production
 HOST=127.0.0.1
-PORT=4000
+PORT=5002
 CORS_ORIGIN=https://hwalingo.example.com
 ```
 
@@ -96,7 +96,7 @@ git pull
 npm install
 npm run build -w backend
 npm run pm2:restart
-curl http://127.0.0.1:4000/api/health
+curl http://127.0.0.1:5002/api/health
 ```
 
 PM2 관리 명령은 다음과 같습니다.
@@ -110,7 +110,7 @@ pm2 delete hwalingo-backend
 ```
 
 Cloudflare 대시보드의 **Networking > Tunnels**에서 Tunnel을 만들고 Published
-application의 Service URL을 `http://localhost:4000`으로 지정합니다. 예를 들어
+application의 Service URL을 `http://localhost:5002`로 지정합니다. 예를 들어
 `api.hwalingo.example.com`을 연결한 뒤 대시보드가 제공하는 명령으로
 `cloudflared` 서비스를 설치합니다.
 
@@ -121,5 +121,5 @@ curl https://api.hwalingo.example.com/api/health
 ```
 
 Tunnel token은 비밀번호와 같으므로 저장소나 문서에 기록하지 마세요. Tunnel은
-외부에서 4000번 포트를 열 필요가 없으므로 공유기 포트 포워딩과 해당 포트의
+외부에서 5002번 포트를 열 필요가 없으므로 공유기 포트 포워딩과 해당 포트의
 외부 방화벽 허용도 설정하지 않습니다.

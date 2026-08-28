@@ -1,0 +1,7 @@
+tunnel: 36c150da-b6b5-48f8-aba1-b580fe375b16
+credentials-file: /home/jishu/.cloudflared/36c150da-b6b5-48f8-aba1-b580fe375b16.json
+
+ingress:
+  - hostname: api-hwalingo.usagain.work
+    service: http://127.0.0.1:5002
+  - service: http_status:404

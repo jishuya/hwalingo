@@ -20,5 +20,23 @@ module.exports = {
         NODE_ENV: 'production',
       },
     },
+    {
+      name: 'hwalingo-tunnel',
+      cwd: __dirname,
+      script: '/usr/local/bin/cloudflared',
+      args: [
+        '--no-autoupdate',
+        '--config',
+        path.join(__dirname, 'deploy/cloudflared-hwalingo.yml'),
+        'tunnel',
+        'run',
+      ],
+      interpreter: 'none',
+      watch: false,
+      autorestart: true,
+      restart_delay: 5000,
+      max_memory_restart: '250M',
+      time: true,
+    },
   ],
 }
