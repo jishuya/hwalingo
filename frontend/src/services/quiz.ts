@@ -52,9 +52,9 @@ export interface AnswerResult {
     currentLevelXp: number
     nextLevelXp: number | null
     progressPercent: number
-    rank: string
+    hwarangGrade: { name: string; step: number; maxStep: number; index: number }
     leveledUp: boolean
-    rankedUp: boolean
+    gradeChanged: boolean
   }
 }
 

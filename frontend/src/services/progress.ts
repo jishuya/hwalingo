@@ -4,7 +4,7 @@ export interface UserProgress {
   currentLevelXp: number
   nextLevelXp: number | null
   progressPercent: number
-  rank: string
+  hwarangGrade: { name: string; step: number; maxStep: number; index: number }
   prestigeLevel: number
   savedWords: number
   masteredWords: number

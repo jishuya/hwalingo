@@ -12,11 +12,10 @@ export const GROWTH_RULES = {
   hintMultiplier: 0.7,
 } as const
 
-export const RANK_RULES = [
-  { minLevel: 1, name: 'Cadet' },
-  { minLevel: 10, name: 'Scout' },
-  { minLevel: 20, name: 'Ranger' },
-  { minLevel: 30, name: 'Vanguard' },
-  { minLevel: 40, name: 'Elite' },
-  { minLevel: 50, name: 'Hwarang Master' },
+export const HWARANG_GRADE_RULES = [
+  { minLevel: 1, maxLevel: 10, name: '새싹 학습자' },
+  { minLevel: 11, maxLevel: 20, name: '화랑 수련생' },
+  { minLevel: 21, maxLevel: 30, name: '정예 화랑' },
+  { minLevel: 31, maxLevel: 40, name: '화랑 마스터' },
+  { minLevel: 41, maxLevel: 50, name: '전설의 화랑' },
 ] as const

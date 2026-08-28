@@ -7,7 +7,7 @@ import { questionTypeForLevel } from '../domain/learning/questionDifficulty.js'
 import { selectTestCandidates, type TestCandidate } from '../domain/learning/testSelection.js'
 import { calculateQuizXp } from '../domain/learning/xp.js'
 import { calculateLevelProgress } from '../domain/learning/level.js'
-import { rankForLevel } from '../domain/learning/rank.js'
+import { hwarangGradeForLevel } from '../domain/learning/hwarangGrade.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
 import { analyzeWrongAnswer, generateAdvancedQuizQuestions, type GeneratedQuestion } from '../services/quizAI.js'
@@ -424,8 +424,8 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
     }
     const totalXpAfter = totalXpBefore + xpEarned
     const growthAfter = calculateLevelProgress(totalXpAfter)
-    const rankBefore = rankForLevel(growthBefore.level)
-    const rankAfter = rankForLevel(growthAfter.level)
+    const gradeBefore = hwarangGradeForLevel(growthBefore.level)
+    const gradeAfter = hwarangGradeForLevel(growthAfter.level)
     await recordLearningActivity(client, request.auth!.userId, 'quiz', {
       earnedXp: xpEarned,
       reviewedWordCount: 1,
@@ -462,9 +462,9 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
         currentLevelXp: growthAfter.currentLevelXp,
         nextLevelXp: growthAfter.nextLevelXp,
         progressPercent: growthAfter.progressPercent,
-        rank: rankAfter,
+        hwarangGrade: gradeAfter,
         leveledUp: growthAfter.level > growthBefore.level,
-        rankedUp: rankAfter !== rankBefore,
+        gradeChanged: gradeAfter.index !== gradeBefore.index,
       },
     })
   } catch (error) {

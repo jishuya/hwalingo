@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { pool } from '../config/database.js'
 import { calculateLevelProgress } from '../domain/learning/level.js'
-import { rankForLevel } from '../domain/learning/rank.js'
+import { hwarangGradeForLevel } from '../domain/learning/hwarangGrade.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { calculateStreakSummary } from '../domain/learning/streak.js'
 
@@ -80,7 +80,7 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
       progress: {
         totalXp,
         ...level,
-        rank: rankForLevel(level.level),
+        hwarangGrade: hwarangGradeForLevel(level.level),
         prestigeLevel: row?.prestige_level ?? 0,
         savedWords: Number(row?.saved_words ?? 0),
         masteredWords: Number(row?.mastered_words ?? 0),
