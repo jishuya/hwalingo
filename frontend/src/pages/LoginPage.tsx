@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpenText, ChatCircle, Check, EnvelopeSimple, Eye, EyeSlash, LockKey, Sparkle, TrendUp } from '@phosphor-icons/react'
+import { ArrowRight, ChatCircle, Check, EnvelopeSimple, Eye, EyeSlash, LockKey } from '@phosphor-icons/react'
 import { useState, type FormEvent } from 'react'
 import SignupModal from '../components/auth/SignupModal'
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal'
@@ -15,6 +15,7 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
   const [signupOpen, setSignupOpen] = useState(false)
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
   const [error, setError] = useState('')
+  const [socialLoginNotice, setSocialLoginNotice] = useState('')
   const [passwordChanged, setPasswordChanged] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -34,25 +35,7 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
     }
   }
 
-  return <><main className="auth-page">
-    <section className="auth-showcase" aria-label="Hwalingo 소개">
-      <div className="auth-showcase-copy">
-        <span className="auth-eyebrow"><Sparkle weight="fill"/> 매일 조금씩, 분명하게</span>
-        <h1>영어 문장이<br/><em>내 것이 되는 순간.</em></h1>
-        <p>문장을 이해하고, 단어를 모으고, 나만의 이야기로 기억하세요.</p>
-        <div className="auth-benefits">
-          <span><Check weight="bold"/> 문장 구조를 한눈에</span>
-          <span><Check weight="bold"/> 단어는 오래 기억하게</span>
-        </div>
-      </div>
-      <div className="auth-preview" aria-hidden="true">
-        <div className="preview-head"><span><BookOpenText weight="duotone"/></span><div><small>오늘의 표현</small><strong>Small steps add up.</strong></div></div>
-        <div className="preview-meaning"><span>small steps</span><i>작은 걸음들이</i><span>add up</span><i>쌓이다</i></div>
-        <div className="preview-progress"><span><TrendUp weight="bold"/> 이번 주 학습</span><strong>82%</strong></div>
-      </div>
-      <small className="auth-copyright">© 2026 Hwalingo</small>
-    </section>
-
+  return <><main className="auth-page auth-page-single">
     <section className="auth-form-side">
       <div className="auth-form-wrap">
         <header className="auth-heading">
@@ -72,10 +55,10 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
         <p className="auth-switch">처음 방문하셨나요? <button type="button" onClick={() => setSignupOpen(true)}>회원가입</button></p>
         <div className="auth-divider"><span>간편 로그인</span></div>
         <div className="auth-socials">
-          <button type="button" className="auth-social-google" onClick={() => setError('Google 로그인은 준비 중입니다.')}><b>G</b><span>Google</span></button>
-          <button type="button" className="auth-social-kakao" onClick={() => setError('카카오 로그인은 준비 중입니다.')}><ChatCircle weight="fill"/><span>Kakao</span></button>
+          <button type="button" className="auth-social-google" onClick={() => setSocialLoginNotice('Google 로그인은 준비 중입니다.')}><b>G</b><span>Google</span></button>
+          <button type="button" className="auth-social-kakao" onClick={() => setSocialLoginNotice('카카오 로그인은 준비 중입니다.')}><ChatCircle weight="fill"/><span>Kakao</span></button>
         </div>
       </div>
     </section>
-  </main>{signupOpen && <SignupModal onClose={() => setSignupOpen(false)} onComplete={done}/>} {forgotPasswordOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setForgotPasswordOpen(false)} onComplete={() => { setForgotPasswordOpen(false); setPassword(''); setPasswordChanged(true) }}/>}<AlertDialog open={passwordChanged} title="비밀번호 변경 완료" message={<>비밀번호가 변경되었습니다.<br/>새 비밀번호로 로그인해주세요.</>} tone="success" onClose={() => setPasswordChanged(false)}/></>
+  </main>{signupOpen && <SignupModal onClose={() => setSignupOpen(false)} onComplete={done}/>} {forgotPasswordOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setForgotPasswordOpen(false)} onComplete={() => { setForgotPasswordOpen(false); setPassword(''); setPasswordChanged(true) }}/>}<AlertDialog open={Boolean(socialLoginNotice)} title="서비스 준비 중" message={socialLoginNotice} onClose={() => setSocialLoginNotice('')}/><AlertDialog open={passwordChanged} title="비밀번호 변경 완료" message={<>비밀번호가 변경되었습니다.<br/>새 비밀번호로 로그인해주세요.</>} tone="success" onClose={() => setPasswordChanged(false)}/></>
 }

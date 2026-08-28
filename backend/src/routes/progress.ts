@@ -46,7 +46,7 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
       [request.auth!.userId],
     )
     const streak = calculateStreakSummary(learningDaysResult.rows.map(item => item.learning_date), settings.today)
-    const [masteryResult, quizResult, recentResult] = await Promise.all([
+    const [masteryResult, quizResult, recentResult, weeklyTrendResult] = await Promise.all([
       pool.query<{ mastery_level: number; word_count: string }>(
         `SELECT COALESCE(vp.mastery_level, 0) AS mastery_level, count(*) AS word_count
          FROM vocabularies v
@@ -70,6 +70,30 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
          LEFT JOIN user_learning_days uld ON uld.user_id = $1 AND uld.learning_date = days.day::date
          ORDER BY days.day`,
         [request.auth!.userId, settings.today],
+      ),
+      pool.query<{ week_start: string; active_days: number; earned_xp: number; reviewed_word_count: number; total_answers: number; correct_answers: number }>(
+        `WITH weeks AS (
+           SELECT generate_series(
+             date_trunc('week', $2::date) - interval '7 weeks',
+             date_trunc('week', $2::date),
+             interval '1 week'
+           )::date AS week_start
+         )
+         SELECT to_char(w.week_start, 'YYYY-MM-DD') AS week_start,
+                (SELECT count(*) FROM user_learning_days uld
+                 WHERE uld.user_id = $1 AND uld.learning_date >= w.week_start AND uld.learning_date < w.week_start + 7)::integer AS active_days,
+                COALESCE((SELECT sum(uld.earned_xp) FROM user_learning_days uld
+                 WHERE uld.user_id = $1 AND uld.learning_date >= w.week_start AND uld.learning_date < w.week_start + 7), 0)::integer AS earned_xp,
+                COALESCE((SELECT sum(uld.reviewed_word_count) FROM user_learning_days uld
+                 WHERE uld.user_id = $1 AND uld.learning_date >= w.week_start AND uld.learning_date < w.week_start + 7), 0)::integer AS reviewed_word_count,
+                (SELECT count(*) FROM quizzes q WHERE q.user_id = $1 AND q.result IN ('correct', 'incorrect')
+                 AND (q.answered_at AT TIME ZONE $3)::date >= w.week_start
+                 AND (q.answered_at AT TIME ZONE $3)::date < w.week_start + 7)::integer AS total_answers,
+                (SELECT count(*) FROM quizzes q WHERE q.user_id = $1 AND q.result = 'correct'
+                 AND (q.answered_at AT TIME ZONE $3)::date >= w.week_start
+                 AND (q.answered_at AT TIME ZONE $3)::date < w.week_start + 7)::integer AS correct_answers
+         FROM weeks w ORDER BY w.week_start`,
+        [request.auth!.userId, settings.today, settings.timezone],
       ),
     ])
     const masteryDistribution = Array.from({ length: 8 }, (_, masteryLevel) => ({ masteryLevel, wordCount: 0 }))
@@ -95,6 +119,14 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
         correctAnswers,
         accuracyPercent: totalAnswers ? Math.round((correctAnswers / totalAnswers) * 100) : 0,
         recentLearningDays: recentResult.rows.map(item => ({ date: item.learning_date, activityCount: item.activity_count, earnedXp: item.earned_xp, reviewedWordCount: item.reviewed_word_count })),
+        weeklyLearningTrend: weeklyTrendResult.rows.map(item => ({
+          weekStart: item.week_start,
+          activeDays: item.active_days,
+          earnedXp: item.earned_xp,
+          reviewedWordCount: item.reviewed_word_count,
+          totalAnswers: item.total_answers,
+          accuracyPercent: item.total_answers ? Math.round((item.correct_answers / item.total_answers) * 100) : null,
+        })),
       },
     })
   } catch (error) {

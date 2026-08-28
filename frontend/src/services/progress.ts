@@ -19,6 +19,7 @@ export interface UserProgress {
   correctAnswers: number
   accuracyPercent: number
   recentLearningDays: Array<{ date: string; activityCount: number; earnedXp: number; reviewedWordCount: number }>
+  weeklyLearningTrend: Array<{ weekStart: string; activeDays: number; earnedXp: number; reviewedWordCount: number; totalAnswers: number; accuracyPercent: number | null }>
 }
 
 export async function getUserProgress(): Promise<UserProgress> {

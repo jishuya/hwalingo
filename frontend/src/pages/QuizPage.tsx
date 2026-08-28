@@ -130,7 +130,7 @@ export default function QuizPage() {
     </div>}
     <div className="quiz-progress"><div><span>오늘의 테스트</span><b>{answeredCount + 1}/{session.totalCount}</b></div><div className="progress-track"><span style={{ width: `${progress}%` }}/></div></div>
     <div className="quiz-swipe-stage">
-      <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''} ${dragOffset < -15 ? 'swipe-wrong' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+      <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''} ${dragOffset < -15 ? 'swipe-wrong' : dragOffset > 15 ? 'swipe-correct' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         {current.cefrLevel && <span className={`quiz-level level-${current.cefrLevel.toLowerCase()}`}>Lv.{current.cefrLevel}</span>}
         <button className="quiz-word-reveal" type="button" onClick={toggleMeaning} aria-label={revealed ? `${current.word} 뜻 숨기기` : `${current.word} 뜻 보기`} aria-pressed={revealed}>
           <strong>{current.word}</strong>
