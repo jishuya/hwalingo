@@ -94,7 +94,7 @@ export default function ProfilePage({ user, logout, onNavigate }: ProfilePagePro
 
   return <div className="page profile-page">
     <section className="profile-card card">
-      <div className="profile-level-avatar"><LevelAvatar className="profile-level-avatar-image" level={level} eager/><span>{hwarangGrade.step}단계</span></div>
+      <div className="profile-level-avatar"><LevelAvatar className="profile-level-avatar-image" level={level} eager sizes="(max-width: 600px) 128px, 148px"/><span>{hwarangGrade.step}단계</span></div>
       <div className="profile-name-row"><h1>{user.displayName}</h1><button type="button" aria-label="이름 변경" title="이름 변경" onClick={() => { setDisplayName(user.displayName); setPanel('profile') }}><PencilSimpleIcon weight="bold"/></button></div><p>{user.email}</p>
       <button type="button" className="profile-growth-collection" onClick={() => setAvatarsOpen(true)}><StepsIcon weight="duotone"/><span>화랑이 성장 도감</span><small>{Math.min(level, 50)} / 50 해금</small></button>
       <div className="badges"><span>◎ {hwarangGrade.name} · {hwarangGrade.step}단계</span><span>🔥 {progress?.currentStreak ?? 0}일 연속</span></div>
