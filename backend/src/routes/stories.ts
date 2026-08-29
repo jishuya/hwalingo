@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { pool } from '../config/database.js'
 import { requireAuth } from '../middleware/requireAuth.js'
-import { generateStory, type StoryDifficulty, type StoryGenre, type StoryLength, type StoryVocabulary } from '../services/storyAI.js'
-import type { LanguageCode } from '../services/openai.js'
+import { generateStory, generateStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength, type StoryVocabulary } from '../services/storyAI.js'
+import { languageNames, type LanguageCode } from '../services/openai.js'
 import { AI_RULES } from '../config/aiRules.js'
 import { readAIResponseCache, writeAIResponseCache } from '../services/aiResponseCache.js'
 
@@ -12,6 +12,34 @@ const lengths = new Set<StoryLength>(['short', 'medium', 'long'])
 const difficulties = new Set<StoryDifficulty>(['easy', 'normal', 'hard'])
 
 interface StoryVocabularyRow extends StoryVocabulary { language_code: LanguageCode }
+
+storiesRouter.post('/translation', requireAuth, async (request, response, next) => {
+  const abortController = new AbortController()
+  request.once('aborted', () => abortController.abort())
+  try {
+    const story = typeof request.body.story === 'string' ? request.body.story.trim() : ''
+    const languageCode = request.body.languageCode as LanguageCode
+    if (!story || story.length > 5_000) {
+      response.status(400).json({ message: '번역할 스토리가 올바르지 않습니다.' }); return
+    }
+    if (!(languageCode in languageNames)) {
+      response.status(400).json({ message: '스토리 언어가 올바르지 않습니다.' }); return
+    }
+    const translation = await readAIResponseCache<string>({
+      userId: request.auth!.userId,
+      operation: 'vocabulary_story_translation_v1',
+      keyParts: { story, languageCode },
+    }) ?? await generateStoryTranslation({ story, languageCode }, abortController.signal)
+    await writeAIResponseCache({
+      userId: request.auth!.userId,
+      operation: 'vocabulary_story_translation_v1',
+      keyParts: { story, languageCode },
+      value: translation,
+      ttlMs: AI_RULES.cache.storyTranslationTtlMs,
+    })
+    response.json({ translation })
+  } catch (error) { next(error) }
+})
 
 storiesRouter.post('/', requireAuth, async (request, response, next) => {
   try {
@@ -40,7 +68,7 @@ storiesRouter.post('/', requireAuth, async (request, response, next) => {
     }
     const cacheIdentity = {
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_v1',
+      operation: 'vocabulary_story_v2',
       keyParts: { vocabularyIds: [...ids].sort(), languageCode, genre, length, difficulty },
     }
     if (!forceRegenerate) {

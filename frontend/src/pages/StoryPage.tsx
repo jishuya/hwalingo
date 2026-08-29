@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowClockwiseIcon, BookOpenTextIcon, CheckCircleIcon, CheckIcon, MagnifyingGlassIcon, PencilSimpleIcon, SlidersHorizontalIcon, SpeakerHighIcon, SparkleIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { AlertDialog, Modal } from '../components/ui/Dialog'
 import { getVocabularies } from '../services/vocabulary'
-import { createStory, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
+import { createStory, getStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
 
 const genres: Array<{ value: StoryGenre; label: string }> = [{ value: 'daily', label: '일상' }, { value: 'adventure', label: '모험' }, { value: 'fantasy', label: '판타지' }, { value: 'mystery', label: '미스터리' }, { value: 'comedy', label: '코미디' }]
 const lengths: Array<{ value: StoryLength; label: string }> = [{ value: 'short', label: '짧게' }, { value: 'medium', label: '보통' }, { value: 'long', label: '길게' }]
@@ -26,10 +26,13 @@ export default function StoryPage() {
   const [draftDifficulty, setDraftDifficulty] = useState<StoryDifficulty>('normal')
   const [translationVisible, setTranslationVisible] = useState(false)
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
-  const storyMutation = useMutation({ mutationFn: createStory, onSuccess: () => { setTranslationVisible(false); window.setTimeout(() => document.querySelector('.story-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) } })
+  const translationMutation = useMutation({ mutationFn: getStoryTranslation })
+  const storyMutation = useMutation({ mutationFn: createStory, onSuccess: () => { setTranslationVisible(false); translationMutation.reset(); window.setTimeout(() => document.querySelector('.story-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) } })
   const words = useMemo(() => vocabulariesQuery.data ?? [], [vocabulariesQuery.data])
   const selectedWords = words.filter(word => selectedIds.includes(word.vocabularyId))
   const selectedLanguage = selectedWords[0]?.languageCode
+  const storyTranslation = storyMutation.data?.translation
+    || (translationMutation.variables?.story === storyMutation.data?.story ? translationMutation.data : '')
   const draftWords = words.filter(word => draftSelectedIds.includes(word.vocabularyId))
   const draftLanguage = draftWords[0]?.languageCode
   const minimum = 3
@@ -98,6 +101,7 @@ export default function StoryPage() {
     if ('speechSynthesis' in window) window.speechSynthesis.cancel()
     setSelectedIds([])
     setTranslationVisible(false)
+    translationMutation.reset()
     storyMutation.reset()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -105,7 +109,18 @@ export default function StoryPage() {
     if ('speechSynthesis' in window) window.speechSynthesis.cancel()
     setSelectedIds([])
     setTranslationVisible(false)
+    translationMutation.reset()
     storyMutation.reset()
+  }
+  const toggleTranslation = () => {
+    if (translationVisible) {
+      setTranslationVisible(false)
+      return
+    }
+    setTranslationVisible(true)
+    if (!storyTranslation && storyMutation.data && selectedLanguage && !translationMutation.isPending) {
+      translationMutation.mutate({ story: storyMutation.data.story, languageCode: selectedLanguage })
+    }
   }
 
   return <div className="page story-page">
@@ -125,7 +140,7 @@ export default function StoryPage() {
             {storyMutation.data && <article className="card story-card story-result">
               <div className="story-title"><div><span>AI STORY · {genres.find(item => item.value === genre)?.label}</span><h2>{storyMutation.data.title}</h2></div><button className="round" aria-label="스토리 전체 듣기" onClick={() => speak(storyMutation.data.story)}><SpeakerHighIcon/></button></div>
               <h3>STORY</h3><p>{storyMutation.data.segments.map((segment, index) => segment.vocabularyId ? <mark key={index}>{segment.text}</mark> : <span key={index}>{segment.text}</span>)}</p>
-              <hr/><section className="story-translation"><button type="button" aria-expanded={translationVisible} onClick={() => setTranslationVisible(visible => !visible)}><TranslateIcon weight="bold"/>한국어 번역 {translationVisible ? '숨기기' : '보기'}</button>{translationVisible && <div><h3>한국어 번역</h3><p className="translation">{storyMutation.data.translation}</p></div>}</section>
+              <hr/><section className="story-translation"><button type="button" aria-expanded={translationVisible} onClick={toggleTranslation}><TranslateIcon weight="bold"/>한국어 번역 {translationVisible ? '숨기기' : '보기'}</button>{translationVisible && <div><h3>한국어 번역</h3>{translationMutation.isPending && <p className="translation">번역하고 있어요…</p>}{translationMutation.isError && <p className="story-error" role="alert">{translationMutation.error.message}</p>}{storyTranslation && <p className="translation">{storyTranslation}</p>}</div>}</section>
               <div className="story-usage"><h3>사용한 단어 {storyMutation.data.vocabularyUsages.length}/{selectedIds.length}</h3><div>{storyMutation.data.vocabularyUsages.map(usage => <span key={usage.vocabularyId}><CheckCircleIcon weight="fill"/>{usage.word}<small>{usage.meaning}</small></span>)}</div></div>
               <div className="story-result-actions"><button onClick={generate} disabled={storyMutation.isPending}><ArrowClockwiseIcon/> 같은 단어로 다시 만들기</button><button onClick={startWithNewWords}>새 단어 선택</button></div>
             </article>}

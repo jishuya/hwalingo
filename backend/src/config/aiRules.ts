@@ -3,6 +3,7 @@ export const AI_RULES = {
   sentenceVocabulary: { timeoutMs: 30_000, maxRetries: 1, maxOutputTokens: 4_000 },
   sentenceParaphrases: { timeoutMs: 15_000, maxRetries: 0, maxOutputTokens: 1_400 },
   storyGeneration: { timeoutMs: 40_000, maxRetries: 1, maxOutputTokens: 4_000 },
+  storyTranslation: { timeoutMs: 20_000, maxRetries: 1, maxOutputTokens: 1_500 },
   vocabularyAnalysis: { timeoutMs: 15_000, maxRetries: 0, maxOutputTokens: 500 },
   vocabularyImage: { timeoutMs: 60_000, maxRetries: 0 },
   reasoningEffort: 'minimal',
@@ -12,5 +13,6 @@ export const AI_RULES = {
     sentenceParaphrasesTtlMs: 30 * 24 * 60 * 60 * 1_000,
     vocabularyAnalysisTtlMs: 30 * 24 * 60 * 60 * 1_000,
     storyTtlMs: 7 * 24 * 60 * 60 * 1_000,
+    storyTranslationTtlMs: 30 * 24 * 60 * 60 * 1_000,
   },
 } as const

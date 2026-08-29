@@ -24,3 +24,12 @@ export async function createStory(input: CreateStoryInput): Promise<GeneratedSto
   if (!response.ok || !result.story) throw new Error(result.message ?? '스토리를 만들지 못했습니다.')
   return result.story
 }
+
+export async function getStoryTranslation(input: { story: string; languageCode: string }): Promise<string> {
+  const response = await fetch('/api/stories/translation', {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+  })
+  const result = await response.json().catch(() => ({})) as { translation?: string; message?: string }
+  if (!response.ok || !result.translation) throw new Error(result.message ?? '스토리 번역을 불러오지 못했습니다.')
+  return result.translation
+}

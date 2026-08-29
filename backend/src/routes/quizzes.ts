@@ -171,10 +171,15 @@ async function getSession(userId: string, sessionId: string) {
 }
 
 quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => {
-  const requested = Number.isInteger(request.body.count) ? Number(request.body.count) : QUIZ_RULES.defaultQuestionCount
-  const requestedCount = Math.min(QUIZ_RULES.maxQuestionCount, Math.max(1, requested))
   const client = await pool.connect()
   try {
+    const configuredCountResult = await client.query<{ quiz_question_count: number }>(
+      `SELECT quiz_question_count FROM user_settings WHERE user_id = $1`,
+      [request.auth!.userId],
+    )
+    const configuredCount = configuredCountResult.rows[0]?.quiz_question_count ?? QUIZ_RULES.defaultQuestionCount
+    const requested = Number.isInteger(request.body.count) ? Number(request.body.count) : configuredCount
+    const requestedCount = Math.min(QUIZ_RULES.maxQuestionCount, Math.max(1, requested))
     const candidatesResult = await client.query<CandidateRow>(
       `SELECT v.id AS vocabulary_id, v.word, v.meaning, v.example_sentence,
               p.mastery_level, p.mastery_score, p.total_attempts, p.correct_count,

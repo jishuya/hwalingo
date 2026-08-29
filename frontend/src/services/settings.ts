@@ -5,6 +5,7 @@ export interface UserSettings {
   notificationsEnabled: boolean
   timezone: string
   weeklyGoalDays: number
+  quizQuestionCount: number
 }
 
 async function settingsRequest<T>(options?: RequestInit): Promise<T> {
