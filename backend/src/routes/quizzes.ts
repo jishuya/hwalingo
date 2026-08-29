@@ -10,11 +10,10 @@ import { calculateLevelProgress } from '../domain/learning/level.js'
 import { hwarangGradeForLevel } from '../domain/learning/hwarangGrade.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
-import { analyzeWrongAnswer } from '../services/quizAI.js'
-import { generateVocabularyDeepAnalysis, generateVocabularyImage, type VocabularyInsightInput } from '../services/vocabularyInsightsAI.js'
+import { generateVocabularyDeepAnalysis, type VocabularyInsightInput } from '../services/vocabularyInsightsAI.js'
+import { getOrGenerateVocabularyImage } from '../services/vocabularyImageCache.js'
 import { withAIResponseCache } from '../services/aiResponseCache.js'
 import { AI_RULES } from '../config/aiRules.js'
-import { getCachedAdvancedQuizQuestions, warmAdvancedQuizQuestionCache } from '../services/quizQuestionCache.js'
 
 interface CandidateRow {
   vocabulary_id: string
@@ -201,16 +200,6 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       lastReviewedAt: item.last_reviewed_at ? new Date(item.last_reviewed_at) : null,
     }))
     const selected = selectTestCandidates(candidates, requestedCount)
-    const advancedRequests = selected.map(item => rowsById.get(item.vocabularyId)!).filter(candidate => candidate.mastery_level >= 5 && candidate.example_sentence).map(candidate => ({
-      vocabularyId: candidate.vocabulary_id,
-      word: candidate.word,
-      meaning: candidate.meaning,
-      exampleSentence: candidate.example_sentence!,
-      questionType: questionTypeForLevel(candidate.mastery_level, true) as 'context' | 'translation',
-    }))
-    const generatedByVocabularyId = await getCachedAdvancedQuizQuestions(request.auth!.userId, advancedRequests)
-    const uncachedAdvancedRequests = advancedRequests.filter(item => !generatedByVocabularyId.has(item.vocabularyId))
-
     await client.query('BEGIN')
     await client.query(`UPDATE quiz_sessions SET status = 'abandoned' WHERE user_id = $1 AND status = 'active'`, [request.auth!.userId])
     const sessionResult = await client.query<{ id: string }>(
@@ -220,12 +209,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
     const sessionId = sessionResult.rows[0].id
     for (const [index, selectedItem] of selected.entries()) {
       const candidate = rowsById.get(selectedItem.vocabularyId)!
-      const generated = generatedByVocabularyId.get(candidate.vocabulary_id)
-      const question = generated ? {
-        ...generated,
-        choices: [],
-        generationSource: 'ai' as const,
-      } : buildQuestion(candidate, candidatesResult.rows)
+      const question = buildQuestion(candidate, candidatesResult.rows)
       await client.query(
         `INSERT INTO quiz_session_items
            (session_id, vocabulary_id, position, selection_group, question_type, prompt,
@@ -238,7 +222,6 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
     }
     await client.query('COMMIT')
     response.status(201).json({ session: await getSession(request.auth!.userId, sessionId) })
-    void warmAdvancedQuizQuestionCache(request.auth!.userId, uncachedAdvancedRequests)
   } catch (error) {
     try { await client.query('ROLLBACK') } catch { /* transaction may not have started */ }
     next(error)
@@ -285,7 +268,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/image', requireAuth, asyn
       response.status(404).json({ status: 'error', message: '그림을 만들 단어를 찾을 수 없습니다.' })
       return
     }
-    const image = await generateVocabularyImage(vocabulary)
+    const image = await getOrGenerateVocabularyImage(request.auth!.userId, vocabulary)
     response.json({ imageDataUrl: `data:${image.mimeType};base64,${image.base64}` })
   } catch (error) { next(error) }
 })
@@ -426,29 +409,12 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
       occurredAt: reviewedAt,
     })
     await client.query('COMMIT')
-    let aiFeedback
-    if (!correct && selfReportedCorrect === undefined) {
-      try {
-        aiFeedback = await analyzeWrongAnswer({
-          questionType: item.question_type,
-          prompt: item.prompt,
-          word: item.word,
-          correctAnswer: item.correct_answer,
-          submittedAnswer,
-          explanation: item.explanation,
-        })
-        await pool.query(`UPDATE quizzes SET ai_feedback = $1::jsonb WHERE id = $2`, [JSON.stringify(aiFeedback), quizResult.rows[0].id])
-      } catch (error) {
-        console.error('AI wrong-answer feedback failed', error)
-      }
-    }
     response.json({
       correct,
       correctAnswer: item.correct_answer,
       mastery: { before: state.masteryLevel, after: outcome.masteryLevel },
       nextReviewAt: outcome.nextReviewAt.toISOString(),
       xpEarned,
-      aiFeedback,
       questionExplanation: item.explanation,
       growth: {
         totalXp: totalXpAfter,

@@ -40,11 +40,6 @@ export interface AnswerResult {
   mastery: { before: number; after: number }
   nextReviewAt: string
   xpEarned: number
-  aiFeedback?: {
-    feedback: string
-    confusionType: string
-    tip: string
-  }
   questionExplanation: string | null
   growth: {
     totalXp: number
