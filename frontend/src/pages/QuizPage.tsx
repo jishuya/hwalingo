@@ -125,7 +125,7 @@ export default function QuizPage() {
     {showSwipeGuide && <div className="quiz-swipe-guide-overlay" role="presentation" onPointerDown={() => setShowSwipeGuide(false)}>
       <div className="quiz-swipe-guide" role="dialog" aria-label="테스트 사용 안내" onPointerDown={event => event.stopPropagation()}>
         <button type="button" aria-label="안내 닫기" onClick={() => setShowSwipeGuide(false)}><XIcon weight="bold"/></button>
-        <p>아는 단어는 <strong>오른쪽</strong>으로<br/>모르는 단어는 <strong>왼쪽</strong>으로 스와이프하세요.</p>
+        <p>아는 단어는 <strong className="direction-right">오른쪽</strong>으로<br/>모르는 단어는 <strong className="direction-left">왼쪽</strong>으로 스와이프하세요.</p>
       </div>
     </div>}
     <div className="quiz-progress"><div><span>오늘의 테스트</span><b>{answeredCount + 1}/{session.totalCount}</b></div><div className="progress-track"><span style={{ width: `${progress}%` }}/></div></div>
