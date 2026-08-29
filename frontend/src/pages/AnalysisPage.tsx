@@ -15,7 +15,7 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
-import { analyzeSentence, getSentenceParaphrases, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
+import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
@@ -24,6 +24,8 @@ const grammarRoleColors = { subject: '#2563D9', verb: '#008C44', other: '#18332A
 export default function AnalysisPage({ request, requestId, onLoadingChange }: { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void }) {
   const [analysis, setAnalysis] = useState<SentenceAnalysis>()
   const [isLoading, setIsLoading] = useState(false)
+  const [isVocabularyLoading, setIsVocabularyLoading] = useState(false)
+  const [vocabularyError, setVocabularyError] = useState('')
   const [error, setError] = useState('')
   const [revealedChunks, setRevealedChunks] = useState<Set<string>>(new Set())
   const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set())
@@ -43,7 +45,6 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
     onError: caught => setError(caught instanceof Error ? caught.message : '저장된 단어를 삭제하지 못했습니다.'),
   })
-  const lastRequestId = useRef(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
   const paraphraseControllersRef = useRef<Map<number, AbortController>>(new Map())
@@ -150,15 +151,15 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   }
 
   useEffect(() => {
-    if (lastRequestId.current === requestId) return
-    lastRequestId.current = requestId
     paraphraseControllersRef.current.forEach(controller => controller.abort())
     paraphraseControllersRef.current.clear()
     const controller = new AbortController()
     const run = async () => {
       setIsLoading(true)
+      setIsVocabularyLoading(false)
       onLoadingChange(true)
       setError('')
+      setVocabularyError('')
       try {
         const nextAnalysis = await analyzeSentence(request, controller.signal)
         setAnalysis(nextAnalysis)
@@ -167,17 +168,47 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         setOpenParaphrases(new Set())
         setLoadingParaphrases(new Set())
         setOpenExampleTranslations(new Set())
+        setIsLoading(false)
+        onLoadingChange(false)
+        setIsVocabularyLoading(true)
+        try {
+          const vocabularies = await getSentenceVocabulary({
+            sourceLanguage: nextAnalysis.sourceLanguage,
+            targetLanguage: nextAnalysis.targetLanguage,
+            sentences: nextAnalysis.sentences.map(sentence => ({
+              sourceText: sentence.sourceText,
+              targetSentence: sentence.targetSentence,
+            })),
+          }, controller.signal)
+          setAnalysis(current => current ? {
+            ...current,
+            sentences: current.sentences.map((sentence, index) => ({
+              ...sentence,
+              vocabulary: vocabularies[index] ?? [],
+            })),
+          } : current)
+        } catch (caught) {
+          if (!controller.signal.aborted) {
+            setVocabularyError(caught instanceof Error ? caught.message : '상세 어휘를 불러오지 못했습니다.')
+          }
+        } finally {
+          if (!controller.signal.aborted) setIsVocabularyLoading(false)
+        }
       } catch (caught) {
         if (controller.signal.aborted) return
         setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
       } finally {
-        if (controller.signal.aborted) return
-        setIsLoading(false)
-        onLoadingChange(false)
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+          onLoadingChange(false)
+        }
       }
     }
-    void run()
+    // React StrictMode mounts effects twice in development. Defer the request by
+    // one tick so the verification mount is cleaned up before any network call.
+    const requestTimer = window.setTimeout(() => void run(), 0)
     return () => {
+      window.clearTimeout(requestTimer)
       controller.abort()
       onLoadingChange(false)
     }
@@ -228,7 +259,9 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
 
             <aside className="sentence-vocab-column">
               <h3><BookOpenIcon />핵심 어휘</h3>
-              {sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">추출된 주요 어휘가 없습니다.</div> : sentence.vocabulary.map(word => {
+              {isVocabularyLoading && sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">상세 어휘를 정리하고 있어요…</div>
+                : vocabularyError && sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">{vocabularyError}</div>
+                : sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">추출된 주요 어휘가 없습니다.</div> : sentence.vocabulary.map(word => {
                 const wordKey = `${sentenceIndex}-${word.word}`
                 const exampleTranslationOpen = openExampleTranslations.has(wordKey)
                 const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.targetLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())

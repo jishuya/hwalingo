@@ -8,6 +8,9 @@ interface AIUsage {
 
 interface AIResponseMetadata {
   model?: string
+  status?: string
+  output_text?: string
+  incomplete_details?: { reason?: string } | null
   usage?: AIUsage | null
   _request_id?: string | null
 }
@@ -33,7 +36,10 @@ export async function observeAIRequest<T>(operation: string, request: () => Prom
       ...context,
       durationMs: Math.round(performance.now() - startedAt),
       model: metadata.model,
+      responseStatus: metadata.status,
+      incompleteReason: metadata.incomplete_details?.reason,
       requestId: metadata._request_id,
+      outputCharacters: metadata.output_text?.length,
       inputTokens: usage?.input_tokens,
       cachedInputTokens: usage?.input_tokens_details?.cached_tokens,
       outputTokens: usage?.output_tokens,
