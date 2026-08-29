@@ -68,7 +68,7 @@ storiesRouter.post('/', requireAuth, async (request, response, next) => {
     }
     const cacheIdentity = {
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_v2',
+      operation: 'vocabulary_story_v3',
       keyParts: { vocabularyIds: [...ids].sort(), languageCode, genre, length, difficulty },
     }
     if (!forceRegenerate) {

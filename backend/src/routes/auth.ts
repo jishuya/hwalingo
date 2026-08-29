@@ -4,6 +4,7 @@ import { Router, type CookieOptions, type Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { pool } from '../config/database.js'
 import { env } from '../config/env.js'
+import { QUIZ_RULES } from '../config/quizRules.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { isMailConfigured, sendPasswordResetCode } from '../services/mail.js'
 
@@ -100,13 +101,28 @@ authRouter.post('/signup', async (request, response, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
-    const result = await pool.query<UserRow>(
-      `INSERT INTO users (email, password_hash, display_name)
-       VALUES ($1, $2, $3)
-       RETURNING id, email, password_hash, display_name`,
-      [email, passwordHash, displayName],
-    )
-    const user = result.rows[0]
+    const client = await pool.connect()
+    let user: UserRow
+    try {
+      await client.query('BEGIN')
+      const result = await client.query<UserRow>(
+        `INSERT INTO users (email, password_hash, display_name)
+         VALUES ($1, $2, $3)
+         RETURNING id, email, password_hash, display_name`,
+        [email, passwordHash, displayName],
+      )
+      user = result.rows[0]
+      await client.query(
+        `INSERT INTO user_settings (user_id, quiz_question_count) VALUES ($1, $2)`,
+        [user.id, QUIZ_RULES.defaultQuestionCount],
+      )
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
     setSessionCookie(response, user.id, false)
     response.status(201).json({ user: publicUser(user) })
   } catch (error) {

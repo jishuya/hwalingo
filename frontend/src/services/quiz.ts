@@ -75,8 +75,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function createQuizSession(count = 10): Promise<QuizSession> {
-  const result = await request<{ session: QuizSession }>('/api/quizzes/sessions', { method: 'POST', body: JSON.stringify({ count }) })
+export async function createQuizSession(count?: number): Promise<QuizSession> {
+  const result = await request<{ session: QuizSession }>('/api/quizzes/sessions', { method: 'POST', body: JSON.stringify(count === undefined ? {} : { count }) })
   return result.session
 }
 
