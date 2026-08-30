@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react'
 import SignupModal from '../components/auth/SignupModal'
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal'
 import { AlertDialog } from '../components/ui/Dialog'
-import mascot from '../assets/hwalangi-upper-body.png'
+import logo from '../assets/hwalingo_logo.png'
 import wordmark from '../assets/wordmarks/hwalingo-wordmark-01-rounded.png'
 import { login, type AuthUser } from '../services/auth'
 
@@ -39,7 +39,7 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
     <section className="auth-form-side">
       <div className="auth-form-wrap">
         <header className="auth-heading">
-          <span className="auth-heading-mascot"><img src={mascot} alt="Hwalingo 캐릭터"/></span>
+          <span className="auth-heading-mascot"><img src={logo} alt="Hwalingo 로고"/></span>
           <h1 className="auth-wordmark"><img src={wordmark} alt="Hwalingo"/></h1>
         </header>
 
