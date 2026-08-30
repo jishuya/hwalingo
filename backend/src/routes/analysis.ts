@@ -12,23 +12,23 @@ analysisRouter.post('/paraphrases', requireAuth, async (request, response, next)
   const abortController = new AbortController()
   request.once('aborted', () => abortController.abort())
   try {
-    const sourceLanguage = request.body.sourceLanguage as LanguageCode
-    const targetLanguage = request.body.targetLanguage as LanguageCode
-    const targetSentence = typeof request.body.targetSentence === 'string' ? request.body.targetSentence.trim() : ''
-    if (!targetSentence || targetSentence.length > 1_000) {
+    const inputLanguage = request.body.inputLanguage as LanguageCode
+    const learningLanguage = request.body.learningLanguage as LanguageCode
+    const learningSentence = typeof request.body.learningSentence === 'string' ? request.body.learningSentence.trim() : ''
+    if (!learningSentence || learningSentence.length > 1_000) {
       response.status(400).json({ status: 'error', message: '패러프레이징할 문장이 올바르지 않습니다.' })
       return
     }
-    if (!(sourceLanguage in languageNames) || !(targetLanguage in languageNames) || sourceLanguage === targetLanguage) {
+    if (!(inputLanguage in languageNames) || !(learningLanguage in languageNames)) {
       response.status(400).json({ status: 'error', message: '언어 설정이 올바르지 않습니다.' })
       return
     }
     const paraphrases = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_paraphrases_v1',
-      keyParts: { sourceLanguage, targetLanguage, targetSentence },
+      operation: 'sentence_paraphrases_v2',
+      keyParts: { inputLanguage, learningLanguage, learningSentence },
       ttlMs: AI_RULES.cache.sentenceParaphrasesTtlMs,
-      generate: () => generateSentenceParaphrases({ sourceLanguage, targetLanguage, targetSentence }, abortController.signal),
+      generate: () => generateSentenceParaphrases({ inputLanguage, learningLanguage, learningSentence }, abortController.signal),
       coalesce: false,
     })
     response.json({ paraphrases })
@@ -42,35 +42,35 @@ analysisRouter.post('/vocabulary', requireAuth, async (request, response, next) 
   const abortController = new AbortController()
   request.once('aborted', () => abortController.abort())
   try {
-    const sourceLanguage = request.body.sourceLanguage as LanguageCode
-    const targetLanguage = request.body.targetLanguage as LanguageCode
+    const inputLanguage = request.body.inputLanguage as LanguageCode
+    const learningLanguage = request.body.learningLanguage as LanguageCode
     const rawSentences: unknown[] = Array.isArray(request.body.sentences) ? request.body.sentences : []
-    const sentences: Array<{ sourceText: string; targetSentence: string }> = rawSentences.map((sentence: unknown) => {
-      if (typeof sentence !== 'object' || sentence === null) return { sourceText: '', targetSentence: '' }
+    const sentences: Array<{ inputText: string; learningSentence: string }> = rawSentences.map((sentence: unknown) => {
+      if (typeof sentence !== 'object' || sentence === null) return { inputText: '', learningSentence: '' }
       const value = sentence as Record<string, unknown>
       return {
-        sourceText: typeof value.sourceText === 'string' ? value.sourceText.trim() : '',
-        targetSentence: typeof value.targetSentence === 'string' ? value.targetSentence.trim() : '',
+        inputText: typeof value.inputText === 'string' ? value.inputText.trim() : '',
+        learningSentence: typeof value.learningSentence === 'string' ? value.learningSentence.trim() : '',
       }
     })
-    const totalCharacters = sentences.reduce((total, sentence) => total + sentence.sourceText.length + sentence.targetSentence.length, 0)
-    if (!sentences.length || sentences.length > 20 || totalCharacters > 2_000 || sentences.some(sentence => !sentence.sourceText || !sentence.targetSentence)) {
+    const totalCharacters = sentences.reduce((total, sentence) => total + sentence.inputText.length + sentence.learningSentence.length, 0)
+    if (!sentences.length || sentences.length > 20 || totalCharacters > 2_000 || sentences.some(sentence => !sentence.inputText || !sentence.learningSentence)) {
       response.status(400).json({ status: 'error', message: '어휘를 분석할 문장이 올바르지 않습니다.' })
       return
     }
-    if (!(sourceLanguage in languageNames) || !(targetLanguage in languageNames) || sourceLanguage === targetLanguage) {
+    if (!(inputLanguage in languageNames) || !(learningLanguage in languageNames)) {
       response.status(400).json({ status: 'error', message: '언어 설정이 올바르지 않습니다.' })
       return
     }
     const vocabularies = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_vocabulary_v1',
-      keyParts: { sourceLanguage, targetLanguage, sentences },
+      operation: 'sentence_vocabulary_v2',
+      keyParts: { inputLanguage, learningLanguage, sentences },
       ttlMs: AI_RULES.cache.sentenceVocabularyTtlMs,
       generate: () => generateSentenceVocabulary({
-        text: sentences.map(sentence => sentence.sourceText).join(' '),
-        sourceLanguage,
-        targetLanguage,
+        text: sentences.map(sentence => sentence.inputText).join(' '),
+        inputLanguage,
+        learningLanguage,
         sentences,
       }, abortController.signal),
       coalesce: false,
@@ -104,8 +104,8 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
   })
   try {
     const text = typeof request.body.text === 'string' ? request.body.text.trim() : ''
-    const sourceLanguage = request.body.sourceLanguage as LanguageCode
-    const targetLanguage = request.body.targetLanguage as LanguageCode
+    const inputLanguage = request.body.inputLanguage as LanguageCode
+    const learningLanguage = request.body.learningLanguage as LanguageCode
     if (!text) {
       response.status(400).json({ status: 'error', message: '분석할 문장을 입력해주세요.' })
       return
@@ -114,21 +114,17 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
       response.status(400).json({ status: 'error', message: '문장은 500자 이하로 입력해주세요.' })
       return
     }
-    if (!(sourceLanguage in languageNames) || !(targetLanguage in languageNames)) {
+    if (!(inputLanguage in languageNames) || !(learningLanguage in languageNames)) {
       response.status(400).json({ status: 'error', message: '지원하지 않는 언어입니다.' })
-      return
-    }
-    if (sourceLanguage === targetLanguage) {
-      response.status(400).json({ status: 'error', message: '서로 다른 언어를 선택해주세요.' })
       return
     }
     const generationStartedAt = Date.now()
     const analysis = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_analysis_core_v3',
-      keyParts: { text, sourceLanguage, targetLanguage },
+      operation: 'sentence_analysis_core_v5',
+      keyParts: { text, inputLanguage, learningLanguage },
       ttlMs: AI_RULES.cache.sentenceAnalysisTtlMs,
-      generate: () => analyzeSentence({ text, sourceLanguage, targetLanguage }, abortController.signal),
+      generate: () => analyzeSentence({ text, inputLanguage, learningLanguage }, abortController.signal),
       coalesce: false,
     })
     console.info(JSON.stringify({

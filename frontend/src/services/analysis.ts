@@ -10,13 +10,13 @@ export type LanguageCode = typeof languageOptions[number]['code']
 
 export interface AnalysisRequest {
   text: string
-  sourceLanguage: LanguageCode
-  targetLanguage: LanguageCode
+  inputLanguage: LanguageCode
+  learningLanguage: LanguageCode
 }
 
 export interface SentenceAnalysis {
-  sourceLanguage: LanguageCode
-  targetLanguage: LanguageCode
+  inputLanguage: LanguageCode
+  learningLanguage: LanguageCode
   detectedSourceLanguage: string
   backgroundKnowledge: string
   sentences: AnalyzedSentence[]
@@ -24,8 +24,10 @@ export interface SentenceAnalysis {
 }
 
 export interface AnalyzedSentence {
-  sourceText: string
-  targetSentence: string
+  inputText: string
+  learningSentence: string
+  koreanTranslation: string
+  englishTranslation: string
   keyExpressions: Array<{ text: string; meaning: string }>
   chunks: Array<{ targetText: string; sourceMeaning: string; role: 'subject' | 'verb' | 'other' }>
   paraphrases: Array<{ level: 'B1' | 'B2' | 'C1' | 'C2'; targetText: string; sourceMeaning: string }>
@@ -44,7 +46,7 @@ export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSi
   return result.analysis
 }
 
-export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'sourceLanguage' | 'targetLanguage'> & { targetSentence: string }, signal?: AbortSignal): Promise<SentenceParaphrase[]> {
+export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'inputLanguage' | 'learningLanguage'> & { learningSentence: string }, signal?: AbortSignal): Promise<SentenceParaphrase[]> {
   const response = await fetch('/api/analysis/paraphrases', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
   })
@@ -53,8 +55,8 @@ export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'sourc
   return result.paraphrases
 }
 
-export async function getSentenceVocabulary(input: Pick<AnalysisRequest, 'sourceLanguage' | 'targetLanguage'> & {
-  sentences: Array<Pick<AnalyzedSentence, 'sourceText' | 'targetSentence'>>
+export async function getSentenceVocabulary(input: Pick<AnalysisRequest, 'inputLanguage' | 'learningLanguage'> & {
+  sentences: Array<Pick<AnalyzedSentence, 'inputText' | 'learningSentence'>>
 }, signal?: AbortSignal): Promise<VocabularyAnalysis[][]> {
   const response = await fetch('/api/analysis/vocabulary', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,

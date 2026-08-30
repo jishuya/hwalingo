@@ -130,11 +130,11 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       setLoadingParaphrases(current => new Set(current).add(sentenceIndex))
       try {
         const paraphrases = await getSentenceParaphrases({
-          sourceLanguage: analysis.sourceLanguage,
-          targetLanguage: analysis.targetLanguage,
-          targetSentence: sentence.targetSentence,
+          inputLanguage: analysis.inputLanguage,
+          learningLanguage: analysis.learningLanguage,
+          learningSentence: sentence.learningSentence,
         }, controller.signal)
-        setAnalysis(current => current && current.sentences[sentenceIndex]?.targetSentence === sentence.targetSentence ? {
+        setAnalysis(current => current && current.sentences[sentenceIndex]?.learningSentence === sentence.learningSentence ? {
           ...current,
           sentences: current.sentences.map((item, index) => index === sentenceIndex ? { ...item, paraphrases } : item),
         } : current)
@@ -173,11 +173,11 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         setIsVocabularyLoading(true)
         try {
           const vocabularies = await getSentenceVocabulary({
-            sourceLanguage: nextAnalysis.sourceLanguage,
-            targetLanguage: nextAnalysis.targetLanguage,
+            inputLanguage: nextAnalysis.inputLanguage,
+            learningLanguage: nextAnalysis.learningLanguage,
             sentences: nextAnalysis.sentences.map(sentence => ({
-              sourceText: sentence.sourceText,
-              targetSentence: sentence.targetSentence,
+              inputText: sentence.inputText,
+              learningSentence: sentence.learningSentence,
             })),
           }, controller.signal)
           setAnalysis(current => current ? {
@@ -229,10 +229,10 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         const paraphrasesOpen = openParaphrases.has(sentenceIndex)
         const paraphrasesLoading = loadingParaphrases.has(sentenceIndex)
         const allChunksVisible = sentence.chunks.every((_, chunkIndex) => revealedChunks.has(`${sentenceIndex}-${chunkIndex}`))
-        return <article className="sentence-analysis-card" key={`${sentence.sourceText}-${sentenceIndex}`}>
+        return <article className="sentence-analysis-card" key={`${sentence.inputText}-${sentenceIndex}`}>
           <header className="sentence-analysis-header">
             <h2>{sentence.chunks.map((chunk, chunkIndex) => <span className={`sentence-role-${chunk.role}`} style={{ color: grammarRoleColors[chunk.role] }} key={`${chunk.targetText}-${chunkIndex}`}>{chunk.targetText}{chunkIndex < sentence.chunks.length - 1 ? ' ' : ''}</span>)}</h2>
-            <div className="sentence-voice-actions"><button className={`voice-record${recordingSentence === sentenceIndex ? ' recording' : ''}`} aria-label={recordingSentence === sentenceIndex ? '녹음 종료' : '발음 녹음하기'} aria-pressed={recordingSentence === sentenceIndex} onClick={() => void toggleRecording(sentenceIndex)}><MicrophoneIcon weight={recordingSentence === sentenceIndex ? 'fill' : 'bold'}/></button><button className="voice-play" aria-label="문장 발음 듣기" onClick={() => speak(sentence.targetSentence, analysis.targetLanguage)}><SpeakerHighIcon weight="fill"/></button></div>
+            <div className="sentence-voice-actions"><button className={`voice-record${recordingSentence === sentenceIndex ? ' recording' : ''}`} aria-label={recordingSentence === sentenceIndex ? '녹음 종료' : '발음 녹음하기'} aria-pressed={recordingSentence === sentenceIndex} onClick={() => void toggleRecording(sentenceIndex)}><MicrophoneIcon weight={recordingSentence === sentenceIndex ? 'fill' : 'bold'}/></button><button className="voice-play" aria-label="문장 발음 듣기" onClick={() => speak(sentence.learningSentence, analysis.learningLanguage)}><SpeakerHighIcon weight="fill"/></button></div>
           </header>
 
           <div className="sentence-analysis-grid">
@@ -248,7 +248,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
 
               <section className="sentence-study-section">
                 <div className="sentence-section-heading"><h3><FileTextIcon />완전한 해석</h3><button onClick={() => toggleInSet(setOpenTranslations, sentenceIndex)}>{translationOpen ? <EyeSlashIcon /> : <EyeIcon />}{translationOpen ? '숨기기' : '보기'}</button></div>
-                {translationOpen ? <div className="bilingual-translation"><p><b>{analysis.sourceLanguage.toUpperCase()}</b><span>{sentence.sourceText}</span></p><p><b>{analysis.targetLanguage.toUpperCase()}</b><span>{sentence.targetSentence}</span></p></div> : <button className="section-placeholder" onClick={() => toggleInSet(setOpenTranslations, sentenceIndex)}>클릭하여 해석 보기</button>}
+                {translationOpen ? <div className="bilingual-translation"><p><b>KO</b><span>{sentence.koreanTranslation}</span></p><p><b>EN</b><span>{sentence.englishTranslation}</span></p></div> : <button className="section-placeholder" onClick={() => toggleInSet(setOpenTranslations, sentenceIndex)}>클릭하여 해석 보기</button>}
               </section>
 
               <section className="sentence-study-section">
@@ -264,7 +264,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                 : sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">추출된 주요 어휘가 없습니다.</div> : sentence.vocabulary.map(word => {
                 const wordKey = `${sentenceIndex}-${word.word}`
                 const exampleTranslationOpen = openExampleTranslations.has(wordKey)
-                const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.targetLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
+                const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
                 const saved = Boolean(savedVocabulary)
                 const saving = (saveWord.isPending && saveWord.variables.word === word.word)
                   || (removeWord.isPending && removeWord.variables === savedVocabulary?.vocabularyId)
@@ -272,11 +272,11 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                   <button className={saved ? 'saved' : ''} disabled={saving} aria-label={saved ? '단어 저장 취소' : '단어장에 저장'} aria-pressed={saved} onClick={() => {
                     setError('')
                     if (savedVocabulary) removeWord.mutate(savedVocabulary.vocabularyId)
-                    else saveWord.mutate({ languageCode: analysis.targetLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence, exampleTranslation: word.exampleMeaning })
+                    else saveWord.mutate({ languageCode: analysis.learningLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence, exampleTranslation: word.exampleMeaning })
                   }}><BookmarkSimpleIcon weight={saved ? 'fill' : 'regular'}/></button>
-                  <div className="sentence-vocab-title"><h4>{word.word}</h4><span>{word.level}</span><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.targetLanguage)}><SpeakerHighIcon/></button></div>
+                  <div className="sentence-vocab-title"><h4>{word.word}</h4><span>{word.level}</span><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.learningLanguage)}><SpeakerHighIcon/></button></div>
                   <p><b>기본:</b> {word.basicMeaning}</p><p><b>문맥:</b> {word.contextualMeaning}</p>
-                  {word.exampleSentence && <div className="vocab-example"><div><b>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.targetLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><p>{word.exampleSentence}</p>{exampleTranslationOpen && word.exampleMeaning && <p className="vocab-example-meaning">{word.exampleMeaning}</p>}</div>}
+                  {word.exampleSentence && <div className="vocab-example"><div><b>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.learningLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><p>{word.exampleSentence}</p>{exampleTranslationOpen && word.exampleMeaning && <p className="vocab-example-meaning">{word.exampleMeaning}</p>}</div>}
                   {word.etymology && <div className="vocab-etymology"><BookOpenIcon weight="duotone"/><span><b>어원:</b> {word.etymology}</span></div>}
                   {word.memoryTip && <div className="vocab-tip"><LightbulbIcon weight="fill"/><span><b>팁:</b> {word.memoryTip}</span></div>}
                 </article>

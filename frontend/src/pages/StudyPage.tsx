@@ -22,22 +22,24 @@ function LanguageSelect({ value, onChange, ariaLabel }: { value: LanguageCode; o
 
 export default function StudyPage() {
   const [text, setText] = useState('')
-  const [sourceLanguage, setSourceLanguage] = useState<LanguageCode>('ko')
-  const [targetLanguage, setTargetLanguage] = useState<LanguageCode>('en')
+  const [inputLanguage, setInputLanguage] = useState<LanguageCode>('ko')
+  const [learningLanguage, setLearningLanguage] = useState<LanguageCode>('en')
   const [activeRequest, setActiveRequest] = useState<AnalysisRequest>()
   const [requestId, setRequestId] = useState(0)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const submit = () => {
     const sentence = text.trim()
-    if (!sentence || sourceLanguage === targetLanguage || isAnalyzing) return
-    setActiveRequest({ text: sentence, sourceLanguage, targetLanguage })
+    if (!sentence || isAnalyzing) return
+    setActiveRequest({ text: sentence, inputLanguage, learningLanguage })
     setRequestId(current => current + 1)
   }
   const startNewSentence = () => {
     setText('')
+    setActiveRequest(undefined)
+    setIsAnalyzing(false)
     textareaRef.current?.focus()
   }
 
-  return <div className="page study-page"><header className="page-title"><span className="page-title-icon"><RobotIcon weight="fill"/></span><h1>AI 문장 분석</h1></header><section className="card input-card study-composer"><div className="study-heading"><div className="study-heading-row"><h1>학습할 언어와 문구를 입력하세요</h1>{activeRequest && <button className="new-sentence-button" aria-label="새 문장 입력" title="새 문장 입력" onClick={startNewSentence}><ArrowClockwiseIcon weight="bold" /></button>}</div><div className="language-selectors"><LanguageSelect value={sourceLanguage} onChange={setSourceLanguage} ariaLabel="원문 언어"/><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><LanguageSelect value={targetLanguage} onChange={setTargetLanguage} ariaLabel="학습할 언어"/></div></div><textarea ref={textareaRef} value={text} maxLength={500} onChange={event => setText(event.target.value)} placeholder="학습하고 싶은 문장이나 문구를 입력해 주세요."/>{sourceLanguage === targetLanguage && <p className="form-error" role="alert">서로 다른 언어를 선택해 주세요.</p>}<div className="input-footer"><span>{text.length} / 500</span><button className="primary" disabled={isAnalyzing || !text.trim() || sourceLanguage === targetLanguage} onClick={submit}><Icon>✦</Icon> {isAnalyzing ? 'AI 분석 중...' : 'AI 분석 시작'}</button></div></section>{activeRequest ? <AnalysisPage request={activeRequest} requestId={requestId} onLoadingChange={setIsAnalyzing}/> : <div className="empty-state study-empty-state"><span>✎</span><p>AI가 표현과 핵심 어휘를 분석해 드려요.</p></div>}</div>
+  return <div className="page study-page"><header className="page-title"><span className="page-title-icon"><RobotIcon weight="fill"/></span><h1>AI 문장 분석</h1></header><section className="card input-card study-composer"><div className="study-heading"><div className="study-heading-row"><h1>학습할 언어와 문구를 입력하세요</h1>{activeRequest && <button className="new-sentence-button" aria-label="새 문장 입력" title="새 문장 입력" onClick={startNewSentence}><ArrowClockwiseIcon weight="bold" /></button>}</div><div className="language-selectors"><div className="language-field"><span className="language-field-label">입력언어</span><LanguageSelect value={inputLanguage} onChange={setInputLanguage} ariaLabel="입력언어"/></div><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><div className="language-field"><span className="language-field-label">학습언어</span><LanguageSelect value={learningLanguage} onChange={setLearningLanguage} ariaLabel="학습언어"/></div></div></div><textarea ref={textareaRef} value={text} maxLength={500} onChange={event => setText(event.target.value)} placeholder="학습하고 싶은 문장이나 문구를 입력해 주세요."/><div className="input-footer"><span>{text.length} / 500</span><button className="primary" disabled={isAnalyzing || !text.trim()} onClick={submit}><Icon>✦</Icon> {isAnalyzing ? 'AI 분석 중...' : 'AI 분석 시작'}</button></div></section>{activeRequest ? <AnalysisPage request={activeRequest} requestId={requestId} onLoadingChange={setIsAnalyzing}/> : <div className="empty-state study-empty-state"><span>✎</span><p>AI가 표현과 핵심 어휘를 분석해 드려요.</p></div>}</div>
 }
