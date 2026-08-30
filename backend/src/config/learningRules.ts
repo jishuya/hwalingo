@@ -1,14 +1,3 @@
-export const MASTERY_LABELS = [
-  '처음 만남',
-  '기억 시작',
-  '단기 기억',
-  '익숙함',
-  '장기 기억 진입',
-  '장기 기억',
-  '마스터',
-  '완전 마스터',
-] as const
-
 export type MasteryLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 export const REVIEW_RULES = {

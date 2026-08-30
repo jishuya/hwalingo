@@ -1,3 +1,37 @@
+.quiz-card-badges {
+  position: absolute;
+  top: 17px;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.quiz-card-badges .quiz-level {
+  position: static;
+}
+
+.quiz-card-badges .quiz-level,
+.quiz-card-badges .quiz-language-badge {
+  height: 27px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.quiz-language-badge {
+  padding: 0 9px;
+  border: 1px solid #d9dfdc;
+  border-radius: 999px;
+  background: #f3f5f4;
+  color: #77817c;
+  font-size: var(--font-xs);
+  font-weight: 800;
+  line-height: 1;
+}
+
 .quiz-detail-panel.image:has(figure) {
   display: block;
   padding: 10px;
