@@ -231,7 +231,11 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         const allChunksVisible = sentence.chunks.every((_, chunkIndex) => revealedChunks.has(`${sentenceIndex}-${chunkIndex}`))
         return <article className="sentence-analysis-card" key={`${sentence.inputText}-${sentenceIndex}`}>
           <header className="sentence-analysis-header">
-            <h2>{sentence.chunks.map((chunk, chunkIndex) => <span className={`sentence-role-${chunk.role}`} style={{ color: grammarRoleColors[chunk.role] }} key={`${chunk.targetText}-${chunkIndex}`}>{chunk.targetText}{chunkIndex < sentence.chunks.length - 1 ? ' ' : ''}</span>)}</h2>
+            <h2>{sentence.chunks.map((chunk, chunkIndex) => {
+              const nextChunk = sentence.chunks[chunkIndex + 1]
+              const joinsNext = /[-'’]$/u.test(chunk.targetText) || (nextChunk ? /^[,.;:!?)}\]»]/u.test(nextChunk.targetText) : false)
+              return <span className={`sentence-role-${chunk.role}`} style={{ color: grammarRoleColors[chunk.role] }} key={`${chunk.targetText}-${chunkIndex}`}>{chunk.targetText}{nextChunk && !joinsNext ? ' ' : ''}</span>
+            })}</h2>
             <div className="sentence-voice-actions"><button className={`voice-record${recordingSentence === sentenceIndex ? ' recording' : ''}`} aria-label={recordingSentence === sentenceIndex ? '녹음 종료' : '발음 녹음하기'} aria-pressed={recordingSentence === sentenceIndex} onClick={() => void toggleRecording(sentenceIndex)}><MicrophoneIcon weight={recordingSentence === sentenceIndex ? 'fill' : 'bold'}/></button><button className="voice-play" aria-label="문장 발음 듣기" onClick={() => speak(sentence.learningSentence, analysis.learningLanguage)}><SpeakerHighIcon weight="fill"/></button></div>
           </header>
 
