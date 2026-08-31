@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { pool } from '../config/database.js'
 import { requireAuth } from '../middleware/requireAuth.js'
-import { languageNames, type LanguageCode } from '../services/openai.js'
+import { languageNames, type CefrLevel, type LanguageCode } from '../services/openai.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
 
 interface VocabularyRow {
@@ -35,7 +35,7 @@ interface VocabularyInput {
   word: string
   meaning: string
   contextMeaning: string
-  cefrLevel: string | null
+  cefrLevel: CefrLevel
   etymology: string | null
   memoryTip: string | null
   exampleSentence: string | null
@@ -58,9 +58,8 @@ function parseVocabularyInput(body: Record<string, unknown>): VocabularyInput | 
   const meaning = typeof body.meaning === 'string' ? body.meaning.trim() : ''
   const contextMeaning = typeof body.contextMeaning === 'string' ? body.contextMeaning.trim() : ''
   const rawCefrLevel = optionalText(body.cefrLevel)?.toUpperCase() ?? ''
-  const cefrLevel = rawCefrLevel.match(/(?:^|\b)(A1|A2|B1|B2|C1|C2)(?:\b|$)/u)?.[1] ?? null
-  if (!(languageCode in languageNames) || !word || !meaning || word.length > 255) return undefined
-  if (cefrLevel && !cefrLevels.has(cefrLevel)) return undefined
+  const cefrLevel = rawCefrLevel.match(/^(A1|A2|B1|B2|C1|C2)$/u)?.[1] as CefrLevel | undefined
+  if (!(languageCode in languageNames) || !word || !meaning || word.length > 255 || !cefrLevel || !cefrLevels.has(cefrLevel)) return undefined
   return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence: optionalText(body.exampleSentence), exampleTranslation: optionalText(body.exampleTranslation) }
 }
 

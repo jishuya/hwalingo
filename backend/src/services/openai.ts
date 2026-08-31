@@ -12,6 +12,8 @@ export const languageNames = {
 } as const
 
 export type LanguageCode = keyof typeof languageNames
+export const cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const
+export type CefrLevel = typeof cefrLevels[number]
 
 export interface AnalysisRequest {
   text: string
@@ -22,7 +24,7 @@ export interface AnalysisRequest {
 export interface VocabularyAnalysis {
   word: string
   partOfSpeech: string
-  level: string
+  level: CefrLevel
   basicMeaning: string
   contextualMeaning: string
   etymology: string
@@ -156,7 +158,7 @@ export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSi
 const vocabularyItemSchema = {
   type: 'object', additionalProperties: false,
   properties: {
-    word: stringField, partOfSpeech: stringField, level: stringField,
+    word: stringField, partOfSpeech: stringField, level: { type: 'string', enum: cefrLevels },
     basicMeaning: stringField, contextualMeaning: stringField, etymology: stringField,
     memoryTip: stringField, exampleSentence: stringField, exampleMeaning: stringField,
   },
@@ -245,6 +247,7 @@ The output language contract is strict:
 - Only word and exampleSentence may be written in learningLanguage.
 - basicMeaning, contextualMeaning, etymology, memoryTip, and exampleMeaning must always be written entirely in natural Korean, regardless of inputLanguage or learningLanguage.
 - partOfSpeech must use a concise Korean label such as 명사, 동사, 형용사, or 부사.
+- Assign every vocabulary item exactly one CEFR level: A1, A2, B1, B2, C1, or C2. Never leave level empty. Estimate the level from the knowledge and usage difficulty expected of a learner of learningLanguage. Apply this same six-level scale consistently to every supported learning language, including Korean, Japanese, and Chinese.
 - Do not copy a learning-language definition into any Korean field. Translate or explain it in Korean before returning it.
 - In memoryTip, any explanation surrounding a learning-language spelling fragment must be Korean. A foreign word or morpheme may appear only as the item being explained.
 Keep basicMeaning and contextualMeaning to one short phrase each. Keep etymology and memoryTip to one short sentence each.

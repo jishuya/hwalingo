@@ -27,7 +27,7 @@ export interface SaveVocabularyInput {
   word: string
   meaning: string
   contextMeaning: string
-  cefrLevel: string
+  cefrLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
   etymology: string
   memoryTip: string
   exampleSentence?: string
