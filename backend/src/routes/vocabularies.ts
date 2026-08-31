@@ -57,7 +57,8 @@ function parseVocabularyInput(body: Record<string, unknown>): VocabularyInput | 
   const word = languageCode === 'en' || languageCode === 'fr' ? rawWord.toLocaleLowerCase() : rawWord
   const meaning = typeof body.meaning === 'string' ? body.meaning.trim() : ''
   const contextMeaning = typeof body.contextMeaning === 'string' ? body.contextMeaning.trim() : ''
-  const cefrLevel = optionalText(body.cefrLevel)?.toUpperCase() ?? null
+  const rawCefrLevel = optionalText(body.cefrLevel)?.toUpperCase() ?? ''
+  const cefrLevel = rawCefrLevel.match(/(?:^|\b)(A1|A2|B1|B2|C1|C2)(?:\b|$)/u)?.[1] ?? null
   if (!(languageCode in languageNames) || !word || !meaning || word.length > 255) return undefined
   if (cefrLevel && !cefrLevels.has(cefrLevel)) return undefined
   return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence: optionalText(body.exampleSentence), exampleTranslation: optionalText(body.exampleTranslation) }

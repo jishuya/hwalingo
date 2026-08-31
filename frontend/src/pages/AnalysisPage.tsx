@@ -15,6 +15,7 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
+import { AlertDialog } from '../components/ui/Dialog'
 import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
@@ -26,6 +27,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [isLoading, setIsLoading] = useState(false)
   const [isVocabularyLoading, setIsVocabularyLoading] = useState(false)
   const [vocabularyError, setVocabularyError] = useState('')
+  const [wordActionAlert, setWordActionAlert] = useState<{ title: string; message: string }>()
   const [error, setError] = useState('')
   const [revealedChunks, setRevealedChunks] = useState<Set<string>>(new Set())
   const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set())
@@ -36,14 +38,14 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const queryClient = useQueryClient()
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
   const saveWord = useMutation({
-    mutationFn: (input: SaveVocabularyInput) => saveVocabulary(input),
+    mutationFn: ({ input }: { input: SaveVocabularyInput; wordKey: string }) => saveVocabulary(input),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
-    onError: caught => setError(caught instanceof Error ? caught.message : '단어를 저장하지 못했습니다.'),
+    onError: caught => setWordActionAlert({ title: '단어를 저장하지 못했어요', message: caught instanceof Error ? caught.message : '잠시 후 다시 시도해 주세요.' }),
   })
   const removeWord = useMutation({
-    mutationFn: deleteVocabulary,
+    mutationFn: ({ vocabularyId }: { vocabularyId: string; wordKey: string }) => deleteVocabulary(vocabularyId),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
-    onError: caught => setError(caught instanceof Error ? caught.message : '저장된 단어를 삭제하지 못했습니다.'),
+    onError: caught => setWordActionAlert({ title: '저장을 취소하지 못했어요', message: caught instanceof Error ? caught.message : '잠시 후 다시 시도해 주세요.' }),
   })
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
@@ -160,6 +162,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       onLoadingChange(true)
       setError('')
       setVocabularyError('')
+      setWordActionAlert(undefined)
       try {
         const nextAnalysis = await analyzeSentence(request, controller.signal)
         setAnalysis(nextAnalysis)
@@ -270,13 +273,13 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                 const exampleTranslationOpen = openExampleTranslations.has(wordKey)
                 const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
                 const saved = Boolean(savedVocabulary)
-                const saving = (saveWord.isPending && saveWord.variables.word === word.word)
-                  || (removeWord.isPending && removeWord.variables === savedVocabulary?.vocabularyId)
+                const saving = (saveWord.isPending && saveWord.variables.wordKey === wordKey)
+                  || (removeWord.isPending && removeWord.variables.wordKey === wordKey)
                 return <article className="sentence-vocab-card" key={wordKey}>
                   <button className={saved ? 'saved' : ''} disabled={saving} aria-label={saved ? '단어 저장 취소' : '단어장에 저장'} aria-pressed={saved} onClick={() => {
-                    setError('')
-                    if (savedVocabulary) removeWord.mutate(savedVocabulary.vocabularyId)
-                    else saveWord.mutate({ languageCode: analysis.learningLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence, exampleTranslation: word.exampleMeaning })
+                    setWordActionAlert(undefined)
+                    if (savedVocabulary) removeWord.mutate({ vocabularyId: savedVocabulary.vocabularyId, wordKey })
+                    else saveWord.mutate({ wordKey, input: { languageCode: analysis.learningLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence, exampleTranslation: word.exampleMeaning } })
                   }}><BookmarkSimpleIcon weight={saved ? 'fill' : 'regular'}/></button>
                   <div className="sentence-vocab-title"><h4>{word.word}</h4><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.learningLanguage)}><SpeakerHighIcon/></button><span>{word.level}</span></div>
                   <p><b>기본:</b> {word.basicMeaning}</p><p><b>문맥:</b> {word.contextualMeaning}</p>
@@ -290,5 +293,6 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         </article>
       })}
     </div>}
+    <AlertDialog open={Boolean(wordActionAlert)} title={wordActionAlert?.title ?? ''} message={wordActionAlert?.message ?? ''} tone="warning" onClose={() => setWordActionAlert(undefined)}/>
   </div>
 }
