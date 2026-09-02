@@ -38,13 +38,32 @@ export type SentenceParaphrase = AnalyzedSentence['paraphrases'][number]
 export type VocabularyAnalysis = AnalyzedSentence['vocabulary'][number]
 
 const punctuationOnly = /^[\s\u200B-\u200D\u2060\uFEFF]*[,.，。、｡．]+[\s\u200B-\u200D\u2060\uFEFF]*$/u
+const standaloneJapaneseParticle = /^(?:は|が|を|に|へ|で|と|も|の|から|まで|より|では|には|とは|にも|でも)$/u
+
+function attachJapaneseParticles(chunks: AnalyzedSentence['chunks'], learningLanguage: LanguageCode) {
+  if (learningLanguage !== 'ja') return chunks
+  return chunks.reduce<AnalyzedSentence['chunks']>((normalized, chunk) => {
+    const particle = chunk.targetText.trim()
+    if (!normalized.length || !standaloneJapaneseParticle.test(particle)) {
+      normalized.push(chunk)
+      return normalized
+    }
+    const previous = normalized[normalized.length - 1]
+    normalized[normalized.length - 1] = {
+      ...previous,
+      targetText: `${previous.targetText}${particle}`,
+      sourceMeaning: `${previous.sourceMeaning}${chunk.sourceMeaning.trim().replace(/^~/u, '')}`,
+    }
+    return normalized
+  }, [])
+}
 
 function attachStandalonePunctuation(analysis: SentenceAnalysis): SentenceAnalysis {
   return {
     ...analysis,
     sentences: analysis.sentences.map(sentence => ({
       ...sentence,
-      chunks: sentence.chunks.reduce<AnalyzedSentence['chunks']>((chunks, chunk) => {
+      chunks: attachJapaneseParticles(sentence.chunks, analysis.learningLanguage).reduce<AnalyzedSentence['chunks']>((chunks, chunk) => {
         if (chunks.length && punctuationOnly.test(chunk.targetText)) {
           const previous = chunks[chunks.length - 1]
           const punctuation = chunk.targetText.replace(/[^,.，。、｡．]/gu, '')
