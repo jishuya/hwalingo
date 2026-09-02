@@ -257,7 +257,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/deep-analysis', requireAu
     }
     const analysis = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'vocabulary_deep_analysis_v1',
+      operation: 'vocabulary_deep_analysis_v2',
       keyParts: vocabulary,
       ttlMs: AI_RULES.cache.vocabularyAnalysisTtlMs,
       generate: () => generateVocabularyDeepAnalysis(vocabulary),
