@@ -96,7 +96,7 @@ const backgroundKnowledgeSchema = {
 } as const
 
 type AnalysisChunk = SentenceAnalysis['sentences'][number]['chunks'][number]
-const leadingCommaOrPeriod = /^([,.，。、｡．]+)\s*(.*)$/u
+const leadingCommaOrPeriod = /^[\s\u200B-\u200D\u2060\uFEFF]*([,.，。、｡．]+)[\s\u200B-\u200D\u2060\uFEFF]*(.*)$/u
 
 function attachCommaAndPeriodToPreviousChunk(chunks: AnalysisChunk[]): AnalysisChunk[] {
   return chunks.reduce<AnalysisChunk[]>((normalized, chunk) => {

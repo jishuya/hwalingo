@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BookmarkSimpleIcon, CaretDownIcon, ClockCounterClockwiseIcon, HeartIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TranslateIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { languageOptions, type LanguageCode } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, setVocabularyFavorite } from '../services/vocabulary'
 
 type VocabularyFilter = 'all' | 'favorite' | 'due' | 'mastered'
@@ -8,6 +9,7 @@ type VocabularyView = 'word' | 'meaning' | 'both'
 
 export default function VocabularyPage() {
   const [filter, setFilter] = useState<VocabularyFilter>('all')
+  const [languageFilter, setLanguageFilter] = useState<'all' | LanguageCode>('all')
   const [view, setView] = useState<VocabularyView>('both')
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -43,8 +45,9 @@ export default function VocabularyPage() {
   const normalizedSearch = search.trim().toLocaleLowerCase()
   const visibleWords = saved.filter(word => {
     const matchesFilter = filter === 'all' || (filter === 'favorite' && word.isFavorite) || (filter === 'due' && word.progress.isDue) || (filter === 'mastered' && word.progress.masteryLevel >= 6)
+    const matchesLanguage = languageFilter === 'all' || word.languageCode === languageFilter
     const matchesSearch = !normalizedSearch || [word.word, word.meaning, word.contextMeaning ?? ''].some(value => value.toLocaleLowerCase().includes(normalizedSearch))
-    return matchesFilter && matchesSearch
+    return matchesFilter && matchesLanguage && matchesSearch
   })
   const filters: Array<{ id: VocabularyFilter; label: string }> = [
     { id: 'all', label: '전체' },
@@ -75,7 +78,7 @@ export default function VocabularyPage() {
 
   return <div className="page vocabulary-page">
     <header className="page-title vocabulary-page-title"><span className="page-title-icon"><BookmarkSimpleIcon weight="fill"/></span><h1>내 단어장</h1><strong>{saved.length}개</strong><div className={`vocabulary-view-menu${viewMenuOpen ? ' open' : ''}`} ref={viewMenuRef}><button type="button" className="vocabulary-view-trigger" aria-haspopup="listbox" aria-expanded={viewMenuOpen} onClick={() => setViewMenuOpen(open => !open)}><span>{views.find(item => item.id === view)?.label}</span><CaretDownIcon weight="bold"/></button>{viewMenuOpen && <div className="vocabulary-view-options" role="listbox" aria-label="단어 표시 방식">{views.map(item => <button type="button" role="option" aria-selected={view === item.id} className={view === item.id ? 'active' : ''} onClick={() => { setView(item.id); setViewMenuOpen(false) }} key={item.id}><span>{item.label}</span></button>)}</div>}</div></header>
-    <header className="vocabulary-toolbar"><label className="vocabulary-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻을 검색하세요" aria-label="단어장 검색"/></label><div className="vocab-filters" role="tablist" aria-label="단어장 필터">{filters.map(item => <button role="tab" aria-selected={filter === item.id} className={filter === item.id ? 'active' : ''} onClick={() => setFilter(item.id)} key={item.id}>{item.id === 'all' ? <ListBulletsIcon weight="bold"/> : item.id === 'favorite' ? <HeartIcon weight="fill"/> : item.id === 'due' ? <ClockCounterClockwiseIcon weight="bold"/> : <TrophyIcon weight="fill"/>}{item.label}</button>)}</div></header>
+    <header className="vocabulary-toolbar"><label className="vocabulary-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻을 검색하세요" aria-label="단어장 검색"/></label><div className="story-selector-languages vocabulary-language-filters" role="tablist" aria-label="언어별 필터"><button type="button" role="tab" aria-selected={languageFilter === 'all'} className={languageFilter === 'all' ? 'active' : ''} onClick={() => setLanguageFilter('all')}>전체 언어</button>{languageOptions.map(language => <button type="button" role="tab" aria-selected={languageFilter === language.code} className={languageFilter === language.code ? 'active' : ''} onClick={() => setLanguageFilter(language.code)} key={language.code}>{language.label}<small>{language.code.toUpperCase()}</small></button>)}</div><div className="vocab-filters" role="tablist" aria-label="단어장 필터">{filters.map(item => <button role="tab" aria-selected={filter === item.id} className={filter === item.id ? 'active' : ''} onClick={() => setFilter(item.id)} key={item.id}>{item.id === 'all' ? <ListBulletsIcon weight="bold"/> : item.id === 'favorite' ? <HeartIcon weight="fill"/> : item.id === 'due' ? <ClockCounterClockwiseIcon weight="bold"/> : <TrophyIcon weight="fill"/>}{item.label}</button>)}</div></header>
 
     {vocabulariesQuery.isPending ? <div className="empty-state"><p>단어장을 불러오고 있어요.</p></div>
       : vocabulariesQuery.isError ? <div className="empty-state"><p>{vocabulariesQuery.error.message}</p><button className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 시도</button></div>

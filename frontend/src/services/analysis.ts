@@ -37,13 +37,34 @@ export interface AnalyzedSentence {
 export type SentenceParaphrase = AnalyzedSentence['paraphrases'][number]
 export type VocabularyAnalysis = AnalyzedSentence['vocabulary'][number]
 
+const punctuationOnly = /^[\s\u200B-\u200D\u2060\uFEFF]*[,.，。、｡．]+[\s\u200B-\u200D\u2060\uFEFF]*$/u
+
+function attachStandalonePunctuation(analysis: SentenceAnalysis): SentenceAnalysis {
+  return {
+    ...analysis,
+    sentences: analysis.sentences.map(sentence => ({
+      ...sentence,
+      chunks: sentence.chunks.reduce<AnalyzedSentence['chunks']>((chunks, chunk) => {
+        if (chunks.length && punctuationOnly.test(chunk.targetText)) {
+          const previous = chunks[chunks.length - 1]
+          const punctuation = chunk.targetText.replace(/[^,.，。、｡．]/gu, '')
+          chunks[chunks.length - 1] = { ...previous, targetText: `${previous.targetText}${punctuation}` }
+        } else {
+          chunks.push(chunk)
+        }
+        return chunks
+      }, []),
+    })),
+  }
+}
+
 export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSignal): Promise<SentenceAnalysis> {
   const response = await fetch('/api/analysis', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request), signal,
   })
   const result = await response.json().catch(() => ({})) as { analysis?: SentenceAnalysis; message?: string }
   if (!response.ok || !result.analysis) throw new Error(result.message ?? 'AI 분석을 완료하지 못했습니다.')
-  return result.analysis
+  return attachStandalonePunctuation(result.analysis)
 }
 
 export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'inputLanguage' | 'learningLanguage'> & { learningSentence: string }, signal?: AbortSignal): Promise<SentenceParaphrase[]> {

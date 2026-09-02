@@ -183,6 +183,7 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 .story-generate:not(.loading) svg{color:#d5a900}
 
 /* Keep vocabulary level badges readable when the vocabulary term is long. */
+.vocabulary-language-filters{margin:12px 0 0}
 .sentence-vocab-title h4{min-width:0;flex:1;overflow-wrap:anywhere}
 .sentence-vocab-title>span{display:inline-flex;min-width:32px;min-height:24px;align-items:center;justify-content:center;flex:0 0 auto;line-height:1;white-space:nowrap;word-break:keep-all}
 .sentence-vocab-title>button{flex:0 0 auto}
