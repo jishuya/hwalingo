@@ -3,11 +3,11 @@ export const XP_BY_MASTERY_LEVEL = [5, 6, 8, 10, 15, 25, 40, 70] as const
 export const GROWTH_RULES = {
   maxLevel: 50,
   earlyLevelEnd: 10,
-  earlyBaseXp: 50,
-  earlyLinearGrowth: 15,
-  laterBaseXp: 200,
-  laterLinearGrowth: 28,
-  laterQuadraticGrowth: 2.2,
+  earlyBaseXp: 150,
+  earlyLinearGrowth: 30,
+  laterBaseXp: 450,
+  laterLinearGrowth: 55,
+  laterQuadraticGrowth: 4,
   earlyReviewMultiplier: 0.25,
   hintMultiplier: 0.7,
 } as const
