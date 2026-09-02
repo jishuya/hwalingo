@@ -76,13 +76,29 @@ export default function StoryPage() {
     }
     setDraftSelectedIds(current => [...current, id])
   }
-  const recommendedIds = () => {
-    const source = [...words].sort((a, b) => Number(b.progress.isDue) - Number(a.progress.isDue) || a.progress.masteryLevel - b.progress.masteryLevel)
-    const language = source[0]?.languageCode
+  const recommendedIds = (candidates = words, preferredLanguage?: LanguageCode) => {
+    const source = [...candidates]
+      .filter(word => !preferredLanguage || word.languageCode === preferredLanguage)
+      .sort((a, b) => Number(b.progress.isDue) - Number(a.progress.isDue) || a.progress.masteryLevel - b.progress.masteryLevel)
+    const languageCounts = new Map<LanguageCode, number>()
+    source.forEach(word => languageCounts.set(word.languageCode, (languageCounts.get(word.languageCode) ?? 0) + 1))
+    const selectableLanguage = preferredLanguage ?? source.find(word => (languageCounts.get(word.languageCode) ?? 0) >= 5)?.languageCode
+    const language = selectableLanguage ?? source[0]?.languageCode
     return source.filter(word => word.languageCode === language).slice(0, 5).map(word => word.vocabularyId)
   }
   const selectRecommended = () => { setSelectedIds(recommendedIds()); storyMutation.reset() }
-  const selectDraftRecommended = () => { setDraftSelectedIds(recommendedIds()); setRecommendSparkling(true) }
+  const selectDraftRecommended = () => {
+    const ids = recommendedIds(visibleWords, languageFilter === 'all' ? undefined : languageFilter)
+    if (ids.length < 5) {
+      setAlert({
+        title: '추천할 단어가 부족해요',
+        message: `현재 선택한 필터에 맞는 같은 언어의 단어가 ${ids.length}개뿐이에요. 추천 단어 5개를 선택하려면 검색어나 필터를 변경해주세요.`,
+      })
+      return
+    }
+    setDraftSelectedIds(ids)
+    setRecommendSparkling(true)
+  }
   const removeSelectedWord = (vocabularyId: string) => { setSelectedIds(current => current.filter(id => id !== vocabularyId)); storyMutation.reset() }
   const openSettings = () => { setDraftGenre(genre); setDraftLength(length); setDraftDifficulty(difficulty); setSettingsOpen(true) }
   const applySettings = () => { setGenre(draftGenre); setLength(draftLength); setDifficulty(draftDifficulty); setSettingsOpen(false); storyMutation.reset() }
