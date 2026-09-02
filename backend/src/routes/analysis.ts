@@ -121,7 +121,7 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
     const generationStartedAt = Date.now()
     const analysis = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_analysis_core_v10',
+      operation: 'sentence_analysis_core_v11',
       keyParts: { text, inputLanguage, learningLanguage },
       ttlMs: AI_RULES.cache.sentenceAnalysisTtlMs,
       generate: () => analyzeSentence({ text, inputLanguage, learningLanguage }, abortController.signal),

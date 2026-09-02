@@ -78,7 +78,8 @@ Success criteria:
 - For every sentence, always provide koreanTranslation in Korean and englishTranslation in English. These are required even when one matches the input or learning language.
 - Split the input into individual sentences and return one analysis object per sentence, preserving their original order. Never combine separate sentences into one analysis.
 - Write backgroundKnowledge in Korean using no more than three short sentences. Tell the learner only useful situational context in a direct, friendly explanatory voice, using endings such as "~상황에서 쓰는 말이에요" or "~할 때 쓰는 표현이에요". Do not use an analytical or report-like voice such as "~로 보입니다", "~로 추정됩니다", "~를 나타냅니다", or "~로 분석됩니다". Briefly explain the likely setting, participants, communicative purpose, or one essential cultural/institutional fact when reasonably inferable, but include only what genuinely helps the learner. This is situational background, not a summary: never retell, paraphrase, or translate the events and claims stated in the input. Do not repeat proper names, initials, ages, dates, prices, quantities, allegations, or other sentence-specific facts. Do not analyze tone, politeness, formality, emotional nuance, grammar, sentence construction, or expression quality. When useful context cannot be inferred reliably, say briefly that more context is needed instead of inventing details. Never exceed three sentences.
-- Split each learning sentence into small learner-friendly semantic units. For languages separated by spaces, every chunk must contain only one or two words. This two-word maximum is a strict UI constraint. If a fixed expression has three or more words, split it into the smallest still-understandable subunits. Keep only tightly connected pairs together. For Chinese and Japanese, use equivalently short word or morpheme units. Preserve the original order and cover the full learning sentence without duplication or omission.
+- Split each learning sentence into small learner-friendly semantic units. For languages separated by spaces, every chunk should normally contain only one or two meaning-bearing words. If a fixed expression has three or more meaning-bearing words, split it into the smallest still-understandable subunits. Keep only tightly connected pairs together. For Chinese and Japanese, use equivalently short word or morpheme units. Preserve the original order and cover the full learning sentence without duplication or omission.
+- In English, never make articles or the preposition "of" into their own learning chunks. Attach "the", "a", and "an" to the following noun phrase without giving the article a separate meaning. Attach "of" to the following noun phrase and incorporate its relationship into that chunk's Korean meaning. A chunk such as "of the project" may contain three surface words because "of" and "the" are function words, not separate meaning-bearing units. Do not return chunks such as "the", "a", "an", "of", "of the", or "of a" by themselves.
 - Never return commas or sentence-ending periods as standalone chunks and never give them a sourceMeaning. This includes language-specific forms such as ",", ".", "，", "。", "、", "｡", and "．". Attach each punctuation mark directly to the targetText of the preceding semantic chunk.
 - For every chunk, sourceMeaning must contain exactly one short, context-specific meaning. Choose the single most natural interpretation in the current sentence. Return only the translation itself, with no definition or grammatical explanation. Never use parentheses or append explanatory text. Never list alternatives, synonyms, dictionary senses, or multiple translations. Do not use slashes, commas, "or", or equivalents to add a second meaning. Example: return "이다" rather than "이다(존재, 상태를 나타냄)", and "공부를" rather than "공부를(학습을)" or "공부를/학습을".
 - Assign every chunk exactly one grammatical role: subject for the grammatical subject, verb for verbs and verb phrases, and other for everything else. Identify roles using the grammar of learningLanguage rather than English word order. Mark explicit subjects reliably in every supported language: include noun or pronoun subjects in English and French; topic-marked noun phrases that function as the sentence subject in Korean and Japanese; and subject noun or pronoun phrases in Chinese, including omitted-copula and topic-comment constructions when the topic is the entity being described. Keep subject particles or markers in the same subject chunk when naturally attached. Never infer or invent an omitted subject, and do not label objects, complements, time/place topics, or modifiers as subject. Ensure every explicit subject span in learningSentence is covered by one or more consecutive chunks whose role is subject.
@@ -113,6 +114,41 @@ function attachCommaAndPeriodToPreviousChunk(chunks: AnalysisChunk[]): AnalysisC
     if (remainingText) normalized.push({ ...chunk, targetText: remainingText })
     return normalized
   }, [])
+}
+
+const standaloneEnglishFunctionWords = /^(?:of(?:\s+(?:the|a|an))?|the|a|an)$/iu
+const containsEnglishOf = /^of(?:\s|$)/iu
+
+function attachEnglishFunctionWordsToFollowingChunk(chunks: AnalysisChunk[], learningLanguage: LanguageCode): AnalysisChunk[] {
+  if (learningLanguage !== 'en') return chunks
+  const normalized: AnalysisChunk[] = []
+
+  for (let index = 0; index < chunks.length; index += 1) {
+    const chunk = chunks[index]
+    if (!standaloneEnglishFunctionWords.test(chunk.targetText.trim()) || index === chunks.length - 1) {
+      normalized.push(chunk)
+      continue
+    }
+
+    const functionChunks = [chunk]
+    while (index + 1 < chunks.length - 1 && standaloneEnglishFunctionWords.test(chunks[index + 1].targetText.trim())) {
+      functionChunks.push(chunks[index + 1])
+      index += 1
+    }
+    const following = chunks[index + 1]
+    index += 1
+    const targetPrefix = functionChunks.map(item => item.targetText.trim()).join(' ')
+    const relationshipMeanings = functionChunks
+      .filter(item => containsEnglishOf.test(item.targetText.trim()))
+      .map(item => item.sourceMeaning.trim())
+      .filter(Boolean)
+    normalized.push({
+      ...following,
+      targetText: `${targetPrefix} ${following.targetText.trim()}`,
+      sourceMeaning: [...relationshipMeanings, following.sourceMeaning].filter(Boolean).join(' '),
+    })
+  }
+  return normalized
 }
 
 async function correctBackgroundKnowledgeToKorean(
@@ -169,10 +205,10 @@ export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSi
       ...sentence,
       paraphrases: [],
       vocabulary: [],
-      chunks: attachCommaAndPeriodToPreviousChunk(sentence.chunks.map(chunk => ({
+      chunks: attachCommaAndPeriodToPreviousChunk(attachEnglishFunctionWordsToFollowingChunk(sentence.chunks.map(chunk => ({
         ...chunk,
         sourceMeaning: chunk.sourceMeaning.replace(/\s*[（(][^）)]*[）)]\s*/gu, '').trim() || chunk.sourceMeaning,
-      }))),
+      })), request.learningLanguage)),
     })),
   }
 }
