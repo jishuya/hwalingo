@@ -22,7 +22,7 @@ export default function LevelAvatarGallery({ open, currentLevel, onClose }: Leve
 
   return <Modal open={open} title="화랑이 성장 도감" icon={<StepsIcon weight="duotone"/>} onClose={onClose} size="large">
     <section className="avatar-collection-summary">
-      <div><span>현재 화랑이 등급</span><strong>{currentGrade.name} · {currentGrade.step}단계</strong></div><b>{unlockedLevel} / 50 해금</b>
+      <div><span>현재 화랑이 등급</span><strong>{currentGrade.name} · {currentGrade.step}단계</strong></div><b>{unlockedLevel} / 50 달성</b>
       <div className="avatar-evolution-progress"><i style={{ width: `${currentGrade.step * 10}%` }}/></div>
       <small>{currentGrade.step < 10 ? `${currentGrade.name} 완성까지 ${10 - currentGrade.step}단계` : currentGrade.index === HWARANG_GRADES.length - 1 ? '모든 화랑이 등급을 달성했어요!' : `${currentGrade.name} 완성! 다음 등급이 곧 시작돼요.`}</small>
     </section>
@@ -42,9 +42,9 @@ export default function LevelAvatarGallery({ open, currentLevel, onClose }: Leve
               const unlocked = level <= unlockedLevel
               const current = level === unlockedLevel
               const gradeStep = level - grade.start + 1
-              return <article className={`${unlocked ? 'unlocked' : 'locked'}${current ? ' current' : ''}`} key={level} aria-current={current ? 'true' : undefined} aria-label={`${grade.name} ${gradeStep}단계 캐릭터 · ${current ? '현재 사용 중' : unlocked ? '해금 완료' : '잠김'}`}>
+              return <article className={`${unlocked ? 'unlocked' : 'locked'}${current ? ' current' : ''}`} key={level} aria-current={current ? 'true' : undefined} aria-label={`${grade.name} ${gradeStep}단계 캐릭터 · ${current ? '현재 사용 중' : unlocked ? '사용 가능' : '잠김'}`}>
                 <div><LevelAvatar level={level}/>{current && <span className="avatar-current-badge">현재</span>}{!unlocked && <span className="avatar-lock"><LockSimpleIcon weight="fill"/></span>}{unlocked && !current && <CheckCircleIcon className="avatar-unlocked-check" weight="fill"/>}</div>
-                <b>{gradeStep}단계</b><small>{current ? '현재' : unlocked ? '해금 완료' : '잠김'}</small>
+                <b>{gradeStep}단계</b><small>{current ? '현재' : unlocked ? '사용 가능' : '잠김'}</small>
               </article>
             })}
           </div>
