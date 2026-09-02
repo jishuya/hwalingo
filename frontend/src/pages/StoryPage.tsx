@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowClockwiseIcon, BookOpenTextIcon, CheckCircleIcon, CheckIcon, MagnifyingGlassIcon, PencilSimpleIcon, SlidersHorizontalIcon, SpeakerHighIcon, SparkleIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { AlertDialog, Modal } from '../components/ui/Dialog'
+import { languageOptions, type LanguageCode } from '../services/analysis'
 import { getVocabularies } from '../services/vocabulary'
 import { createStory, getStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
 
@@ -14,6 +15,7 @@ export default function StoryPage() {
   const [draftSelectedIds, setDraftSelectedIds] = useState<string[]>([])
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [languageFilter, setLanguageFilter] = useState<'all' | LanguageCode>('all')
   const [wordFilter, setWordFilter] = useState<'all' | 'favorite' | 'due'>('all')
   const [alert, setAlert] = useState<{ title: string; message: string }>()
   const [recommendSparkling, setRecommendSparkling] = useState(false)
@@ -40,11 +42,12 @@ export default function StoryPage() {
     const term = search.trim().toLocaleLowerCase()
     return words.filter(word => {
       const matchesSearch = !term || word.word.toLocaleLowerCase().includes(term) || word.meaning.toLocaleLowerCase().includes(term)
+      const matchesLanguage = languageFilter === 'all' || word.languageCode === languageFilter
       const matchesFilter = wordFilter === 'all' || (wordFilter === 'favorite' && word.isFavorite) || (wordFilter === 'due' && word.progress.isDue)
-      return matchesSearch && matchesFilter
+      return matchesSearch && matchesLanguage && matchesFilter
     })
-  }, [words, search, wordFilter])
-  const openSelector = () => { setDraftSelectedIds(selectedIds); setSearch(''); setWordFilter('all'); setSelectorOpen(true) }
+  }, [words, search, languageFilter, wordFilter])
+  const openSelector = () => { setDraftSelectedIds(selectedIds); setSearch(''); setLanguageFilter('all'); setWordFilter('all'); setSelectorOpen(true) }
   const closeSelector = () => setSelectorOpen(false)
   const applySelection = () => {
     if (draftSelectedIds.length < minimum) {
@@ -150,6 +153,7 @@ export default function StoryPage() {
     </Modal>
     <Modal open={selectorOpen} title="단어 선택" description={`같은 언어의 단어를 선택해주세요. (${draftSelectedIds.length}/10)`} onClose={closeSelector} size="large" footer={<><button className="ui-dialog-secondary" type="button" onClick={closeSelector}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySelection}>선택한 {draftSelectedIds.length}개 적용</button></>}>
       <div className="story-selector">
+        <div className="story-selector-languages" role="tablist" aria-label="언어별 필터"><button type="button" role="tab" aria-selected={languageFilter === 'all'} className={languageFilter === 'all' ? 'active' : ''} onClick={() => setLanguageFilter('all')}>전체 언어</button>{languageOptions.map(language => <button type="button" role="tab" aria-selected={languageFilter === language.code} className={languageFilter === language.code ? 'active' : ''} onClick={() => setLanguageFilter(language.code)} key={language.code}>{language.label}<small>{language.code.toUpperCase()}</small></button>)}</div>
         <label className="story-selector-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻 검색" aria-label="스토리 단어 검색"/></label>
         <div className="story-selector-filters" role="tablist" aria-label="단어 필터">{([{ id: 'all', label: '전체' }, { id: 'favorite', label: '즐겨찾기' }, { id: 'due', label: '복습 예정' }] as const).map(filter => <button type="button" role="tab" aria-selected={wordFilter === filter.id} className={wordFilter === filter.id ? 'active' : ''} onClick={() => setWordFilter(filter.id)} key={filter.id}>{filter.label}</button>)}<button type="button" className={`recommend${recommendSparkling ? ' sparkling' : ''}`} onClick={selectDraftRecommended} onAnimationEnd={() => setRecommendSparkling(false)}><SparkleIcon weight="fill"/> 추천</button></div>
         <div className="story-word-grid story-selector-grid">{visibleWords.map(word => {

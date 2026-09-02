@@ -1,5 +1,5 @@
 import { ArrowRight, ChatCircle, Check, EnvelopeSimple, Eye, EyeSlash, HourglassMedium, LockKey } from '@phosphor-icons/react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import SignupModal from '../components/auth/SignupModal'
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal'
 import { AlertDialog } from '../components/ui/Dialog'
@@ -18,6 +18,11 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
   const [socialLoginNotice, setSocialLoginNotice] = useState('')
   const [passwordChanged, setPasswordChanged] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    document.body.classList.add('auth-screen')
+    return () => document.body.classList.remove('auth-screen')
+  }, [])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
