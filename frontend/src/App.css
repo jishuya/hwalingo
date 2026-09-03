@@ -188,3 +188,8 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 .sentence-vocab-title h4{min-width:0;flex:1;overflow-wrap:anywhere}
 .sentence-vocab-title>span{display:inline-flex;min-width:32px;min-height:24px;align-items:center;justify-content:center;flex:0 0 auto;line-height:1;white-space:nowrap;word-break:keep-all}
 .sentence-vocab-title>button{flex:0 0 auto}
+
+/* Keep the desktop navigation centered independently of the side controls. */
+@media(min-width:721px){.app-shell{width:min(100%,900px);margin-inline:auto}.topbar{width:min(100%,900px);inset:0 auto auto 50%;display:flex;padding-inline:20px;transform:translateX(-50%);border-inline:1px solid #edf1ed}.brand{flex:0 0 auto}.desktop-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));flex:1;gap:0;margin-left:20px}.desktop-nav button{min-width:0;justify-content:center}.notification-button{margin-left:20px}}
+
+@media(min-width:721px){.story-builder-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:22px}.story-options{margin-top:0;padding-top:0;border-top:0}}
