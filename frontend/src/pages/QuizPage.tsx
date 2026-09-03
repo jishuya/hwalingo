@@ -97,6 +97,8 @@ export default function QuizPage() {
   }
   const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
     if (answerMutation.isPending) return
+    const target = event.target
+    if (target instanceof Element && target.closest('button, a, input, textarea, select, [role="button"]')) return
     dragStart.current = event.clientX
     setDragging(true)
     event.currentTarget.setPointerCapture(event.pointerId)
