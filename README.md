@@ -1,6 +1,10 @@
 # Hwalingo
 
+영어 문장 분석, 단어장, 퀴즈, 스토리텔링 학습을 제공하는 웹 애플리케이션입니다.
 React/Vite 프론트엔드와 Express/PostgreSQL 백엔드를 npm workspaces로 관리합니다.
+
+- [PROJECT_GUIDE.md](PROJECT_GUIDE.md): 기술 구조, 디자인·개발 규칙, AI 분석과 학습 정책
+- [AGENTS.md](AGENTS.md): AI 작업 지침
 
 ## 구조
 
@@ -60,8 +64,7 @@ SMTP_PASSWORD=your-app-password
 MAIL_FROM="Hwalingo <your-email@gmail.com>"
 ```
 
-Gmail을 사용하는 경우 일반 계정 비밀번호가 아니라 Google 계정에서 만든
-앱 비밀번호를 `SMTP_PASSWORD`에 입력해야 합니다.
+Gmail은 `SMTP_PASSWORD`에 Google 계정의 앱 비밀번호를 사용합니다.
 
 ## 백엔드 운영 배포
 
@@ -99,15 +102,9 @@ npm run pm2:restart
 curl http://127.0.0.1:5002/api/health
 ```
 
-PM2 관리 명령은 다음과 같습니다.
-
-```bash
-pm2 status
-pm2 logs hwalingo-backend
-pm2 restart hwalingo-backend
-pm2 stop hwalingo-backend
-pm2 delete hwalingo-backend
-```
+상태·로그 확인은 `pm2 status`, `pm2 logs hwalingo-backend`를 사용합니다.
+재시작·중지는 위의 `npm run pm2:*` 명령, 프로세스 삭제는
+`pm2 delete hwalingo-backend`를 사용합니다.
 
 Cloudflare 대시보드의 **Networking > Tunnels**에서 Tunnel을 만들고 Published
 application의 Service URL을 `http://localhost:5002`로 지정합니다. 예를 들어
@@ -120,6 +117,38 @@ sudo systemctl status cloudflared
 curl https://api.hwalingo.example.com/api/health
 ```
 
-Tunnel token은 비밀번호와 같으므로 저장소나 문서에 기록하지 마세요. Tunnel은
-외부에서 5002번 포트를 열 필요가 없으므로 공유기 포트 포워딩과 해당 포트의
-외부 방화벽 허용도 설정하지 않습니다.
+## 사진 글자 추출 (Google Cloud Vision)
+
+`/study`에서 사진 촬영 또는 이미지 업로드 후 원하는 영역을 잘라 글자를 추출할 수 있습니다.
+사진 위에서 영역을 이동하거나 모서리를 드래그하고, 미세 조절 슬라이더로 위치와 크기를
+조정한 뒤 `선택 영역 사용`을 누릅니다. 자른 부분만 OCR로 전송하며,
+`다시 자르기`는 원본 사진에서 시작합니다. `전체 이미지 사용`도 가능합니다.
+JPEG, PNG, WebP 사진 한 장(최대 10MB, 4천만 화소)을 지원합니다.
+추출한 글은 확인·수정한 뒤 500자 이내로 입력창에 적용합니다.
+사진은 Google로 전송되며 애플리케이션 DB나 디스크에는 저장하지 않습니다.
+PDF와 HEIC는 초기 지원 대상에 포함하지 않습니다.
+
+1. Google Cloud 프로젝트에 결제 계정을 연결하고 Cloud Vision API를 활성화합니다.
+2. 서버에 Application Default Credentials(ADC)를 설정합니다. 로컬 개발에서는
+   `gcloud auth application-default login`을 사용할 수 있습니다.
+3. 현재처럼 Google Cloud 외부 서버에서 서비스 계정 JSON을 사용하는 경우,
+   자격증명 파일을 저장소와 웹 공개 경로 밖에 보관하고 서버 사용자만 읽도록 설정합니다.
+   `backend/.env`의 `GOOGLE_APPLICATION_CREDENTIALS`에 파일의 절대 경로를 설정합니다.
+   JSON 내용이나 비밀 키를 프론트엔드 환경변수에 넣지 마세요.
+4. 백엔드를 빌드하고 재시작합니다. 설정 변경 후에는
+   `npm run pm2:restart`로 재시작합니다.
+5. 로그인 후 선명한 인쇄물 사진으로 실제 추출을 확인합니다.
+
+인증이 없거나 API가 비활성화되어 있으면 OCR 요청에서 오류를 안내하며,
+다른 학습 기능은 계속 사용할 수 있습니다. OCR은 자동 재시도하지 않습니다.
+사용자당 분당 최대 5회, 동시 1회로 제한합니다. 제한 상태는 서버 메모리에
+있으므로 재시작하면 초기화되며 여러 서버 사이에 공유되지 않습니다.
+Google Cloud 콘솔에서 사용량과 할당량을 함께 관리하세요.
+
+공식 설정 문서: https://docs.cloud.google.com/vision/docs/setup
+
+OCR API 자동 검증(Google 호출은 모의 응답으로 대체):
+
+```bash
+JWT_SECRET=ocr-test-secret node --import tsx --test backend/src/routes/ocr.test.ts
+```

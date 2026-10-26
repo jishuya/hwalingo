@@ -184,7 +184,7 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 
 /* Keep vocabulary level badges readable when the vocabulary term is long. */
 .vocabulary-language-filters{margin:12px 0 0}
-.clickable-chunks{max-width:100%;overflow-x:hidden}.clickable-chunks>div{width:max-content;max-width:100%;min-width:42px;flex:0 1 auto}.clickable-chunks b,.clickable-chunks button{max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.clickable-chunks{max-width:100%;overflow-x:hidden}.clickable-chunks>div{width:max-content;max-width:100%;min-width:42px;flex:1 1 auto}.clickable-chunks b,.clickable-chunks button{max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal}
 .sentence-vocab-title h4{min-width:0;flex:1;overflow-wrap:anywhere}
 .sentence-vocab-title>span{display:inline-flex;min-width:32px;min-height:24px;align-items:center;justify-content:center;flex:0 0 auto;line-height:1;white-space:nowrap;word-break:keep-all}
 .sentence-vocab-title>button{flex:0 0 auto}
@@ -193,3 +193,10 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 @media(min-width:721px){.app-shell{width:min(100%,900px);margin-inline:auto}.topbar{width:min(100%,900px);inset:0 auto auto 50%;display:flex;padding-inline:20px;transform:translateX(-50%);border-inline:1px solid #edf1ed}.brand{flex:0 0 auto}.desktop-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));flex:1;gap:0;margin-left:20px}.desktop-nav button{min-width:0;justify-content:center}.notification-button{margin-left:20px}}
 
 @media(min-width:721px){.story-builder-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:22px}.story-options{margin-top:0;padding-top:0;border-top:0}}
+
+/* Shared dialog actions used in dialog bodies as well as footers. */
+.ui-dialog-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:999px;font-size:var(--font-sm);line-height:20px;font-weight:600;cursor:pointer}
+.ui-dialog-action:disabled{opacity:.55;cursor:not-allowed}
+.ui-dialog-action:focus-visible{outline:3px solid #ffd95a;outline-offset:3px}
+
+.sentence-analysis-grid.without-vocabulary{grid-template-columns:minmax(0,1fr)}.sentence-analysis-grid.without-vocabulary>.sentence-study-column{border-right:0;border-bottom:0}

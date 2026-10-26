@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import { env } from './config/env.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { analysisRouter } from './routes/analysis.js'
+import { ocrRouter } from './routes/ocr.js'
 import { authRouter } from './routes/auth.js'
 import { healthRouter } from './routes/health.js'
 import { quizzesRouter } from './routes/quizzes.js'
@@ -27,6 +28,7 @@ app.get('/api', (_request, response) => {
 app.use('/api/health', healthRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/analysis', analysisRouter)
+app.use('/api/ocr', ocrRouter)
 app.use('/api/vocabularies', vocabulariesRouter)
 app.use('/api/quizzes', quizzesRouter)
 app.use('/api/progress', progressRouter)

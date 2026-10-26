@@ -103,5 +103,5 @@ export async function getSentenceVocabulary(input: Pick<AnalysisRequest, 'inputL
   })
   const result = await response.json().catch(() => ({})) as { vocabularies?: VocabularyAnalysis[][]; message?: string }
   if (!response.ok || !result.vocabularies) throw new Error(result.message ?? '상세 어휘를 불러오지 못했습니다.')
-  return result.vocabularies
+  return result.vocabularies.map(items => items.filter(item => ['B1', 'B2', 'C1', 'C2'].includes(item.level)))
 }

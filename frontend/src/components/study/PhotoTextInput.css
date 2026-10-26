@@ -1,0 +1,60 @@
+.photo-text-content { display: grid; gap: 12px; }
+.photo-text-content img { width: 100%; max-height: 240px; object-fit: contain; border-radius: 12px; background: #f7f7f2; }
+.photo-text-content label, .photo-text-content p { font-size: var(--font-sm); line-height: 1.5; }
+.photo-text-content textarea { width: 100%; min-height: 180px; resize: vertical; padding: 12px; border: 1px solid #ccd9d0; border-radius: 12px; font-size: 16px; line-height: 1.6; }
+.image-cropper { display: grid; gap: 16px; min-width: 0; }
+.photo-text-content #crop-instructions { margin: 0; color: #6d7d75; font-size: var(--font-sm); }
+.image-cropper-stage { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; overflow: hidden; border-radius: 16px; background: #f7f7f2; touch-action: none; user-select: none; cursor: crosshair; line-height: 0; isolation: isolate; }
+.photo-text-content .image-cropper-stage img { display: block; width: auto; height: auto; max-width: 100%; max-height: min(42dvh, 440px); border-radius: 0; pointer-events: none; }
+.image-cropper-selection { position: absolute; border: 2px solid #fff; border-radius: 8px; box-shadow: 0 0 0 100vmax #18332a80, inset 0 0 0 1px #008c4466; cursor: move; touch-action: none; }
+.image-cropper-handle { position: absolute; width: 36px; height: 36px; touch-action: none; }
+.image-cropper-handle::after { content: ''; position: absolute; inset: 10px; border: 2px solid #fff; border-radius: 50%; background: #008c44; box-shadow: 0 1px 5px #18332a40; pointer-events: none; }
+.image-cropper-nw { left: -18px; top: -18px; cursor: nwse-resize; }
+.image-cropper-ne { right: -18px; top: -18px; cursor: nesw-resize; }
+.image-cropper-sw { left: -18px; bottom: -18px; cursor: nesw-resize; }
+.image-cropper-se { right: -18px; bottom: -18px; cursor: nwse-resize; }
+.image-cropper-adjustments { border: 1px solid #e1e9e2; border-radius: 16px; background: #f7f9f5; }
+.image-cropper-adjustments summary { padding: 12px 16px; color: #52635a; cursor: pointer; font-size: var(--font-sm); font-weight: 600; }
+.image-cropper-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 0; padding: 4px 16px 14px; border: 0; }
+.image-cropper-controls legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.image-cropper-controls label { display: grid; gap: 6px; min-width: 0; color: #6d7d75; }
+.image-cropper-controls input { appearance: none; width: 100%; height: 28px; margin: 0; border: 0; background: transparent; cursor: pointer; }
+.image-cropper-controls input::-webkit-slider-runnable-track { height: 5px; border-radius: 999px; background: #d6e6d9; }
+.image-cropper-controls input::-moz-range-track { height: 5px; border-radius: 999px; background: #d6e6d9; }
+.image-cropper-controls input::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; margin-top: -6.5px; border: 3px solid white; border-radius: 50%; background: #008c44; box-shadow: 0 1px 5px #18332a30; }
+.image-cropper-controls input::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid white; border-radius: 50%; background: #008c44; box-shadow: 0 1px 5px #18332a30; }
+.image-cropper-controls input:focus-visible { outline: 2px solid #008c44; outline-offset: 3px; border-radius: 8px; }
+.image-cropper-controls:disabled { opacity: .5; }
+.image-cropper-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.image-cropper-buttons .ui-dialog-primary { grid-column: 1 / -1; }
+
+/* A single composer with three equal entry methods. */
+.study-composer-v2 .study-heading-row h1 { margin: 0; font-size: var(--font-xl); line-height: 1.35; }
+.study-input-methods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 24px 0 20px; padding: 5px; background: #f1f5f0; border: 1px solid #e3eae1; border-radius: 16px; }
+.study-input-methods button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 52px; padding: 9px 8px; border: 1px solid transparent; border-radius: 11px; background: transparent; color: #63736a; font-size: var(--font-md); font-weight: 600; cursor: pointer; }
+.study-input-methods button:hover { background: #e6eee5; }
+.study-input-methods button[aria-pressed="true"] { background: #008c44; border-color: #008c44; color: white; box-shadow: 0 3px 8px #008c441a; }
+.study-input-methods svg { width: 23px; height: 23px; flex-shrink: 0; }
+.study-input-methods button:disabled, .study-photo-prompt button:disabled { opacity: .5; cursor: default; }
+.study-input-methods button:focus-visible, .study-photo-prompt button:focus-visible { outline: 3px solid #e0b930; outline-offset: 3px; }
+.study-input-body { min-width: 0; }
+.study-text-field { position: relative; }
+.study-composer-v2 .study-input-body textarea { display: block; margin: 0; min-height: 180px; padding-bottom: 38px; font-size: 16px; }
+.study-text-count { position: absolute; right: 18px; bottom: 12px; pointer-events: none; color: var(--muted); font-size: var(--font-xs); line-height: 1.5; }
+.study-photo-prompt { display: flex; min-height: 180px; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; border: 1px dashed #bfd3c4; border-radius: 16px; background: #fafcf8; text-align: center; }
+.study-photo-prompt-icon { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 0 14px; padding: 0; border: 1px solid #d2e8d8; border-radius: 20px; background: #e7f4eb; color: #008c44; cursor: pointer; transition: background .15s, border-color .15s; }
+.study-photo-prompt-icon:hover:not(:disabled) { background: #d9eddf; border-color: #a9ceb6; }
+.study-photo-prompt-icon svg { width: 32px; height: 32px; }
+.study-photo-prompt strong { color: #18332a; font-size: var(--font-md); line-height: 1.5; }
+.study-composer-settings { margin: 0 0 12px; }
+.study-composer-v2 .study-composer-settings .language-selectors { margin: 0; }
+.study-composer-v2 .study-composer-submit { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+.study-composer-v2 .study-composer-submit .primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding-inline: 24px; }
+@media (max-width: 600px) {
+  .study-composer-v2 .study-heading-row h1 { font-size: var(--font-lg); }
+  .study-input-methods { gap: 4px; margin-top: 20px; }
+  .study-input-methods button { flex-direction: column; gap: 5px; min-height: 66px; font-size: var(--font-sm); padding-inline: 4px; }
+  .study-input-methods svg { width: 24px; height: 24px; }
+  .study-composer-v2 .study-composer-submit { flex-direction: column; gap: 12px; }
+  .study-composer-v2 .study-composer-submit .primary { width: 100%; }
+}

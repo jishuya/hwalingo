@@ -9,7 +9,6 @@ import {
   EyeSlashIcon,
   FileTextIcon,
   LightbulbIcon,
-  MicrophoneIcon,
   SpeakerHighIcon,
   TranslateIcon,
   WarningCircleIcon,
@@ -34,7 +33,6 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [openParaphrases, setOpenParaphrases] = useState<Set<number>>(new Set())
   const [loadingParaphrases, setLoadingParaphrases] = useState<Set<number>>(new Set())
   const [openExampleTranslations, setOpenExampleTranslations] = useState<Set<string>>(new Set())
-  const [recordingSentence, setRecordingSentence] = useState<number>()
   const queryClient = useQueryClient()
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
   const saveWord = useMutation({
@@ -47,8 +45,6 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
     onError: caught => setWordActionAlert({ title: '저장을 취소하지 못했어요', message: caught instanceof Error ? caught.message : '잠시 후 다시 시도해 주세요.' }),
   })
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const recordedChunksRef = useRef<Blob[]>([])
   const paraphraseControllersRef = useRef<Map<number, AbortController>>(new Map())
 
   const speak = (content: string, language: LanguageCode, rate = 1) => {
@@ -58,46 +54,6 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     utterance.lang = speechLanguages[language]
     utterance.rate = rate
     window.speechSynthesis.speak(utterance)
-  }
-
-  const toggleRecording = async (sentenceIndex: number) => {
-    if (recordingSentence === sentenceIndex) {
-      mediaRecorderRef.current?.stop()
-      return
-    }
-    if (!navigator.mediaDevices?.getUserMedia || !('MediaRecorder' in window)) {
-      setError('이 브라우저에서는 음성 녹음을 지원하지 않습니다.')
-      return
-    }
-    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
-      recordedChunksRef.current = []
-      recorder.ondataavailable = event => {
-        if (event.data.size) recordedChunksRef.current.push(event.data)
-      }
-      recorder.onstop = () => {
-        stream.getTracks().forEach(track => track.stop())
-        setRecordingSentence(undefined)
-        const blob = new Blob(recordedChunksRef.current, { type: recorder.mimeType })
-        const audioUrl = URL.createObjectURL(blob)
-        const audio = new Audio(audioUrl)
-        audio.onended = () => URL.revokeObjectURL(audioUrl)
-        void audio.play().catch(() => URL.revokeObjectURL(audioUrl))
-      }
-      recorder.onerror = () => {
-        stream.getTracks().forEach(track => track.stop())
-        setRecordingSentence(undefined)
-        setError('녹음 중 문제가 발생했습니다.')
-      }
-      mediaRecorderRef.current = recorder
-      setError('')
-      setRecordingSentence(sentenceIndex)
-      recorder.start()
-    } catch {
-      setError('마이크 권한을 허용해야 녹음할 수 있습니다.')
-    }
   }
 
   const toggleInSet = <T,>(setter: Dispatch<SetStateAction<Set<T>>>, value: T) => setter(current => {
@@ -228,6 +184,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       <section className="analysis-background-v2"><LightbulbIcon weight="fill"/><div><h3>배경 지식</h3><p>{analysis.backgroundKnowledge}</p></div></section>
 
       {analysis.sentences.map((sentence, sentenceIndex) => {
+        const showVocabulary = sentence.vocabulary.length > 0 || isVocabularyLoading || Boolean(vocabularyError)
         const translationOpen = openTranslations.has(sentenceIndex)
         const paraphrasesOpen = openParaphrases.has(sentenceIndex)
         const paraphrasesLoading = loadingParaphrases.has(sentenceIndex)
@@ -239,10 +196,10 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
               const joinsNext = /[-'’]$/u.test(chunk.targetText) || (nextChunk ? /^[,.;:!?)}\]»]/u.test(nextChunk.targetText) : false)
               return <span className={`sentence-role-${chunk.role}`} style={{ color: grammarRoleColors[chunk.role] }} key={`${chunk.targetText}-${chunkIndex}`}>{chunk.targetText}{nextChunk && !joinsNext ? ' ' : ''}</span>
             })}</h2>
-            <div className="sentence-voice-actions"><button className={`voice-record${recordingSentence === sentenceIndex ? ' recording' : ''}`} aria-label={recordingSentence === sentenceIndex ? '녹음 종료' : '발음 녹음하기'} aria-pressed={recordingSentence === sentenceIndex} onClick={() => void toggleRecording(sentenceIndex)}><MicrophoneIcon weight={recordingSentence === sentenceIndex ? 'fill' : 'bold'}/></button><button className="voice-play" aria-label="문장 발음 듣기" onClick={() => speak(sentence.learningSentence, analysis.learningLanguage)}><SpeakerHighIcon weight="fill"/></button></div>
+            <div className="sentence-voice-actions"><button className="voice-play" aria-label="문장 발음 듣기" onClick={() => speak(sentence.learningSentence, analysis.learningLanguage)}><SpeakerHighIcon weight="fill"/></button></div>
           </header>
 
-          <div className="sentence-analysis-grid">
+          <div className={`sentence-analysis-grid${showVocabulary ? '' : ' without-vocabulary'}`}>
             <div className="sentence-study-column">
               <section className="sentence-study-section chunk-practice">
                 <div className="sentence-section-heading"><h3><BrainIcon />직독직해 연습</h3><button onClick={() => revealAllChunks(sentenceIndex, sentence.chunks.length)}>{allChunksVisible ? '모두 숨기기' : '모두 보기'}</button></div>
@@ -264,11 +221,11 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
               </section>
             </div>
 
-            <aside className="sentence-vocab-column">
+            {showVocabulary && <aside className="sentence-vocab-column">
               <h3><BookOpenIcon />핵심 어휘</h3>
               {isVocabularyLoading && sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">상세 어휘를 정리하고 있어요…</div>
                 : vocabularyError && sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">{vocabularyError}</div>
-                : sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">추출된 주요 어휘가 없습니다.</div> : sentence.vocabulary.map(word => {
+                : sentence.vocabulary.map(word => {
                 const wordKey = `${sentenceIndex}-${word.word}`
                 const exampleTranslationOpen = openExampleTranslations.has(wordKey)
                 const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
@@ -288,7 +245,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                   {word.memoryTip && <div className="vocab-tip"><LightbulbIcon weight="fill"/><span><b>팁:</b> {word.memoryTip}</span></div>}
                 </article>
               })}
-            </aside>
+            </aside>}
           </div>
         </article>
       })}
