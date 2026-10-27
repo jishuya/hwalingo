@@ -14,7 +14,7 @@ interface SettingsRow {
 
 const themes = new Set<Theme>(['light', 'dark', 'system'])
 const supportedTimezones = new Set(['Asia/Seoul', 'UTC', 'America/New_York', 'Europe/London', 'Asia/Tokyo'])
-const quizQuestionCounts = new Set([5, 10, 20, 30])
+const quizQuestionCounts = new Set([10, 20, 30, 40])
 
 export const settingsRouter = Router()
 

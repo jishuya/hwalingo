@@ -48,8 +48,8 @@ storiesRouter.post('/', requireAuth, async (request, response, next) => {
     const length = request.body.length as StoryLength
     const difficulty = request.body.difficulty as StoryDifficulty
     const forceRegenerate = request.body.forceRegenerate === true
-    if (!ids.length || ids.length > 10) {
-      response.status(400).json({ message: '단어를 1개 이상 10개 이하로 선택해주세요.' }); return
+    if (!ids.length || ids.length > 30) {
+      response.status(400).json({ message: '단어를 1개 이상 30개 이하로 선택해주세요.' }); return
     }
     if (!genres.has(genre) || !lengths.has(length) || !difficulties.has(difficulty)) {
       response.status(400).json({ message: '스토리 설정이 올바르지 않습니다.' }); return

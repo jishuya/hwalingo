@@ -14,7 +14,8 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
-import { AlertDialog } from '../components/ui/Dialog'
+import './AnalysisLoading.css'
+import { AlertDialog, Modal } from '../components/ui/Dialog'
 import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
@@ -175,8 +176,14 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
 
   return <div className="analysis-page analysis-page-v2 analysis-results-root">
     {error && <p role="alert" className="analysis-result-error">{error}</p>}
-    {isLoading && !analysis && <section className="analysis-loading" aria-live="polite"><div className="analysis-loading-orb"><Icon>✦</Icon></div><strong>문장을 학습하기 좋게 분석하고 있어요</strong><span>자연스러운 표현과 핵심 어휘를 정리하는 중입니다.</span><div className="analysis-loading-bar"><i /></div></section>}
-    {isLoading && analysis && <div className="analysis-refreshing" aria-live="polite"><Icon>✦</Icon><span>새 문장을 분석하고 있어요. 기존 결과는 잠시 유지됩니다.</span></div>}
+    <Modal open={isLoading} title="AI 문장 분석 중" hideHeader onClose={() => {}} closeOnBackdrop={false} hideClose size="small" presentation="compact">
+      <div className="analysis-loading analysis-loading-progress" role="status" aria-label="AI 분석 중">
+        <div className="analysis-progress-spinner" aria-hidden="true"><Icon>✦</Icon></div>
+        <strong>문장과 표현을 분석하는 중이에요</strong>
+        <span>문장 길이에 따라 시간이 조금 걸릴 수 있어요.</span>
+        <div className="analysis-progress-track" role="progressbar" aria-label="문장 분석 진행 중"><i /></div>
+      </div>
+    </Modal>
 
     {analysis && <div className={`analysis-content-v2${isLoading ? ' refreshing' : ''}`}>
       {analysis.warnings.map((warning, index) => <div className="analysis-warning" role="status" key={`${warning}-${index}`}><WarningCircleIcon weight="fill"/><span>{warning}</span></div>)}

@@ -70,8 +70,8 @@ export default function StoryPage() {
       setAlert({ title: '같은 언어의 단어를 선택해주세요', message: '한 스토리에는 같은 언어의 단어만 함께 사용할 수 있어요.' })
       return
     }
-    if (draftSelectedIds.length >= 10) {
-      setAlert({ title: '단어를 10개까지 선택할 수 있어요', message: '새 단어를 선택하려면 선택한 단어 하나를 먼저 해제해주세요.' })
+    if (draftSelectedIds.length >= 30) {
+      setAlert({ title: '단어를 30개까지 선택할 수 있어요', message: '새 단어를 선택하려면 선택한 단어 하나를 먼저 해제해주세요.' })
       return
     }
     setDraftSelectedIds(current => [...current, id])
@@ -150,7 +150,7 @@ export default function StoryPage() {
           : <>
             <section className="card story-builder">
               <div className="story-builder-grid">
-                <div className="story-word-step"><div className="story-section-heading"><div className="story-step-title"><span className="story-step-number">1</span><h2>단어 선택</h2>{selectedIds.length > 0 && <small className="story-word-count">{selectedIds.length}/10</small>}</div>{selectedIds.length > 0 && <button type="button" className="story-word-refresh" aria-label="단어 선택 초기화" title="단어 다시 선택" onClick={resetWordSelection}><ArrowClockwiseIcon weight="bold"/></button>}</div>
+                <div className="story-word-step"><div className="story-section-heading"><div className="story-step-title"><span className="story-step-number">1</span><h2>단어 선택</h2>{selectedIds.length > 0 && <small className="story-word-count">{selectedIds.length}/30</small>}</div>{selectedIds.length > 0 && <button type="button" className="story-word-refresh" aria-label="단어 선택 초기화" title="단어 다시 선택" onClick={resetWordSelection}><ArrowClockwiseIcon weight="bold"/></button>}</div>
                 {selectedWords.length ? <div className="story-selection-summary"><div className="selected-word-chips">{selectedWords.map(word => <span key={word.vocabularyId}>{word.word}<small className="story-language-badge">{word.languageCode.toUpperCase()}</small><button type="button" aria-label={`${word.word} 선택 해제`} onClick={() => removeSelectedWord(word.vocabularyId)}><XIcon weight="bold"/></button></span>)}</div><button type="button" className="story-change-words" onClick={openSelector}><PencilSimpleIcon/> 변경</button></div>
                   : <div className="story-selection-empty"><div><button type="button" className="story-recommend-button" onClick={selectRecommended}><SparkleIcon weight="fill"/> 추천 단어 5개 선택</button><button type="button" onClick={openSelector}>직접 선택</button></div></div>}</div>
                 <div className="story-options"><div className="story-section-heading"><div className="story-step-title"><span className="story-step-number">2</span><h2>스토리 설정</h2></div></div><div className="story-settings-summary"><button type="button" className="story-settings-card story-settings-selected" aria-label="스토리 설정 변경" onClick={openSettings}><span className="story-settings-edit"><SlidersHorizontalIcon weight="bold"/></span><span className="story-setting-value"><small>장르</small><b>{genres.find(item => item.value === genre)?.label}</b></span><span className="story-setting-value"><small>길이</small><b>{lengths.find(item => item.value === length)?.label}</b></span><span className="story-setting-value"><small>난이도</small><b>{difficulties.find(item => item.value === difficulty)?.label}</b></span></button></div></div>
@@ -169,7 +169,7 @@ export default function StoryPage() {
     <Modal open={settingsOpen} title="스토리 설정" onClose={() => setSettingsOpen(false)} size="medium" footer={<><button className="ui-dialog-secondary" type="button" onClick={() => setSettingsOpen(false)}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySettings}>설정 적용</button></>}>
       <div className="story-option-grid story-settings-fields"><OptionGroup label="장르" options={genres} value={draftGenre} setValue={setDraftGenre}/><OptionGroup label="길이" options={lengths} value={draftLength} setValue={setDraftLength}/><OptionGroup label="난이도" options={difficulties} value={draftDifficulty} setValue={setDraftDifficulty}/></div>
     </Modal>
-    <Modal open={selectorOpen} title="단어 선택" description={`같은 언어의 단어를 선택해주세요. (${draftSelectedIds.length}/10)`} onClose={closeSelector} size="large" footer={<><button className="ui-dialog-secondary" type="button" onClick={closeSelector}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySelection}>선택한 {draftSelectedIds.length}개 적용</button></>}>
+    <Modal open={selectorOpen} title="단어 선택" description={`같은 언어의 단어를 선택해주세요. (${draftSelectedIds.length}/30)`} onClose={closeSelector} size="large" footer={<><button className="ui-dialog-secondary" type="button" onClick={closeSelector}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySelection}>선택한 {draftSelectedIds.length}개 적용</button></>}>
       <div className="story-selector">
         <div className="story-selector-languages" role="tablist" aria-label="언어별 필터"><button type="button" role="tab" aria-selected={languageFilter === 'all'} className={languageFilter === 'all' ? 'active' : ''} onClick={() => setLanguageFilter('all')}>전체 언어</button>{languageOptions.map(language => <button type="button" role="tab" aria-selected={languageFilter === language.code} className={languageFilter === language.code ? 'active' : ''} onClick={() => setLanguageFilter(language.code)} key={language.code}>{language.label}<small>{language.code.toUpperCase()}</small></button>)}</div>
         <label className="story-selector-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻 검색" aria-label="스토리 단어 검색"/></label>

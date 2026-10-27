@@ -1,6 +1,6 @@
 export const QUIZ_RULES = {
   defaultQuestionCount: 10,
-  maxQuestionCount: 30,
+  maxQuestionCount: 40,
   selectionWeights: {
     due: 0.5,
     new: 0.25,

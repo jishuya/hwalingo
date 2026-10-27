@@ -17,7 +17,7 @@ const themeLabels: Record<Theme, string> = { light: '밝게', dark: '어둡게',
 const timezones = [{ value: 'Asia/Seoul', label: '서울' }, { value: 'Asia/Tokyo', label: '도쿄' }, { value: 'UTC', label: 'UTC' }, { value: 'America/New_York', label: '뉴욕' }, { value: 'Europe/London', label: '런던' }]
 const themeOptions = [{ value: 'light', label: '밝게' }, { value: 'dark', label: '어둡게' }, { value: 'system', label: '시스템 설정' }]
 const weeklyGoalOptions = [1, 2, 3, 4, 5, 6, 7].map(day => ({ value: String(day), label: `주 ${day}일` }))
-const quizQuestionCountPresets = [5, 10, 20, 30] as const
+const quizQuestionCountPresets = [10, 20, 30, 40] as const
 const timezoneOptions = timezones.map(item => ({ value: item.value, label: `${item.label} (${item.value})` }))
 const inquiryOptions = ['사용 방법', '계정 및 로그인', '학습 및 퀴즈', '오류 신고', '기타'].map(value => ({ value, label: value }))
 const weekDayLabels = ['월', '화', '수', '목', '금', '토', '일']

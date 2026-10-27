@@ -19,10 +19,11 @@ interface ModalProps {
   presentation?: 'sheet' | 'compact'
   icon?: ReactNode
   hideClose?: boolean
+  hideHeader?: boolean
   tone?: DialogTone
 }
 
-export function Modal({ open, title, description, children, footer, onClose, closeOnBackdrop = true, size = 'medium', ariaLabel, role = 'dialog', presentation = 'sheet', icon, hideClose = false, tone = 'info' }: ModalProps) {
+export function Modal({ open, title, description, children, footer, onClose, closeOnBackdrop = true, size = 'medium', ariaLabel, role = 'dialog', presentation = 'sheet', icon, hideClose = false, hideHeader = false, tone = 'info' }: ModalProps) {
   const titleId = useId()
   const descriptionId = useId()
   const dialogRef = useRef<HTMLElement>(null)
@@ -80,12 +81,12 @@ export function Modal({ open, title, description, children, footer, onClose, clo
     }}
     onMouseDown={handleBackdrop}
   >
-    <section ref={dialogRef} className={`ui-dialog ui-dialog-${size} ui-dialog-${presentation} ui-dialog-${tone}`} role={role} aria-modal="true" aria-labelledby={ariaLabel ? undefined : titleId} aria-label={ariaLabel} aria-describedby={description ? descriptionId : undefined}>
+    <section ref={dialogRef} className={`ui-dialog ui-dialog-${size} ui-dialog-${presentation} ui-dialog-${tone}${hideHeader ? ' ui-dialog-headerless' : ''}`} role={role} aria-modal="true" aria-labelledby={ariaLabel || hideHeader ? undefined : titleId} aria-label={ariaLabel ?? (hideHeader ? title : undefined)} aria-describedby={description ? descriptionId : undefined}>
       {presentation === 'sheet' && <div className="ui-dialog-handle" aria-hidden="true"><span/></div>}
-      <header className="ui-dialog-header">
+      {!hideHeader && <header className="ui-dialog-header">
         <div>{icon && <span className="ui-dialog-heading-icon">{icon}</span>}<h2 id={titleId}>{title}</h2>{description && <p id={descriptionId}>{description}</p>}</div>
         {!hideClose && <button type="button" onClick={onClose} aria-label={`${title} 닫기`}><X weight="bold"/></button>}
-      </header>
+      </header>}
       {children && <div className="ui-dialog-body">{children}</div>}
       {footer && <footer className="ui-dialog-footer">{footer}</footer>}
     </section>
