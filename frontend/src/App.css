@@ -179,9 +179,13 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 /* Vocabulary view control beside the saved-word count */
 .vocabulary-page-title{gap:8px}.vocabulary-page-title>strong{margin-left:auto}.vocabulary-page-title .vocabulary-view-menu{width:80px;flex:0 0 80px}.vocabulary-page-title .vocabulary-view-trigger{height:28px;padding:0 7px;border-color:#cbd8e6;border-radius:999px;background:#edf4fb;color:#48657c;font-size:11px;font-weight:700}.vocabulary-page-title .vocabulary-view-trigger:hover,.vocabulary-page-title .vocabulary-view-menu.open .vocabulary-view-trigger{border-color:#9eb8cf;background:#e1edf7;color:#31566f}.vocabulary-page-title .vocabulary-view-trigger:focus-visible{outline-color:rgba(72,101,124,.2)}.vocabulary-page-title .vocabulary-view-options{right:0;width:100%;box-sizing:border-box;border-color:#cbd8e6;background:#edf4fb;box-shadow:0 10px 28px rgba(72,101,124,.15)}.vocabulary-page-title .vocabulary-view-options button{color:#48657c}.vocabulary-page-title .vocabulary-view-options button:hover{background:#e1edf7;color:#31566f}.vocabulary-page-title .vocabulary-view-options button.active{background:#e1edf7;color:#31566f}
 @media(max-width:480px){.vocabulary-page-title .vocabulary-view-menu{width:76px;flex-basis:76px}.vocabulary-page-title .vocabulary-view-trigger{height:27px;padding-inline:6px;font-size:10px}}
-.story-generate:not(.loading){border:1px solid #619f75;background:linear-gradient(135deg,#dcefe2 0%,#edf2d9 55%,#ffedaa 100%);color:#0d6338;box-shadow:0 5px 13px rgba(24,87,57,.14)}
-.story-generate:not(.loading):hover{border-color:#438b5c;background:linear-gradient(135deg,#d1ead9 0%,#e7edce 55%,#ffe58c 100%);color:#07562f;box-shadow:0 7px 16px rgba(24,87,57,.18)}
-.story-generate:not(.loading) svg{color:#d5a900}
+.story-generate:not(.loading){position:relative;overflow:hidden;isolation:isolate;min-height:44px;padding:9px 24px;border:0;border-radius:12px;background:#0aa65b;color:#fff;box-shadow:0 4px 0 #078247;transition:transform .12s,box-shadow .12s,background .12s}
+.story-generate:not(.loading):hover:not(:disabled){background:#099653}
+.story-generate:not(.loading):active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #078247}
+.story-generate:not(.loading) svg{color:inherit}
+.story-generate:not(.loading)::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.5) 50%,transparent 75%);transform:translateX(-140%);animation:story-button-shimmer 3.5s ease-in-out infinite}
+@keyframes story-button-shimmer{0%,25%{transform:translateX(-140%)}65%,100%{transform:translateX(140%)}}
+@media(prefers-reduced-motion:reduce){.story-generate:not(.loading){transition:none}.story-generate:not(.loading):active:not(:disabled){transform:none}.story-generate:not(.loading)::after{animation:none;display:none}}
 
 /* Keep vocabulary level badges readable when the vocabulary term is long. */
 .vocabulary-language-navigation{display:flex;align-items:center;gap:6px;min-width:0;margin-top:12px}
@@ -395,3 +399,14 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 .vocabulary-page .vocabulary-word-heading .favorite-star:hover{background:#fff8df;color:#eab308}
 .vocabulary-page .compact-word-actions .compact-pronunciation{grid-column:1;grid-row:1;color:#5f8ed1}
 .vocabulary-page .compact-word-actions .compact-pronunciation:hover{background:#edf4ff;color:#2563eb}
+
+.story-intro{position:relative;overflow:hidden;isolation:isolate;margin:0 0 18px;padding:24px 28px;border-radius:18px;background:linear-gradient(135deg,#ebecff 0%,#f2f1ff 52%,#eef6e5 100%)}
+.story-intro-copy{position:relative;z-index:1}
+.story-intro::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 48%,rgba(255,255,255,.15) 58%,transparent 72%);transform:translate(-110%,-110%);animation:study-intro-shimmer 4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.story-intro::after{animation:none;display:none}}
+.story-intro-badge{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:3px 12px;border-radius:999px;background:#ccebed;color:#007d73;font-size:var(--font-xs);font-weight:800;line-height:1.4}
+.story-intro-badge svg{flex:none;width:14px;height:14px}
+.story-intro h1{margin:8px 0 4px;color:#172334;font-size:var(--font-xl);font-weight:800;line-height:1.3;letter-spacing:-.6px}
+.story-intro p{max-width:520px;margin:0;color:#526174;font-size:var(--font-sm);line-height:1.45;word-break:keep-all}
+@media(max-width:600px){.story-intro{padding:16px;margin-bottom:14px;border-radius:16px}.story-intro-badge{padding:2px 9px;letter-spacing:-.4px}.story-intro h1{margin-top:7px}}
+@media(max-width:360px){.story-intro{padding:14px}}

@@ -68,16 +68,16 @@ export default function StudyPage() {
   const mismatchDetectedLabel = languageOptions.find(language => language.code === languageMismatch?.detectedLanguage)?.label ?? ''
 
   return <><div className="page study-page">
-    {!activeRequest && <section className="study-intro" aria-labelledby="study-intro-title">
-      <div className="study-intro-copy">
-        <h1 id="study-intro-title">궁금한 문장,<br/><span>AI가 쉽게 풀어드려요!</span></h1>
+    {!activeRequest && <section className="story-intro" aria-labelledby="study-intro-title">
+      <div className="story-intro-copy">
+        <span className="story-intro-badge"><SparkleIcon weight="fill"/> 궁금한 문장을 나만의 배움으로</span>
+        <h1 id="study-intro-title">AI 문장 분석 <span aria-hidden="true">✨</span></h1>
         <p>어려운 뉴스도, 미드 속 대사도 쉽게 이해하고 배워보세요.</p>
         <ul className="study-intro-features" aria-label="주요 분석 기능">
           <li>직독직해 구문분해</li>
           <li>CEFR B1~C2 패러프레이징</li>
         </ul>
       </div>
-      <span className="study-intro-art" aria-hidden="true"><SparkleIcon weight="duotone"/></span>
     </section>}
     <section className="card input-card study-composer study-composer-v2">
       <PhotoTextInput hasText={Boolean(text.trim())} disabled={isAnalyzing} onApply={value => { setText(value); requestAnimationFrame(() => textareaRef.current?.focus()) }} controls={<div className="study-composer-settings"><div className="language-selectors"><div className="language-field"><span className="language-field-label">입력언어</span><LanguageSelect value={inputLanguage} onChange={setInputLanguage} ariaLabel="입력언어" options={inputLanguageOptions} displayLabel={inputLanguage === 'auto' ? autoDisplayLabel : undefined}/></div><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><div className="language-field"><span className="language-field-label">학습언어</span><LanguageSelect value={learningLanguage} onChange={value => setLearningLanguage(value as LanguageCode)} ariaLabel="학습언어"/></div></div></div>}>
