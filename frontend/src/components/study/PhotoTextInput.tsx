@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
-import { CameraIcon, ImageIcon, KeyboardIcon } from '@phosphor-icons/react'
+import { CameraIcon, ImageIcon } from '@phosphor-icons/react'
 import { AlertDialog, ConfirmDialog, Modal } from '../ui/Dialog'
 import { extractImageText } from '../../services/ocr'
 import ImageCropper from './ImageCropper'
 import './PhotoTextInput.css'
 
 export default function PhotoTextInput({ hasText, disabled, onApply, children, controls }: { hasText: boolean; disabled: boolean; onApply: (text: string) => void; children: ReactNode; controls: ReactNode }) {
-  const [mode, setMode] = useState<'text' | 'camera' | 'image'>('text')
   const cameraRef = useRef<HTMLInputElement>(null)
   const uploadRef = useRef<HTMLInputElement>(null)
   const controller = useRef<AbortController | null>(null)
@@ -66,24 +65,19 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
   }
   const apply = () => {
     if (!result?.trim() || result.length > 500) return
-    setMode('text')
     onApply(result.trim())
     close()
   }
   return <>
-    <div className="study-input-methods" role="group" aria-label="학습 내용 입력 방법">
-      <button type="button" aria-pressed={mode === 'text'} disabled={disabled} onClick={() => setMode('text')}><KeyboardIcon weight={mode === 'text' ? 'fill' : 'regular'}/><span>직접 입력</span></button>
-      <button type="button" aria-pressed={mode === 'camera'} disabled={disabled} onClick={() => { setMode('camera'); cameraRef.current?.click() }}><CameraIcon weight={mode === 'camera' ? 'fill' : 'regular'}/><span>사진 촬영</span></button>
-      <button type="button" aria-pressed={mode === 'image'} disabled={disabled} onClick={() => { setMode('image'); uploadRef.current?.click() }}><ImageIcon weight={mode === 'image' ? 'fill' : 'regular'}/><span>이미지 선택</span></button>
-    </div>
     <input hidden ref={cameraRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={choose}/>
     <input hidden ref={uploadRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/>
     {controls}
     <div className="study-input-body">
-      {mode === 'text' ? children : <div className="study-photo-prompt">
-        <button type="button" className="study-photo-prompt-icon" disabled={disabled} aria-label={mode === 'camera' ? '카메라 열기' : '이미지 선택하기'} onClick={() => (mode === 'camera' ? cameraRef : uploadRef).current?.click()}>{mode === 'camera' ? <CameraIcon aria-hidden="true"/> : <ImageIcon aria-hidden="true"/>}</button>
-        <strong>{mode === 'camera' ? '학습하고 싶은 글을 찍어 주세요' : <>학습하고 싶은 글이 있는<br/>이미지를 선택해주세요</>}</strong>
-      </div>}
+      {children}
+      <div className="study-photo-actions" role="group" aria-label="사진에서 글자 가져오기">
+        <button type="button" aria-label="사진 촬영" title="사진 촬영" disabled={disabled} onClick={() => cameraRef.current?.click()}><CameraIcon weight="duotone" aria-hidden="true"/></button>
+        <button type="button" aria-label="이미지 선택" title="이미지 선택" disabled={disabled} onClick={() => uploadRef.current?.click()}><ImageIcon weight="duotone" aria-hidden="true"/></button>
+      </div>
     </div>
     <Modal open={Boolean(file) && !confirm && !error} title={cropping ? '사진 자르기' : result === undefined ? '사진에서 글자 추출' : '추출한 글 확인'} onClose={close} footer={<><button className="ui-dialog-secondary" onClick={close}>취소</button>{cropping ? null : result === undefined ? <button className="ui-dialog-primary" disabled={loading} onClick={() => void extract()}>{loading ? '글자 추출 중...' : '글자 추출'}</button> : <button className="ui-dialog-primary" disabled={!result.trim() || result.length > 500} onClick={() => hasText ? setConfirm(true) : apply()}>입력창에 적용</button>}</>}>
       <div className="photo-text-content">
