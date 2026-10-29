@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { BookOpenIcon, CheckCircleIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
+import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, CheckCircleIcon, FireIcon, LightningIcon, QuotesIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
 import './QuizPage.css'
 
 type DetailPanel = 'etymology' | 'memory' | 'deep' | 'image' | null
+
+const languageFlags: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵', zh: '🇨🇳', fr: '🇫🇷' }
 
 const speechLocales: Record<string, string> = { en: 'en-US', ko: 'ko-KR', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
 
@@ -121,6 +123,11 @@ export default function QuizPage() {
   if (!current) return <div className="quiz-page page"><section className="card quiz-complete"><CheckCircleIcon weight="fill"/><h1>오늘의 테스트 완료!</h1><p>{session.totalCount}문제 중 <b>{session.correctCount}문제</b>를 기억했어요.</p><strong className="quiz-total-xp">+{session.earnedXp} XP</strong><button className="primary" onClick={() => { queryClient.removeQueries({ queryKey: ['quiz'] }); void sessionQuery.refetch() }}>새 테스트 시작</button></section></div>
 
   const progress = Math.min(100, ((answeredCount + 1) / session.totalCount) * 100)
+  const answeredItems = session.items.filter(item => item.result)
+  let correctStreak = 0
+  for (let index = answeredItems.length - 1; index >= 0 && answeredItems[index].result === 'correct'; index--) correctStreak++
+  const example = current.exampleSentence || '저장된 예문이 아직 없어요.'
+  const wordIndex = example.toLocaleLowerCase().indexOf(current.word.toLocaleLowerCase())
   const tilt = Math.max(-7, Math.min(7, dragOffset / 28))
 
   return <div className="quiz-page quiz-flash-page page">
@@ -130,12 +137,12 @@ export default function QuizPage() {
         <p>아는 단어는 <strong className="direction-right">오른쪽</strong>으로<br/>모르는 단어는 <strong className="direction-left">왼쪽</strong>으로 스와이프하세요.</p>
       </div>
     </div>}
-    <div className="quiz-progress"><div><span>오늘의 테스트</span><b>{answeredCount + 1}/{session.totalCount}</b></div><div className="progress-track"><span style={{ width: `${progress}%` }}/></div></div>
+    <div className="quiz-progress"><div><div className="quiz-progress-labels"><span className="quiz-progress-title"><LightningIcon weight="regular" aria-hidden="true"/>오늘의 단어 챌린지</span>{correctStreak > 0 && <span className="quiz-progress-streak"><FireIcon weight="fill"/> 연속 {correctStreak}개 정답!</span>}</div><b className="quiz-progress-count">{answeredCount + 1}<small> / {session.totalCount}</small></b></div><div className="progress-track" role="progressbar" aria-label="테스트 진행률" aria-valuemin={0} aria-valuemax={session.totalCount} aria-valuenow={answeredCount + 1}><span style={{ width: `${progress}%` }}/></div></div>
     <div className="quiz-swipe-stage">
       <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''} ${dragOffset < -15 ? 'swipe-wrong' : dragOffset > 15 ? 'swipe-correct' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className="quiz-card-badges">
-          <span className="quiz-language-badge" aria-label={`현재 문제 언어 ${current.languageCode.toUpperCase()}`}>{current.languageCode.toUpperCase()}</span>
-          {current.cefrLevel && <span className={`quiz-level level-${current.cefrLevel.toLowerCase()}`}>Lv.{current.cefrLevel}</span>}
+          <span className="quiz-language-badge" aria-label={`현재 문제 언어 ${current.languageCode.toUpperCase()}`}>{languageFlags[current.languageCode] && <span className="quiz-language-flag" aria-hidden="true">{languageFlags[current.languageCode]}</span>}{current.languageCode.toUpperCase()}</span>
+          {current.cefrLevel && <span className="quiz-level" aria-label={`단어 등급 ${current.cefrLevel}`}>{current.cefrLevel}</span>}
         </div>
         <button className="quiz-word-reveal" type="button" onClick={toggleMeaning} aria-label={revealed ? `${current.word} 뜻 숨기기` : `${current.word} 뜻 보기`} aria-pressed={revealed}>
           <strong>{current.word}</strong>
@@ -143,23 +150,24 @@ export default function QuizPage() {
           {revealed && <span className="quiz-meaning">{current.meaning}</span>}
         </button>
         <button className="quiz-sound" type="button" onClick={event => { event.stopPropagation(); speak() }} aria-label={`${current.word} 발음 듣기`}><SpeakerHighIcon weight="fill"/></button>
-        <div className="quiz-example"><div><b>EXAMPLE</b>{current.exampleTranslation && <button type="button" className={showExampleTranslation ? 'active' : ''} aria-label={`예문 해석 ${showExampleTranslation ? '숨기기' : '보기'}`} aria-pressed={showExampleTranslation} onClick={() => setShowExampleTranslation(value => !value)}><TranslateIcon/></button>}</div><p>{current.exampleSentence || '저장된 예문이 아직 없어요.'}</p>{showExampleTranslation && current.exampleTranslation && <p className="quiz-example-translation">{current.exampleTranslation}</p>}</div>
+        <div className="quiz-example"><div><b><QuotesIcon weight="fill"/> EXAMPLE</b>{current.exampleTranslation && <button type="button" className={showExampleTranslation ? 'active' : ''} aria-label={`예문 해석 ${showExampleTranslation ? '숨기기' : '보기'}`} aria-pressed={showExampleTranslation} onClick={() => setShowExampleTranslation(value => !value)}><TranslateIcon/></button>}</div><p>{wordIndex >= 0 ? <>{example.slice(0, wordIndex)}<mark>{example.slice(wordIndex, wordIndex + current.word.length)}</mark>{example.slice(wordIndex + current.word.length)}</> : example}</p>{showExampleTranslation && current.exampleTranslation && <p className="quiz-example-translation">{current.exampleTranslation}</p>}</div>
+        <div className="quiz-tools-heading"><b><span className="quiz-tools-lightning" aria-hidden="true">⚡</span> AI 보조 학습 파워업</b></div>
         <div className="quiz-detail-tabs">
-          <button className={detailPanel === 'etymology' ? 'active' : ''} onClick={() => togglePanel('etymology')} type="button"><BookOpenIcon weight="fill"/>어원 힌트</button>
-          <button className={detailPanel === 'memory' ? 'active' : ''} onClick={() => togglePanel('memory')} type="button"><LightbulbIcon weight="fill"/>암기 팁</button>
-          <button className={detailPanel === 'deep' ? 'active deep' : 'deep'} onClick={() => togglePanel('deep')} type="button"><MagicWandIcon weight="fill"/>AI 심화</button>
-          <button className={detailPanel === 'image' ? 'active image' : 'image'} onClick={() => togglePanel('image')} type="button"><ImageIcon weight="fill"/>AI 그림</button>
+          <button className={detailPanel === 'etymology' ? 'active' : ''} aria-expanded={detailPanel === 'etymology'} onClick={() => togglePanel('etymology')} type="button"><span className="quiz-tool-icon"><BookOpenIcon weight="duotone"/></span>어원 힌트</button>
+          <button className={detailPanel === 'memory' ? 'active' : ''} aria-expanded={detailPanel === 'memory'} onClick={() => togglePanel('memory')} type="button"><span className="quiz-tool-icon"><LightbulbIcon weight="duotone"/></span>암기 팁</button>
+          <button className={detailPanel === 'deep' ? 'active deep' : 'deep'} aria-expanded={detailPanel === 'deep'} onClick={() => togglePanel('deep')} type="button"><span className="quiz-tool-icon"><MagicWandIcon weight="duotone"/></span>AI 심화</button>
+          <button className={detailPanel === 'image' ? 'active image' : 'image'} aria-expanded={detailPanel === 'image'} onClick={() => togglePanel('image')} type="button"><span className="quiz-tool-icon"><ImageIcon weight="duotone"/></span>AI 그림</button>
         </div>
-        {detailPanel === 'etymology' && <div className="quiz-detail-panel"><b><BookOpenIcon/> 어원 힌트</b><p>{current.etymology || '저장된 어원 정보가 아직 없어요.'}</p></div>}
-        {detailPanel === 'memory' && <div className="quiz-detail-panel memory"><b><LightbulbIcon/> 암기 팁</b><p>{current.memoryTip || '저장된 암기 팁이 아직 없어요.'}</p></div>}
-        {detailPanel === 'deep' && <div className="quiz-detail-panel deep"><b><MagicWandIcon/> AI 심화 분석</b>
+        {detailPanel === 'etymology' && <div className="quiz-detail-panel"><b><BookOpenIcon weight="duotone"/> 어원 힌트</b><p>{current.etymology || '저장된 어원 정보가 아직 없어요.'}</p></div>}
+        {detailPanel === 'memory' && <div className="quiz-detail-panel memory"><b><LightbulbIcon weight="duotone"/> 암기 팁</b><p>{current.memoryTip || '저장된 암기 팁이 아직 없어요.'}</p></div>}
+        {detailPanel === 'deep' && <div className="quiz-detail-panel deep">
           {deepAnalysisMutation.isPending && <p className="quiz-ai-status">단어의 뉘앙스를 분석하고 있어요…</p>}
           {deepAnalysisMutation.isError && <p className="quiz-ai-error">{deepAnalysisMutation.error.message}</p>}
           {deepAnalysisMutation.data && deepAnalysisMutation.variables?.itemId === current.id && <>
-            <p><strong>유의어:</strong> {deepAnalysisMutation.data.synonyms.length ? deepAnalysisMutation.data.synonyms.map(item => `${item.word} (${item.meaning})`).join(', ') : '뚜렷한 유의어가 없어요.'}</p>
-            <p><strong>반의어:</strong> {deepAnalysisMutation.data.antonyms.length ? deepAnalysisMutation.data.antonyms.map(item => `${item.word} (${item.meaning})`).join(', ') : '뚜렷한 반의어가 없어요.'}</p>
-            <p><strong>뉘앙스:</strong> {deepAnalysisMutation.data.nuance}</p>
-            <p><strong>사용 팁:</strong> {deepAnalysisMutation.data.usageTip}</p>
+            <p><strong className="quiz-analysis-label synonyms"><EqualsIcon weight="duotone" aria-hidden="true"/>유의어</strong> {deepAnalysisMutation.data.synonyms.length ? deepAnalysisMutation.data.synonyms.map(item => `${item.word} (${item.meaning})`).join(', ') : '뚜렷한 유의어가 없어요.'}</p>
+            <p><strong className="quiz-analysis-label antonyms"><ArrowsLeftRightIcon weight="duotone" aria-hidden="true"/>반의어</strong> {deepAnalysisMutation.data.antonyms.length ? deepAnalysisMutation.data.antonyms.map(item => `${item.word} (${item.meaning})`).join(', ') : '뚜렷한 반의어가 없어요.'}</p>
+            <p><strong className="quiz-analysis-label nuance"><PaletteIcon weight="duotone" aria-hidden="true"/>뉘앙스</strong> {deepAnalysisMutation.data.nuance}</p>
+            <p><strong className="quiz-analysis-label usage"><LightbulbIcon weight="duotone" aria-hidden="true"/>사용 팁</strong> {deepAnalysisMutation.data.usageTip}</p>
           </>}
         </div>}
         {detailPanel === 'image' && <div className="quiz-detail-panel image">
