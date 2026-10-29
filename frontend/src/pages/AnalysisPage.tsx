@@ -14,6 +14,7 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import Icon from '../components/Icon'
+import SpeechControls from '../components/study/SpeechControls'
 import './AnalysisLoading.css'
 import { AlertDialog, Modal } from '../components/ui/Dialog'
 import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
@@ -22,9 +23,17 @@ import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyI
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
 const grammarRoleColors = { subject: '#2563D9', verb: '#008C44', other: '#18332A' } as const
 
+function highlightExampleWord(example: string, word: string) {
+  const escaped = word.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (!escaped) return example
+  const pattern = new RegExp(`(${escaped})`, 'giu')
+  return example.split(pattern).map((part, index) => index % 2 === 1 ? <strong key={index}>{part}</strong> : part)
+}
+
 export default function AnalysisPage({ request, requestId, onLoadingChange }: { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void }) {
   const [analysis, setAnalysis] = useState<SentenceAnalysis>()
   const [isLoading, setIsLoading] = useState(false)
+  const [speechRate, setSpeechRate] = useState(1)
   const [isVocabularyLoading, setIsVocabularyLoading] = useState(false)
   const [vocabularyError, setVocabularyError] = useState('')
   const [wordActionAlert, setWordActionAlert] = useState<{ title: string; message: string }>()
@@ -48,7 +57,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   })
   const paraphraseControllersRef = useRef<Map<number, AbortController>>(new Map())
 
-  const speak = (content: string, language: LanguageCode, rate = 1) => {
+  const speak = (content: string, language: LanguageCode, rate = speechRate) => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(content)
@@ -179,7 +188,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     <Modal open={isLoading} title="AI 문장 분석 중" hideHeader onClose={() => {}} closeOnBackdrop={false} hideClose size="small" presentation="compact">
       <div className="analysis-loading analysis-loading-progress" role="status" aria-label="AI 분석 중">
         <div className="analysis-progress-spinner" aria-hidden="true"><Icon>✦</Icon></div>
-        <strong>문장과 표현을 분석하는 중이에요</strong>
+        <strong>AI가 분석 중이에요</strong>
         <span>문장 길이에 따라 시간이 조금 걸릴 수 있어요.</span>
         <div className="analysis-progress-track" role="progressbar" aria-label="문장 분석 진행 중"><i /></div>
       </div>
@@ -198,12 +207,12 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         const allChunksVisible = sentence.chunks.every((_, chunkIndex) => revealedChunks.has(`${sentenceIndex}-${chunkIndex}`))
         return <article className="sentence-analysis-card" key={`${sentence.inputText}-${sentenceIndex}`}>
           <header className="sentence-analysis-header">
-            <h2>{sentence.chunks.map((chunk, chunkIndex) => {
+            <div className="sentence-analysis-title-row"><h2><FileTextIcon aria-hidden="true"/>문장 분석</h2><SpeechControls rate={speechRate} onRateChange={setSpeechRate} onPlay={() => speak(sentence.learningSentence, analysis.learningLanguage)}/></div>
+            <p className="sentence-analysis-text">{sentence.chunks.map((chunk, chunkIndex) => {
               const nextChunk = sentence.chunks[chunkIndex + 1]
               const joinsNext = /[-'’]$/u.test(chunk.targetText) || (nextChunk ? /^[,.;:!?)}\]»]/u.test(nextChunk.targetText) : false)
               return <span className={`sentence-role-${chunk.role}`} style={{ color: grammarRoleColors[chunk.role] }} key={`${chunk.targetText}-${chunkIndex}`}>{chunk.targetText}{nextChunk && !joinsNext ? ' ' : ''}</span>
-            })}</h2>
-            <div className="sentence-voice-actions"><button className="voice-play" aria-label="문장 발음 듣기" onClick={() => speak(sentence.learningSentence, analysis.learningLanguage)}><SpeakerHighIcon weight="fill"/></button></div>
+            })}</p>
           </header>
 
           <div className={`sentence-analysis-grid${showVocabulary ? '' : ' without-vocabulary'}`}>
@@ -245,9 +254,9 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                     if (savedVocabulary) removeWord.mutate({ vocabularyId: savedVocabulary.vocabularyId, wordKey })
                     else saveWord.mutate({ wordKey, input: { languageCode: analysis.learningLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence, exampleTranslation: word.exampleMeaning } })
                   }}><BookmarkSimpleIcon weight={saved ? 'fill' : 'regular'}/></button>
-                  <div className="sentence-vocab-title"><h4>{word.word}</h4><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.learningLanguage)}><SpeakerHighIcon/></button><span>{word.level}</span></div>
+                  <div className="sentence-vocab-title"><h4>{word.word}{word.pronunciation && <small className="vocab-pronunciation" aria-label={`발음 ${word.pronunciation}`}>{word.pronunciation}</small>}</h4><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.learningLanguage)}><SpeakerHighIcon/></button><span>{word.level}</span></div>
                   <p><b>기본:</b> {word.basicMeaning}</p><p><b>문맥:</b> {word.contextualMeaning}</p>
-                  {word.exampleSentence && <div className="vocab-example"><div><b>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.learningLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><p>{word.exampleSentence}</p>{exampleTranslationOpen && word.exampleMeaning && <p className="vocab-example-meaning">{word.exampleMeaning}</p>}</div>}
+                  {word.exampleSentence && <div className="vocab-example"><div><b>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.learningLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><p>{highlightExampleWord(word.exampleSentence, word.word)}{exampleTranslationOpen && word.exampleMeaning && <span className="vocab-example-meaning">→ {word.exampleMeaning}</span>}</p></div>}
                   {word.etymology && <div className="vocab-etymology"><BookOpenIcon weight="duotone"/><span><b>어원:</b> {word.etymology}</span></div>}
                   {word.memoryTip && <div className="vocab-tip"><LightbulbIcon weight="fill"/><span><b>팁:</b> {word.memoryTip}</span></div>}
                 </article>

@@ -32,7 +32,10 @@
 .study-input-body { position: relative; min-width: 0; }
 .study-text-field { position: relative; }
 .study-composer-v2 .study-input-body textarea { display: block; margin: 0; min-height: 180px; padding-bottom: 58px; font-size: 16px; }
-.study-text-count { position: absolute; right: 18px; bottom: 18px; pointer-events: none; color: var(--muted); font-size: var(--font-xs); line-height: 1.5; }
+.study-text-count { margin-top: 6px; text-align: right; color: var(--muted); font-size: var(--font-xs); line-height: 1.5; }
+.study-clear-text { position: absolute; bottom: 10px; right: 10px; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid #dce6df; border-radius: 50%; background: #eef4ef; color: #63736a; font-size: var(--font-sm); font-weight: 600; }
+.study-clear-text:hover { background: #dfe8e1; color: var(--dark); }
+.study-clear-text:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .study-photo-actions { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 8px; }
 .study-photo-actions button { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid #dce6df; border-radius: 50%; background: #eef4ef; color: #48745b; transition: background .15s, border-color .15s; }
 .study-photo-actions button:hover:not(:disabled) { background: #dfeee3; border-color: #adcdb7; color: #008c44; }
@@ -59,3 +62,5 @@
 @keyframes study-button-shine { from { transform: translateX(-140%); } to { transform: translateX(140%); } }
 @media (prefers-reduced-motion: reduce) { .study-composer-v2 .study-composer-submit .primary { transition: none; } .study-composer-v2 .study-composer-submit .primary:active:not(:disabled) { transform: none; } .study-composer-v2 .study-composer-submit .primary.is-shining::after { animation: study-button-flash .3s ease-out; } }
 @keyframes study-button-flash { from { transform: none; opacity: .5; } to { transform: none; opacity: 0; } }
+
+.study-clear-text svg { width: 20px; height: 20px; }

@@ -29,7 +29,6 @@ function LanguageSelect({ value, onChange, ariaLabel, options = languageOptions,
 export default function StudyPage() {
   const [text, setText] = useState('')
   const [buttonShining, setButtonShining] = useState(false)
-  const [inputSession, setInputSession] = useState(0)
   const [inputLanguage, setInputLanguage] = useState<InputLanguageSelection>('auto')
   const [learningLanguage, setLearningLanguage] = useState<LanguageCode>('en')
   const [activeRequest, setActiveRequest] = useState<AnalysisRequest>()
@@ -61,18 +60,15 @@ export default function StudyPage() {
     }
     if (resolvedInputLanguage) runAnalysis(sentence, resolvedInputLanguage)
   }
-  const startNewSentence = () => {
-    setInputSession(current => current + 1)
+  const clearText = () => {
     setText('')
-    setActiveRequest(undefined)
-    setIsAnalyzing(false)
     requestAnimationFrame(() => textareaRef.current?.focus())
   }
   const autoDisplayLabel = detection.status === 'mixed' ? '혼합 언어' : detection.status === 'low-confidence' && text.trim() ? '언어 선택 필요' : detectedLanguageLabel
   const mismatchDetectedLabel = languageOptions.find(language => language.code === languageMismatch?.detectedLanguage)?.label ?? ''
 
   return <><div className="page study-page">
-    <section className="study-intro" aria-labelledby="study-intro-title">
+    {!activeRequest && <section className="study-intro" aria-labelledby="study-intro-title">
       <div className="study-intro-copy">
         <h1 id="study-intro-title">궁금한 문장,<br/><span>AI가 쉽게 풀어드려요!</span></h1>
         <p>어려운 뉴스도, 미드 속 대사도 쉽게 이해하고 배워보세요.</p>
@@ -82,13 +78,13 @@ export default function StudyPage() {
         </ul>
       </div>
       <span className="study-intro-art" aria-hidden="true"><SparkleIcon weight="duotone"/></span>
-    </section>
+    </section>}
     <section className="card input-card study-composer study-composer-v2">
-      <div className="study-heading-row">{activeRequest && <button className="new-sentence-button" aria-label="새 문장 입력" title="새 문장 입력" onClick={startNewSentence}><ArrowClockwiseIcon weight="bold" /></button>}</div>
-      <PhotoTextInput key={inputSession} hasText={Boolean(text.trim())} disabled={isAnalyzing} onApply={value => { setText(value); requestAnimationFrame(() => textareaRef.current?.focus()) }} controls={<div className="study-composer-settings"><div className="language-selectors"><div className="language-field"><span className="language-field-label">입력언어</span><LanguageSelect value={inputLanguage} onChange={setInputLanguage} ariaLabel="입력언어" options={inputLanguageOptions} displayLabel={inputLanguage === 'auto' ? autoDisplayLabel : undefined}/></div><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><div className="language-field"><span className="language-field-label">학습언어</span><LanguageSelect value={learningLanguage} onChange={value => setLearningLanguage(value as LanguageCode)} ariaLabel="학습언어"/></div></div></div>}>
+      <PhotoTextInput hasText={Boolean(text.trim())} disabled={isAnalyzing} onApply={value => { setText(value); requestAnimationFrame(() => textareaRef.current?.focus()) }} controls={<div className="study-composer-settings"><div className="language-selectors"><div className="language-field"><span className="language-field-label">입력언어</span><LanguageSelect value={inputLanguage} onChange={setInputLanguage} ariaLabel="입력언어" options={inputLanguageOptions} displayLabel={inputLanguage === 'auto' ? autoDisplayLabel : undefined}/></div><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><div className="language-field"><span className="language-field-label">학습언어</span><LanguageSelect value={learningLanguage} onChange={value => setLearningLanguage(value as LanguageCode)} ariaLabel="학습언어"/></div></div></div>}>
         <div className="study-text-field"><textarea aria-label="학습할 내용" id="study-text" ref={textareaRef} value={text} maxLength={500} onChange={event => setText(event.target.value)} placeholder="학습하고 싶은 문장이나 문구를 입력해 주세요."/>
-        <div className="study-text-count">{text.length} / 500</div></div>
+        {text.length > 0 && <button type="button" className="study-clear-text" aria-label="입력 내용 초기화" title="입력 내용 초기화" onClick={clearText}><ArrowClockwiseIcon weight="bold" aria-hidden="true"/></button>}</div>
       </PhotoTextInput>
+      {text.length >= 1 && <div className="study-text-count" role="status">{text.length} / 500자</div>}
 
       <div className="input-footer study-composer-submit"><button className={`primary${buttonShining ? ' is-shining' : ''}`} disabled={isAnalyzing || !text.trim()} onClick={() => { setButtonShining(true); submit() }} onAnimationEnd={() => setButtonShining(false)}><Icon>✦</Icon> {isAnalyzing ? 'AI 분석 중...' : 'AI 분석 시작'}</button></div>
     </section>{activeRequest && <AnalysisPage request={activeRequest} requestId={requestId} onLoadingChange={setIsAnalyzing}/>}</div><AlertDialog open={detectionNoticeOpen} title="입력언어를 선택해 주세요" message="여러 언어가 섞여 있거나 문장이 짧아 입력언어를 확실하게 감지하지 못했어요." tone="warning" onClose={() => setDetectionNoticeOpen(false)}/><ConfirmDialog open={Boolean(languageMismatch)} title="입력언어가 다른 것 같아요" message={`선택한 언어는 ${selectedLanguageLabel ?? ''}이지만 ${mismatchDetectedLabel}(으)로 감지되었습니다.`} confirmLabel={`${mismatchDetectedLabel}로 변경`} cancelLabel={`${selectedLanguageLabel ?? '선택한 언어'}로 계속`} onCancel={() => { if (languageMismatch && inputLanguage !== 'auto') runAnalysis(languageMismatch.sentence, inputLanguage); setLanguageMismatch(undefined) }} onConfirm={() => { if (languageMismatch) { setInputLanguage(languageMismatch.detectedLanguage); runAnalysis(languageMismatch.sentence, languageMismatch.detectedLanguage) } setLanguageMismatch(undefined) }}/></>
