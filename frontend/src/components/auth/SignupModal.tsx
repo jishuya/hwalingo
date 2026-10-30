@@ -1,4 +1,5 @@
-import { ArrowRight, Check, Eye, EyeSlash, X } from '@phosphor-icons/react'
+import DialogCloseButton from '../ui/DialogCloseButton'
+import { ArrowRight, Check, Eye, EyeSlash } from '@phosphor-icons/react'
 import { useEffect, useState, type FormEvent, type MouseEvent } from 'react'
 import { signup, type AuthUser } from '../../services/auth'
 
@@ -109,7 +110,7 @@ export default function SignupModal({ onClose, onComplete }: SignupModalProps) {
     <section className="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title">
       <header className="signup-modal-head">
         <div><h2 id="signup-title">회원가입</h2><p>Hwalingo에 오신 것을 환영합니다!</p></div>
-        <button type="button" onClick={onClose} aria-label="회원가입 닫기"><X/></button>
+        <DialogCloseButton onClose={onClose} label="회원가입 닫기"/>
       </header>
 
       <form onSubmit={submit} noValidate>

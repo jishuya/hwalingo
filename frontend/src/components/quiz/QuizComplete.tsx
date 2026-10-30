@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { ArrowClockwiseIcon, ArrowRightIcon, CheckCircleIcon, HouseIcon, SparkleIcon, TrophyIcon } from '@phosphor-icons/react'
 
 interface QuizCompleteProps {
+  mode?: 'standard' | 'incorrect'
   accuracy: number
   earnedXp: number
   relearnedCount: number
@@ -11,7 +12,7 @@ interface QuizCompleteProps {
 
 const confettiColors = ['#008c44', '#69c49b', '#ffd95a', '#86b6ee', '#c3a1de']
 
-export default function QuizComplete({ accuracy, earnedXp, relearnedCount, onRestart, onHome }: QuizCompleteProps) {
+export default function QuizComplete({ mode = 'standard', accuracy, earnedXp, relearnedCount, onRestart, onHome }: QuizCompleteProps) {
   return <div className="quiz-page page quiz-completion-page">
     <section className="card quiz-completion" aria-labelledby="quiz-completion-title">
       <div className="quiz-confetti" aria-hidden="true">
@@ -29,7 +30,7 @@ export default function QuizComplete({ accuracy, earnedXp, relearnedCount, onRes
       </div>
       <div className="quiz-completion-emblem" aria-hidden="true"><SparkleIcon className="quiz-completion-sparkle left" weight="fill"/><TrophyIcon weight="duotone"/><SparkleIcon className="quiz-completion-sparkle right" weight="fill"/></div>
       <span className="quiz-completion-eyebrow">차곡차곡 쌓이는 나의 실력</span>
-      <h1 id="quiz-completion-title">오늘의 테스트 완료!</h1>
+      <h1 id="quiz-completion-title">{mode === 'incorrect' ? '오답 단어 테스트 완료!' : '오늘의 테스트 완료!'}</h1>
       <p className="quiz-completion-message">오늘도 한 걸음 성장했어요.<br/>꾸준히 쌓은 배움이 실력이 될 거예요.</p>
       <div className="quiz-completion-stats">
         <div><span>첫 시도 정답률</span><strong>{accuracy}<small>%</small></strong></div>

@@ -1,3 +1,4 @@
+import { reconcileArchivedQuizItems } from '../services/quizSessionCleanup.js'
 import { Router } from 'express'
 import { pool } from '../config/database.js'
 import { requireAuth } from '../middleware/requireAuth.js'
@@ -16,6 +17,7 @@ interface VocabularyRow {
   memory_tip: string | null
   example_sentence: string | null
   example_translation: string | null
+  last_story_used_at: string | null
   saved_at: string
   mastery_level: number
   mastery_score: string
@@ -78,6 +80,7 @@ function serializeVocabulary(row: VocabularyRow) {
     exampleSentence: row.example_sentence,
     exampleTranslation: row.example_translation,
     savedAt: row.saved_at,
+    lastStoryUsedAt: row.last_story_used_at ?? null,
     progress: {
       masteryLevel: row.mastery_level,
       masteryScore: Number(row.mastery_score),
@@ -96,6 +99,9 @@ function serializeVocabulary(row: VocabularyRow) {
 
 const vocabularySelect = `SELECT v.id AS vocabulary_id, f.id AS favorite_id, v.language_code, v.word,
   v.meaning, v.context_meaning, v.cefr_level, v.etymology, v.memory_tip, v.example_sentence, v.example_translation,
+  (SELECT MAX(s.created_at) FROM ai_stories s
+   WHERE s.user_id = v.user_id AND s.vocabulary_ids @> ARRAY[v.id]::bigint[]
+     AND s.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days') AS last_story_used_at,
   v.created_at AS saved_at, p.mastery_level, p.mastery_score, p.total_attempts,
   p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
   p.last_reviewed_at, p.next_review_at,
@@ -157,11 +163,17 @@ vocabulariesRouter.delete('/:vocabularyId', requireAuth, async (request, respons
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
+    await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.auth!.userId])
+    await client.query(
+      `SELECT id FROM quiz_sessions WHERE user_id = $1 AND status = 'active' ORDER BY id FOR UPDATE`,
+      [request.auth!.userId],
+    )
     const result = await client.query(`UPDATE vocabularies SET archived_at=CURRENT_TIMESTAMP WHERE id=$1 AND user_id=$2 AND archived_at IS NULL RETURNING id`, [request.params.vocabularyId, request.auth!.userId])
     if (!result.rowCount) {
       await client.query('ROLLBACK'); response.status(404).json({ status: 'error', message: '단어를 찾을 수 없습니다.' }); return
     }
     await client.query(`DELETE FROM favorite_vocabularies WHERE vocabulary_id=$1`, [request.params.vocabularyId])
+    await reconcileArchivedQuizItems(client, request.auth!.userId)
     await client.query('COMMIT'); response.status(204).send()
   } catch (error) { await client.query('ROLLBACK'); next(error) } finally { client.release() }
 })

@@ -1,4 +1,4 @@
-export type StoryGenre = 'daily' | 'adventure' | 'fantasy' | 'mystery' | 'comedy'
+export type StoryGenre = 'daily' | 'adventure' | 'fantasy' | 'mystery' | 'comedy' | 'business' | 'romance'
 export type StoryLength = 'short' | 'medium' | 'long'
 export type StoryDifficulty = 'easy' | 'normal' | 'hard'
 

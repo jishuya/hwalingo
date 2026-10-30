@@ -13,6 +13,7 @@ export interface Vocabulary {
   memoryTip: string | null
   exampleSentence: string | null
   exampleTranslation: string | null
+  lastStoryUsedAt?: string | null
   savedAt: string
   progress: {
     masteryLevel: number; masteryScore: number; totalAttempts: number; correctCount: number

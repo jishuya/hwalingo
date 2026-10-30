@@ -7,7 +7,7 @@ import { AI_RULES } from '../config/aiRules.js'
 import { readAIResponseCache, writeAIResponseCache } from '../services/aiResponseCache.js'
 
 export const storiesRouter = Router()
-const genres = new Set<StoryGenre>(['daily', 'adventure', 'fantasy', 'mystery', 'comedy'])
+const genres = new Set<StoryGenre>(['daily', 'adventure', 'fantasy', 'mystery', 'comedy', 'business', 'romance'])
 const lengths = new Set<StoryLength>(['short', 'medium', 'long'])
 const difficulties = new Set<StoryDifficulty>(['easy', 'normal', 'hard'])
 
@@ -68,7 +68,7 @@ storiesRouter.post('/', requireAuth, async (request, response, next) => {
     }
     const cacheIdentity = {
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_v3',
+      operation: 'vocabulary_story_v4',
       keyParts: { vocabularyIds: [...ids].sort(), languageCode, genre, length, difficulty },
     }
     if (!forceRegenerate) {

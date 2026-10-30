@@ -1,4 +1,5 @@
-import { CheckCircle, Question, Warning, X } from '@phosphor-icons/react'
+import DialogCloseButton from './DialogCloseButton'
+import { CheckCircle, Question, Warning } from '@phosphor-icons/react'
 import { useEffect, useEffectEvent, useId, useRef, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -86,7 +87,7 @@ export function Modal({ open, title, titleBadge, description, children, footer, 
       {presentation === 'sheet' && <div className="ui-dialog-handle" aria-hidden="true"><span/></div>}
       {!hideHeader && <header className="ui-dialog-header">
         <div>{icon && <span className="ui-dialog-heading-icon">{icon}</span>}<h2 id={titleId}>{title}{titleBadge && <span className="ui-dialog-title-badge">{titleBadge}</span>}</h2>{description && <p id={descriptionId}>{description}</p>}</div>
-        {!hideClose && <button type="button" onClick={onClose} aria-label={`${title} 닫기`}><X weight="bold"/></button>}
+        {!hideClose && <DialogCloseButton onClose={onClose} label={`${title} 닫기`}/>}
       </header>}
       {children && <div className="ui-dialog-body">{children}</div>}
       {footer && <footer className="ui-dialog-footer">{footer}</footer>}

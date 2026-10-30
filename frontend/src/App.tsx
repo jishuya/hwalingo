@@ -14,6 +14,7 @@ import './App.css'
 
 export default function App() {
   const [page, setPage] = useState<Page>(readRoute)
+  const [quizMode, setQuizMode] = useState<'standard' | 'incorrect'>(() => new URLSearchParams(location.search).get('mode') === 'incorrect' ? 'incorrect' : 'standard')
   const queryClient = useQueryClient()
   const authQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -33,12 +34,13 @@ export default function App() {
   }, [settingsQuery.data?.theme])
 
   useEffect(() => {
-    const syncRoute = () => setPage(readRoute())
+    const syncRoute = () => { setPage(readRoute()); setQuizMode(new URLSearchParams(location.search).get('mode') === 'incorrect' ? 'incorrect' : 'standard') }
     window.addEventListener('popstate', syncRoute)
     return () => window.removeEventListener('popstate', syncRoute)
   }, [])
 
   const go = (nextPage: Page) => {
+    setQuizMode('standard')
     history.pushState(null, '', `/${nextPage}`)
     setPage(nextPage)
     window.scrollTo(0, 0)
@@ -61,9 +63,13 @@ export default function App() {
   const content = page === 'study'
     ? <StudyPage/>
       : page === 'vocabulary'
-        ? <VocabularyPage/>
+        ? <VocabularyPage onIncorrectTest={() => {
+          queryClient.removeQueries({ queryKey: ['quiz'] })
+          history.pushState(null, '', '/quiz?mode=incorrect')
+          setQuizMode('incorrect'); setPage('quiz'); window.scrollTo(0, 0)
+        }}/>
         : page === 'quiz'
-          ? <QuizPage onHome={() => go('study')}/>
+          ? <QuizPage key={quizMode} mode={quizMode} onHome={() => go(quizMode === 'incorrect' ? 'vocabulary' : 'study')}/>
         : page === 'story'
           ? <StoryPage/>
           : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>

@@ -171,3 +171,9 @@ node --import tsx --test backend/src/routes/quizzes.test.ts
 
 PostgreSQL 서버 실행 도구가 필요하며, 기본 경로는 `/usr/lib/postgresql/16/bin`입니다.
 다른 위치에 설치했다면 `PG_BINDIR`로 지정합니다.
+
+## 오답 단어 테스트
+
+`backend/sql/016_quiz_modes.sql`을 DB에 적용한 뒤 백엔드를 실행합니다.
+단어장 `오답단어` 탭의 **오답 단어 테스트**에서 누적 오답 이력이 있는 단어만 기존 테스트 화면으로 학습합니다.
+일반 테스트와 오답 테스트는 각각 진행 중인 세션을 이어 풉니다.

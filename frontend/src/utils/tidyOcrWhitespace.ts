@@ -1,10 +1,4 @@
-/** Normalize OCR spacing while preserving line breaks and paragraph boundaries. */
+/** Collapse OCR whitespace, including line breaks, into single spaces. */
 export function tidyOcrWhitespace(text: string): string {
-  return text
-    .replace(/\r\n?/g, '\n')
-    .split('\n')
-    .map(line => line.replace(/[^\S\n]+/gu, ' ').trim())
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+  return text.replace(/\s+/gu, ' ').trim()
 }

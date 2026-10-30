@@ -1,7 +1,8 @@
+import DialogCloseButton from '../components/ui/DialogCloseButton'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, FireIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
+import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, FireIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TranslateIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer, type QuizItem } from '../services/quiz'
+import { createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
 import QuizComplete from '../components/quiz/QuizComplete'
 import './QuizPage.css'
 
@@ -32,10 +33,9 @@ function submitTimedAnswer(sessionId: string, itemId: string, correct: boolean, 
   return submitQuizAnswer(sessionId, itemId, correct, startedAt ? Date.now() - startedAt : 0)
 }
 
-export default function QuizPage({ onHome }: { onHome: () => void }) {
+export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => void; mode?: 'standard' | 'incorrect' }) {
   const queryClient = useQueryClient()
   const [showSwipeGuide, setShowSwipeGuide] = useState(true)
-  const [missedItem, setMissedItem] = useState<QuizItem | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [detailPanel, setDetailPanel] = useState<DetailPanel>(null)
   const [showExampleTranslation, setShowExampleTranslation] = useState(false)
@@ -43,7 +43,7 @@ export default function QuizPage({ onHome }: { onHome: () => void }) {
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef<number | null>(null)
   const questionStartedAt = useRef(0)
-  const sessionQuery = useQuery({ queryKey: ['quiz', 'new-session'], queryFn: () => createQuizSession(), retry: false, staleTime: Infinity })
+  const sessionQuery = useQuery({ queryKey: ['quiz', 'new-session', mode], queryFn: () => createQuizSession(undefined, mode), retry: false, staleTime: Infinity, refetchOnMount: 'always' })
   const session = sessionQuery.data
   const current = session?.items.find(item => !item.result)
   const answeredCount = session?.items.filter(item => !item.retryOfItemId && item.result).length ?? 0
@@ -63,20 +63,19 @@ export default function QuizPage({ onHome }: { onHome: () => void }) {
   const next = async () => {
     if (!session) return
     const updated = await queryClient.fetchQuery({ queryKey: ['quiz', 'session', session.id], queryFn: () => getQuizSession(session.id) })
-    queryClient.setQueryData(['quiz', 'new-session'], updated)
+    queryClient.setQueryData(['quiz', 'new-session', mode], updated)
     resetCard()
   }
 
   const answerMutation = useMutation({
     mutationFn: (correct: boolean) => submitTimedAnswer(session!.id, current!.id, correct, questionStartedAt.current),
-    onSuccess: async result => {
-      if (!result.correct && current) setMissedItem(current)
+    onSuccess: async () => {
       await new Promise(resolve => window.setTimeout(resolve, 180))
       await next()
     },
     onError: () => setDragOffset(0),
   })
-  const answerPending = answerMutation.isPending || Boolean(missedItem) || !current
+  const answerPending = answerMutation.isPending || !current
   const mutateAnswer = answerMutation.mutate
   const deepAnalysisMutation = useMutation({ mutationFn: ({ sessionId, itemId }: { sessionId: string; itemId: string }) => getVocabularyDeepAnalysis(sessionId, itemId) })
   const imageMutation = useMutation({ mutationFn: ({ sessionId, itemId }: { sessionId: string; itemId: string }) => generateVocabularyImage(sessionId, itemId) })
@@ -145,21 +144,12 @@ export default function QuizPage({ onHome }: { onHome: () => void }) {
 
   if (sessionQuery.isPending) return <div className="quiz-page page"><div className="empty-state"><p>오늘의 테스트를 준비하고 있어요.</p></div></div>
   if (sessionQuery.isError && sessionQuery.error.message === '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.') return <div className="quiz-page page"><div className="empty-state vocabulary-empty"><StarIcon/><h2>테스트할 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘를 단어장에 저장하면<br/>이곳에서 테스트로 복습할 수 있어요.</p></div></div>
+  if (sessionQuery.isError && sessionQuery.error.message.startsWith('오늘 추가로 풀 단어')) return <div className="quiz-page page"><div className="empty-state"><h2>추가 학습을 모두 마쳤어요</h2><p>{sessionQuery.error.message}</p></div></div>
+  if (sessionQuery.isError && sessionQuery.error.message === '테스트할 오답 단어가 없어요.') return <div className="quiz-page page"><div className="empty-state"><h2>테스트할 오답 단어가 없어요</h2><button className="primary" onClick={onHome}>단어장으로</button></div></div>
+  if (sessionQuery.isError && sessionQuery.error.message.startsWith('테스트는 단어장에 단어를 ')) return <div className="quiz-page page"><div className="empty-state vocabulary-empty"><StarIcon/><h2>단어를 10개 이상 모아 주세요</h2><p>{sessionQuery.error.message}</p><button className="primary" onClick={onHome}>홈으로</button></div></div>
   if (sessionQuery.isError) return <div className="quiz-page page"><div className="empty-state"><h2>테스트를 시작할 수 없어요</h2><p>{sessionQuery.error.message}</p><button className="primary" onClick={() => void sessionQuery.refetch()}>다시 시도</button></div></div>
   if (!session) return null
-  if (missedItem) return <div className="quiz-page quiz-flash-page page">
-    <section className="card quiz-retry-feedback" aria-live="polite">
-      <span className="quiz-retry-label">오답 다시 학습하기</span>
-      <h1>{missedItem.word}</h1><strong>{missedItem.meaning}</strong>
-      <p>이 단어는 맨 뒤에서 다시 나와요. 뜻과 설명을 확인한 뒤 계속해 주세요.</p>
-      {missedItem.exampleSentence && <div className="quiz-detail-panel"><b>예문</b><p>{missedItem.exampleSentence}</p>{missedItem.exampleTranslation && <p>{missedItem.exampleTranslation}</p>}</div>}
-      {missedItem.etymology && <div className="quiz-detail-panel"><b>어원 힌트</b><p>{highlightLearningText(missedItem.etymology, missedItem.word, missedItem.meaning)}</p></div>}
-      {missedItem.memoryTip && <div className="quiz-detail-panel memory"><b>암기 팁</b><p>{highlightLearningText(missedItem.memoryTip, missedItem.word, missedItem.meaning)}</p></div>}
-      <button className="primary" disabled={answerMutation.isPending} onClick={() => setMissedItem(null)}>확인하고 계속하기</button>
-      {answerMutation.isError && <p role="alert">{answerMutation.error.message}</p>}
-    </section>
-  </div>
-  if (!current) return <QuizComplete key={session.id}
+  if (!current) return <QuizComplete key={session.id} mode={mode}
     accuracy={session.totalCount ? Math.round(session.correctCount / session.totalCount * 100) : 0}
     earnedXp={session.earnedXp} relearnedCount={retryWordCount} onHome={onHome}
     onRestart={() => { queryClient.removeQueries({ queryKey: ['quiz'] }); void sessionQuery.refetch() }}/>
@@ -177,11 +167,11 @@ export default function QuizPage({ onHome }: { onHome: () => void }) {
   return <div className="quiz-page quiz-flash-page page">
     {showSwipeGuide && <div className="quiz-swipe-guide-overlay" role="presentation" onPointerDown={() => setShowSwipeGuide(false)}>
       <div className="quiz-swipe-guide" role="dialog" aria-label="테스트 사용 안내" onPointerDown={event => event.stopPropagation()}>
-        <button type="button" aria-label="안내 닫기" onClick={() => setShowSwipeGuide(false)}><XIcon weight="bold"/></button>
+        <DialogCloseButton label="안내 닫기" onClose={() => setShowSwipeGuide(false)}/>
         <p>아는 단어는 <strong className="direction-right">오른쪽</strong>으로<br/>모르는 단어는 <strong className="direction-left">왼쪽</strong>으로 스와이프하세요.</p>
       </div>
     </div>}
-    <div className="quiz-progress"><div><div className="quiz-progress-labels"><span className="quiz-progress-title"><span aria-hidden="true">⚡</span>오늘의 단어 챌린지</span>{correctStreak > 0 && <span className="quiz-progress-streak"><FireIcon weight="fill"/> 연속 {correctStreak}개 정답!</span>}</div><b className="quiz-progress-count">{progressCount}<small> / {session.totalCount}</small></b></div><div className="progress-track" role="progressbar" aria-label="테스트 진행률" aria-valuemin={0} aria-valuemax={session.totalCount} aria-valuenow={progressCount}><span style={{ width: `${progress}%` }}/></div></div>
+    <div className="quiz-progress"><div><div className="quiz-progress-labels"><span className="quiz-progress-title"><span aria-hidden="true">🌱</span>{mode === 'incorrect' ? '오답 단어 테스트' : '오늘의 단어 챌린지'}</span>{correctStreak > 0 && <span className="quiz-progress-streak"><FireIcon weight="fill"/> 연속 {correctStreak}개 정답!</span>}</div><b className="quiz-progress-count">{progressCount}<small> / {session.totalCount}</small></b></div><div className="progress-track" role="progressbar" aria-label="테스트 진행률" aria-valuemin={0} aria-valuemax={session.totalCount} aria-valuenow={progressCount}><span style={{ width: `${progress}%` }}/></div></div>
     {retryRemaining > 0 && <p className="quiz-retry-progress" aria-live="polite">{current.retryOfItemId ? `기본 ${session.totalCount}문제 완료 · 오답 ${retryRemaining}개 다시 풀기` : `오답 ${retryRemaining}개는 뒤에서 다시 풀어요`}</p>}
     <div className="quiz-swipe-stage">
       <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''} ${dragOffset < -15 ? 'swipe-wrong' : dragOffset > 15 ? 'swipe-correct' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>

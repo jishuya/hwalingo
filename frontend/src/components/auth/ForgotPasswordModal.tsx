@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, Eye, EyeSlash, X } from '@phosphor-icons/react'
+import DialogCloseButton from '../ui/DialogCloseButton'
+import { ArrowLeft, ArrowRight, Eye, EyeSlash } from '@phosphor-icons/react'
 import { useEffect, useState, type FormEvent, type MouseEvent } from 'react'
 import { forgotPassword, resetPassword } from '../../services/auth'
 
@@ -117,7 +118,7 @@ export default function ForgotPasswordModal({ initialEmail, onClose, onComplete 
     <section className="signup-modal forgot-modal" role="dialog" aria-modal="true" aria-labelledby="forgot-title">
       <header className="signup-modal-head">
         <div><h2 id="forgot-title">비밀번호 재설정</h2><p>{step === 'email' ? '가입한 이메일 주소를 입력해주세요.' : '인증 후 새 비밀번호를 설정해주세요.'}</p></div>
-        <button type="button" onClick={onClose} aria-label="비밀번호 재설정 닫기"><X/></button>
+        <DialogCloseButton onClose={onClose} label="비밀번호 재설정 닫기"/>
       </header>
 
       {step === 'email' ? <form onSubmit={requestCode} noValidate>

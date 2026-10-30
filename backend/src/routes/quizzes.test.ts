@@ -36,7 +36,7 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
     closePool = () => pool.end()
     await pool.query(await readFile(new URL('../../../docs/db.sql', import.meta.url), 'utf8'))
     const sqlDirectory = new URL('../../sql/', import.meta.url)
-    for (const file of (await readdir(sqlDirectory)).filter(file => /^(003|004|005|006|008|012|014|015)_/.test(file)).sort()) {
+    for (const file of (await readdir(sqlDirectory)).filter(file => /^(003|004|005|006|008|012|014|015|016)_/.test(file)).sort()) {
       try { await pool.query(await readFile(new URL(file, sqlDirectory), 'utf8')) } catch (error) { throw new Error(`Migration ${file} failed`, { cause: error }) }
     }
     // The migration can safely be reapplied.
@@ -45,6 +45,8 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
     const app = express()
     app.use(express.json(), cookieParser())
     app.use('/api/quizzes', quizzesRouter)
+    const { vocabulariesRouter } = await import('./vocabularies.js')
+    app.use('/api/vocabularies', vocabulariesRouter)
     app.use(((error, _request, response, _next) => { response.status(500).json({ message: String(error) }) }) as express.ErrorRequestHandler)
     const server = app.listen(0, '127.0.0.1')
     await new Promise<void>(resolve => server.once('listening', resolve))
@@ -75,6 +77,20 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
       await pool.query(`INSERT INTO vocabulary_progress(user_id, vocabulary_id) VALUES ($1, $2)`, [userId, result.rows[0].id])
     }
     await seed('first'); await seed('second'); await seed('third')
+    await t.test('standard tests require ten saved words, including words not yet due', async () => {
+      for (let index = 0; index < 7; index++) {
+        if ([0, 3, 6].includes(index)) {
+          const response = await send('/sessions', { count: 10 })
+          assert.equal(response.status, 409)
+          assert.equal((await response.json() as { code: string }).code, 'INSUFFICIENT_VOCABULARY')
+          assert.equal((await pool.query('SELECT id FROM quiz_sessions')).rowCount, 0)
+        }
+        await seed(`future-padding-${index}`)
+      }
+      await pool.query(`UPDATE vocabulary_progress p SET total_attempts = 1, correct_count = 1,
+        next_review_at = CURRENT_TIMESTAMP + INTERVAL '30 days'
+        FROM vocabularies v WHERE p.vocabulary_id = v.id AND v.word LIKE 'future-padding-%'`)
+    })
     await t.test('wrong answers append to the end and repeated retries do not change statistics', async () => {
       let session = await create(3)
       const originalId = pending(session)[0].id
@@ -138,7 +154,30 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
       assert.deepEqual((await pool.query('SELECT * FROM user_learning_days')).rows, daysBeforeRetry)
       assert.deepEqual((await pool.query('SELECT * FROM user_progress')).rows, xpBeforeRetry)
     })
+    await t.test('additional sessions exclude answered words and future reviews, prioritize due masters, and handle exhaustion', async () => {
+      const exhausted = await send('/sessions', { count: 10 })
+      assert.equal(exhausted.status, 409)
+      await seed('due-master'); await seed('future'); await seed('fresh')
+      await pool.query(`UPDATE vocabulary_progress p SET total_attempts = 1, correct_count = 1, mastery_level = 6,
+        next_review_at = CURRENT_TIMESTAMP - INTERVAL '1 day'
+        FROM vocabularies v WHERE p.vocabulary_id = v.id AND v.word = 'due-master'`)
+      await pool.query(`UPDATE vocabulary_progress p SET total_attempts = 1, correct_count = 1,
+        next_review_at = CURRENT_TIMESTAMP + INTERVAL '1 day'
+        FROM vocabularies v WHERE p.vocabulary_id = v.id AND v.word = 'future'`)
+      let session = await create(10)
+      assert.deepEqual(session.items.map(item => item.word), ['due-master', 'fresh'])
+      // Reopening still resumes this session.
+      assert.equal((await create(10)).id, session.id)
+      for (let index = 0; index < 2; index++) { await answer(session, true); session = await get(session.id) }
+      assert.equal((await send('/sessions', { count: 10 })).status, 409)
+      // A new local learning day restores the normal session selection.
+      await pool.query(`UPDATE quiz_sessions SET completed_at = CURRENT_TIMESTAMP - INTERVAL '2 days' WHERE user_id = $1`, [userId])
+      session = await create(1)
+      assert.equal(session.totalCount, 1)
+      await answer(session, true)
+    })
     await t.test('a single remaining word stays active through repeated wrong answers', async () => {
+      await seed('single-new')
       let session = await create(1)
       assert.equal(session.totalCount, 1)
       for (let index = 0; index < 3; index++) {
@@ -152,13 +191,88 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
       assert.equal(session.status, 'completed')
       assert.equal(session.correctCount, 0)
     })
-    await t.test('all correct finishes without retries', async () => {
-      let session = await create(2)
-      for (let index = 0; index < 2; index++) { await answer(session, true); session = await get(session.id) }
-      assert.equal(session.status, 'completed')
-      assert.equal(session.correctCount, 2)
-      assert.equal(session.items.length, 2)
+    await t.test('incorrect mode only selects incorrect words, resumes separately, and preserves early-review mastery', async () => {
+      await seed('standard-only')
+      const standard = await create(1)
+      const response = await send('/sessions', { count: 40, mode: 'incorrect' })
+      assert.equal(response.status, 201, await response.clone().text())
+      let session = (await response.json() as { session: QuizSession }).session
+      assert.notEqual(session.id, standard.id)
+      const incorrectWords = (await pool.query(`SELECT v.word FROM vocabularies v JOIN vocabulary_progress p ON p.vocabulary_id = v.id WHERE p.user_id = $1 AND p.incorrect_count > 0`, [userId])).rows.map(row => row.word)
+      assert.deepEqual(session.items.map(item => item.word).sort(), incorrectWords.sort())
+      assert.equal((await create(1)).id, standard.id)
+      const resumed = await send('/sessions', { mode: 'incorrect' })
+      assert.equal((await resumed.json() as { session: QuizSession }).session.id, session.id)
+      // All selected words are early reviews; today's wrong words are still available in this mode.
+      await pool.query(`UPDATE vocabulary_progress SET next_review_at = CURRENT_TIMESTAMP + INTERVAL '30 days' WHERE user_id = $1`, [userId])
+      const before = (await pool.query(`SELECT vocabulary_id, mastery_level, next_review_at FROM vocabulary_progress WHERE user_id = $1 ORDER BY vocabulary_id`, [userId])).rows
+      while (pending(session).length) { await answer(session, true); session = await get(session.id) }
+      assert.deepEqual((await pool.query(`SELECT vocabulary_id, mastery_level, next_review_at FROM vocabulary_progress WHERE user_id = $1 ORDER BY vocabulary_id`, [userId])).rows, before)
+      await answer(standard, true)
     })
+    await t.test('six questions finish without retries even when ten were requested', async () => {
+      for (let index = 0; index < 6; index++) await seed(`completion-${index}`)
+      let session = await create(10)
+      assert.equal(session.totalCount, 6)
+      for (let index = 0; index < 6; index++) { await answer(session, true); session = await get(session.id) }
+      assert.equal(session.status, 'completed')
+      assert.equal(session.correctCount, 6)
+      assert.equal(session.items.length, 6)
+    })
+    await t.test('resuming legacy sessions removes previously archived words and retries', async () => {
+      await seed('legacy-a'); await seed('legacy-b'); await seed('legacy-c')
+      let session = await create(3)
+      const wrongWord = pending(session)[0].word
+      await answer(session, false)
+      session = await get(session.id)
+      const untestedWord = pending(session)[0].word
+      // Simulate deletion by the old backend, which left session items untouched.
+      await pool.query('UPDATE vocabularies SET archived_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND word = ANY($2::text[])', [userId, [wrongWord, untestedWord]])
+      const resumed = await create(3)
+      assert.equal(resumed.id, session.id)
+      assert.equal(resumed.totalCount, 2)
+      assert.equal(pending(resumed).length, 1)
+      assert.ok(pending(resumed).every(item => ![wrongWord, untestedWord].includes(item.word)))
+      assert.equal(resumed.items.find(item => item.word === wrongWord)?.result, 'incorrect')
+      await pool.query('UPDATE vocabularies SET archived_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND word = $2', [userId, pending(resumed)[0].word])
+      session = await get(session.id)
+      assert.equal(session.status, 'completed')
+      assert.equal(session.totalCount, 1)
+      assert.equal(pending(session).length, 0)
+    })
+    await t.test('deletion removes pending originals and retries while preserving answers and XP', async () => {
+      await seed('delete-a'); await seed('delete-b'); await seed('delete-c')
+      let session = await create(3)
+      const removeWord = async (word: string) => {
+        const vocabulary = await pool.query('SELECT id FROM vocabularies WHERE user_id = $1 AND word = $2', [userId, word])
+        const response = await fetch(`${base.replace('/quizzes', '/vocabularies')}/${vocabulary.rows[0].id}`, { method: 'DELETE', headers: { cookie } })
+        assert.equal(response.status, 204, await response.text())
+      }
+      const wrongWord = pending(session)[0].word
+      await answer(session, false)
+      session = await get(session.id)
+      const untestedWord = pending(session)[0].word
+      await removeWord(untestedWord)
+      session = await get(session.id)
+      assert.equal(session.totalCount, 2)
+      assert.ok(!session.items.some(item => item.word === untestedWord))
+      await answer(session, true)
+      session = await get(session.id)
+      const before = (await pool.query('SELECT correct_count, earned_xp FROM quiz_sessions WHERE id = $1', [session.id])).rows[0]
+      await removeWord(wrongWord)
+      session = await get(session.id)
+      assert.equal(session.status, 'completed')
+      assert.equal(pending(session).length, 0)
+      assert.equal(session.items.find(item => item.word === wrongWord)?.result, 'incorrect')
+      assert.deepEqual((await pool.query('SELECT correct_count, earned_xp FROM quiz_sessions WHERE id = $1', [session.id])).rows[0], before)
+      await seed('delete-only')
+      session = await create(1)
+      await removeWord(pending(session)[0].word)
+      session = await get(session.id)
+      assert.equal(session.status, 'abandoned')
+      assert.equal(session.totalCount, 0)
+    })
+
   } finally {
     await closeApp?.()
     await closePool?.()

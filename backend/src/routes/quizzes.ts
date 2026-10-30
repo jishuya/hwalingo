@@ -1,3 +1,4 @@
+import { reconcileArchivedQuizItems } from '../services/quizSessionCleanup.js'
 import { Router } from 'express'
 import type { PoolClient } from 'pg'
 import { pool } from '../config/database.js'
@@ -5,7 +6,7 @@ import { QUIZ_RULES, type QuestionType, type SelectionGroup } from '../config/qu
 import type { MasteryLevel } from '../config/learningRules.js'
 import { calculateReviewOutcome, type VocabularyProgressState } from '../domain/learning/mastery.js'
 import { questionTypeForLevel } from '../domain/learning/questionDifficulty.js'
-import { selectTestCandidates, type TestCandidate } from '../domain/learning/testSelection.js'
+import { selectIncorrectTestCandidates, selectAdditionalTestCandidates, selectTestCandidates, type TestCandidate } from '../domain/learning/testSelection.js'
 import { calculateQuizXp } from '../domain/learning/xp.js'
 import { calculateLevelProgress } from '../domain/learning/level.js'
 import { hwarangGradeForLevel } from '../domain/learning/hwarangGrade.js'
@@ -120,6 +121,16 @@ function buildQuestion(candidate: CandidateRow, allCandidates: CandidateRow[]) {
 }
 
 async function getSession(userId: string, sessionId: string) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await reconcileArchivedQuizItems(client, userId)
+    await client.query('COMMIT')
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally { client.release() }
+
   const sessionResult = await pool.query<{
     id: string; status: string; total_count: number; correct_count: number; earned_xp: number; started_at: string; completed_at: string | null
   }>(
@@ -176,11 +187,13 @@ async function getSession(userId: string, sessionId: string) {
 quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => {
   const client = await pool.connect()
   try {
+    const mode = request.body.mode === 'incorrect' ? 'incorrect' : 'standard'
     await client.query('BEGIN')
     await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.auth!.userId])
+    await reconcileArchivedQuizItems(client, request.auth!.userId)
     const active = await client.query<{ id: string }>(
-      `SELECT id FROM quiz_sessions WHERE user_id = $1 AND status = 'active' ORDER BY started_at DESC LIMIT 1`,
-      [request.auth!.userId],
+      `SELECT id FROM quiz_sessions WHERE user_id = $1 AND status = 'active' AND mode = $2 ORDER BY started_at DESC LIMIT 1`,
+      [request.auth!.userId, mode],
     )
     if (active.rows[0]) {
       await client.query('COMMIT')
@@ -209,6 +222,15 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       response.status(409).json({ status: 'error', message: '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.' })
       return
     }
+    if (mode === 'standard' && candidatesResult.rows.length < QUIZ_RULES.minimumVocabularyCount) {
+      await client.query('ROLLBACK')
+      response.status(409).json({
+        status: 'error',
+        code: 'INSUFFICIENT_VOCABULARY',
+        message: `테스트는 단어장에 단어를 ${QUIZ_RULES.minimumVocabularyCount}개 이상 저장한 뒤 시작할 수 있어요. 현재 ${candidatesResult.rows.length}개가 저장되어 있어요.`,
+      })
+      return
+    }
     const rowsById = new Map(candidatesResult.rows.map(item => [item.vocabulary_id, item]))
     const candidates: TestCandidate[] = candidatesResult.rows.map(item => ({
       vocabularyId: item.vocabulary_id,
@@ -219,11 +241,37 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       nextReviewAt: new Date(item.next_review_at),
       lastReviewedAt: item.last_reviewed_at ? new Date(item.last_reviewed_at) : null,
     }))
-    const selected = selectTestCandidates(candidates, requestedCount)
+    const todayResult = await client.query<{ completed_today: boolean; answered_ids: string[] }>(
+      `WITH day AS (
+         SELECT (CURRENT_TIMESTAMP AT TIME ZONE COALESCE(
+           (SELECT timezone FROM user_settings WHERE user_id = $1), 'Asia/Seoul'))::date AS today,
+           COALESCE((SELECT timezone FROM user_settings WHERE user_id = $1), 'Asia/Seoul') AS timezone
+       )
+       SELECT EXISTS (
+         SELECT 1 FROM quiz_sessions s, day d WHERE s.user_id = $1 AND s.status = 'completed' AND s.mode = 'standard'
+           AND s.total_count > 0 AND (s.completed_at AT TIME ZONE d.timezone)::date = d.today
+       ) AS completed_today,
+       ARRAY(SELECT DISTINCT i.vocabulary_id::text FROM quiz_session_items i
+         JOIN quiz_sessions s ON s.id = i.session_id CROSS JOIN day d
+         WHERE s.user_id = $1 AND i.result IS NOT NULL
+           AND (i.answered_at AT TIME ZONE d.timezone)::date = d.today) AS answered_ids`,
+      [request.auth!.userId],
+    )
+    const today = todayResult.rows[0]
+    const selected = mode === 'incorrect'
+      ? selectIncorrectTestCandidates(candidates, requestedCount)
+      : today.completed_today
+      ? selectAdditionalTestCandidates(candidates, requestedCount, new Set(today.answered_ids))
+      : selectTestCandidates(candidates, requestedCount)
+    if (!selected.length) {
+      await client.query('ROLLBACK')
+      response.status(409).json({ status: 'error', message: mode === 'incorrect' ? '테스트할 오답 단어가 없어요.' : '오늘 추가로 풀 단어를 모두 학습했어요. 새 단어를 저장하거나 다음 복습일에 다시 와 주세요.' })
+      return
+    }
     const sessionResult = await client.query<{ id: string }>(
-      `INSERT INTO quiz_sessions (user_id, requested_count, total_count, status, completed_at)
-       VALUES ($1, $2, $3, $4, CASE WHEN $3::smallint = 0 THEN CURRENT_TIMESTAMP END) RETURNING id`,
-      [request.auth!.userId, requestedCount, selected.length, selected.length ? 'active' : 'completed'],
+      `INSERT INTO quiz_sessions (user_id, requested_count, total_count, status, completed_at, mode)
+       VALUES ($1, $2, $3, $4, CASE WHEN $3::smallint = 0 THEN CURRENT_TIMESTAMP END, $5) RETURNING id`,
+      [request.auth!.userId, requestedCount, selected.length, selected.length ? 'active' : 'completed', mode],
     )
     const sessionId = sessionResult.rows[0].id
     for (const [index, selectedItem] of selected.entries()) {
@@ -408,6 +456,12 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
       return
     }
     const outcome = calculateReviewOutcome(state, correct, reviewedAt)
+    if (correct && state.totalAttempts > 0 && reviewedAt < new Date(progress.next_review_at)) {
+      outcome.masteryLevel = state.masteryLevel
+      outcome.masteryScore = state.masteryScore
+      outcome.masteredAt = state.masteredAt
+      outcome.nextReviewAt = new Date(progress.next_review_at)
+    }
     const xpEarned = calculateQuizXp({
       correct,
       masteryLevelBefore: state.masteryLevel,
