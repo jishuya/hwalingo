@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowClockwiseIcon, CaretDownIcon, ArrowRightIcon, CheckIcon, SparkleIcon } from '@phosphor-icons/react'
-import Icon from '../components/Icon'
 import PhotoTextInput from '../components/study/PhotoTextInput'
 import { AlertDialog, ConfirmDialog } from '../components/ui/Dialog'
 import { languageOptions, type AnalysisRequest, type LanguageCode } from '../services/analysis'
@@ -28,7 +27,6 @@ function LanguageSelect({ value, onChange, ariaLabel, options = languageOptions,
 
 export default function StudyPage() {
   const [text, setText] = useState('')
-  const [buttonShining, setButtonShining] = useState(false)
   const [inputLanguage, setInputLanguage] = useState<InputLanguageSelection>('auto')
   const [learningLanguage, setLearningLanguage] = useState<LanguageCode>('en')
   const [activeRequest, setActiveRequest] = useState<AnalysisRequest>()
@@ -86,6 +84,6 @@ export default function StudyPage() {
       </PhotoTextInput>
       {text.length >= 1 && <div className="study-text-count" role="status">{text.length} / 500자</div>}
 
-      <div className="input-footer study-composer-submit"><button className={`primary${buttonShining ? ' is-shining' : ''}`} disabled={isAnalyzing || !text.trim()} onClick={() => { setButtonShining(true); submit() }} onAnimationEnd={() => setButtonShining(false)}><Icon>✦</Icon> {isAnalyzing ? 'AI 분석 중...' : 'AI 분석 시작'}</button></div>
+      <div className="input-footer study-composer-submit"><button type="button" className="primary" disabled={isAnalyzing || !text.trim()} onClick={submit} aria-busy={isAnalyzing}><SparkleIcon size={16} weight="fill" aria-hidden="true"/> {isAnalyzing ? 'AI 분석 중...' : 'AI 분석 시작'}</button></div>
     </section>{activeRequest && <AnalysisPage request={activeRequest} requestId={requestId} onLoadingChange={setIsAnalyzing}/>}</div><AlertDialog open={detectionNoticeOpen} title="입력언어를 선택해 주세요" message="여러 언어가 섞여 있거나 문장이 짧아 입력언어를 확실하게 감지하지 못했어요." tone="warning" onClose={() => setDetectionNoticeOpen(false)}/><ConfirmDialog open={Boolean(languageMismatch)} title="입력언어가 다른 것 같아요" message={`선택한 언어는 ${selectedLanguageLabel ?? ''}이지만 ${mismatchDetectedLabel}(으)로 감지되었습니다.`} confirmLabel={`${mismatchDetectedLabel}로 변경`} cancelLabel={`${selectedLanguageLabel ?? '선택한 언어'}로 계속`} onCancel={() => { if (languageMismatch && inputLanguage !== 'auto') runAnalysis(languageMismatch.sentence, inputLanguage); setLanguageMismatch(undefined) }} onConfirm={() => { if (languageMismatch) { setInputLanguage(languageMismatch.detectedLanguage); runAnalysis(languageMismatch.sentence, languageMismatch.detectedLanguage) } setLanguageMismatch(undefined) }}/></>
 }

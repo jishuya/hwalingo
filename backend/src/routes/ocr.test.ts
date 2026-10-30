@@ -18,12 +18,12 @@ test('OCR upload API validates input and handles Vision results', async () => {
   assert.ok(address && typeof address !== 'string')
   const url = `http://127.0.0.1:${address.port}/api/ocr`
   let calls = 0
-  let mode: 'text' | 'empty' | 'quota' = 'text'
+  let mode: 'text' | 'missing' | 'zero' | 'empty' | 'quota' = 'text'
   const original = ImageAnnotatorClient.prototype.batchAnnotateImages
   ImageAnnotatorClient.prototype.batchAnnotateImages = (async () => {
     calls++
     if (mode === 'quota') throw Object.assign(new Error('quota'), { code: 8 })
-    return [{ responses: [{ fullTextAnnotation: { text: mode === 'text' ? 'Hello world\n' : '' } }] }]
+    return [{ responses: [{ fullTextAnnotation: { text: ['text', 'missing', 'zero'].includes(mode) ? 'Hello world\n' : '', pages: mode === 'missing' ? [] : [{ confidence: mode === 'zero' ? 0 : 0.98, property: { detectedLanguages: [{ languageCode: 'en', confidence: 0.99 }, { languageCode: 'ko', confidence: 0.8 }] } }, { confidence: mode === 'zero' ? 0 : 0.94, property: { detectedLanguages: [{ languageCode: 'en', confidence: 0.9 }] } }] } }] }]
   }) as unknown as typeof original
   const image = await sharp({ create: { width: 100, height: 100, channels: 3, background: 'white' } }).png().toBuffer()
   const send = (user: string | undefined, content?: Buffer) => {
@@ -39,14 +39,18 @@ test('OCR upload API validates input and handles Vision results', async () => {
     assert.equal(calls, 0)
     const result = await send('success', image)
     assert.equal(result.status, 200)
-    assert.deepEqual(await result.json(), { text: 'Hello world' })
+    assert.deepEqual(await result.json(), { text: 'Hello world', confidence: 0.96, languages: [{ code: 'en', confidence: 0.99 }, { code: 'ko', confidence: 0.8 }] })
+    mode = 'missing'
+    assert.deepEqual(await (await send('missing-metadata', image)).json(), { text: 'Hello world', confidence: null, languages: [] })
+    mode = 'zero'
+    assert.equal((await (await send('zero', image)).json() as { confidence: number }).confidence, 0)
     mode = 'empty'
     assert.equal((await send('empty', image)).status, 422)
     mode = 'quota'
     assert.equal((await send('quota', image)).status, 429)
     for (let i = 0; i < 5; i++) assert.equal((await send('rate')).status, 400)
     assert.equal((await send('rate')).status, 429)
-    assert.equal(calls, 3)
+    assert.equal(calls, 5)
   } finally {
     ImageAnnotatorClient.prototype.batchAnnotateImages = original
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))

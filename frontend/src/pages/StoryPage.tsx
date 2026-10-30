@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ArrowClockwiseIcon, BookOpenTextIcon, CheckCircleIcon, CheckIcon, MagnifyingGlassIcon, PencilSimpleIcon, SlidersHorizontalIcon, SpeakerHighIcon, SparkleIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
+import { ArrowClockwiseIcon, CheckCircleIcon, CheckIcon, MagnifyingGlassIcon, PencilSimpleIcon, SlidersHorizontalIcon, SpeakerHighIcon, SparkleIcon, StarIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { AlertDialog, Modal } from '../components/ui/Dialog'
+import AiLoadingOverlay from '../components/ui/AiLoadingOverlay'
 import { languageOptions, type LanguageCode } from '../services/analysis'
 import { getVocabularies } from '../services/vocabulary'
 import { createStory, getStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
@@ -143,6 +144,7 @@ export default function StoryPage() {
   }
 
   return <div className="page story-page">
+    <AiLoadingOverlay open={storyMutation.isPending} kind="story"/>
     <section className="story-intro" aria-labelledby="story-intro-title">
       <div className="story-intro-copy">
         <span className="story-intro-badge"><SparkleIcon weight="fill"/> 단어로 만드는 나만의 영어 이야기</span>
@@ -152,7 +154,7 @@ export default function StoryPage() {
     </section>
     {vocabulariesQuery.isPending ? <div className="card story-state"><p>단어장을 불러오고 있어요.</p></div>
       : vocabulariesQuery.isError ? <div className="card story-state"><p>{vocabulariesQuery.error.message}</p><button className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 시도</button></div>
-        : !words.length ? <div className="card story-state"><BookOpenTextIcon/><h2>스토리에 사용할 단어가 없어요</h2><p>문장 분석에서 단어를 저장하면 이곳에서 이야기로 복습할 수 있어요.</p></div>
+        : !words.length ? <div className="empty-state vocabulary-empty"><StarIcon/><h2>스토리에 사용할 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘를 단어장에 저장하면<br/>이곳에서 이야기로 복습할 수 있어요.</p></div>
           : <>
             <section className="card story-builder">
               <div className="story-builder-grid">

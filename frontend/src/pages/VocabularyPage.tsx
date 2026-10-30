@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BookmarkSimpleIcon, ChatTextIcon, SparkleIcon, LightbulbIcon, PlantIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TranslateIcon, StarIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
+import { ChatTextIcon, SparkleIcon, LightbulbIcon, PlantIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TranslateIcon, StarIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { languageOptions, type LanguageCode } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, setVocabularyFavorite } from '../services/vocabulary'
@@ -112,7 +112,7 @@ export default function VocabularyPage() {
   }, [viewMenuOpen])
 
   return <div className="page vocabulary-page">
-    <header className="page-title vocabulary-page-title"><span className="page-title-icon"><BookmarkSimpleIcon weight="fill"/></span><h1>내 단어장</h1><strong>{saved.length}개</strong><div className={`vocabulary-view-menu${viewMenuOpen ? ' open' : ''}`} ref={viewMenuRef}><button type="button" className="vocabulary-view-trigger" aria-haspopup="listbox" aria-expanded={viewMenuOpen} onClick={() => setViewMenuOpen(open => !open)}><span>{views.find(item => item.id === view)?.label}</span><CaretDownIcon weight="bold"/></button>{viewMenuOpen && <div className="vocabulary-view-options" role="listbox" aria-label="단어 표시 방식">{views.map(item => <button type="button" role="option" aria-selected={view === item.id} className={view === item.id ? 'active' : ''} onClick={() => { setView(item.id); setViewMenuOpen(false) }} key={item.id}><span>{item.label}</span></button>)}</div>}</div></header>
+    <header className="page-title vocabulary-page-title"><span className="page-title-icon"><StarIcon weight="fill"/></span><h1>내 단어장</h1><strong>{saved.length}개</strong><div className={`vocabulary-view-menu${viewMenuOpen ? ' open' : ''}`} ref={viewMenuRef}><button type="button" className="vocabulary-view-trigger" aria-haspopup="listbox" aria-expanded={viewMenuOpen} onClick={() => setViewMenuOpen(open => !open)}><span>{views.find(item => item.id === view)?.label}</span><CaretDownIcon weight="bold"/></button>{viewMenuOpen && <div className="vocabulary-view-options" role="listbox" aria-label="단어 표시 방식">{views.map(item => <button type="button" role="option" aria-selected={view === item.id} className={view === item.id ? 'active' : ''} onClick={() => { setView(item.id); setViewMenuOpen(false) }} key={item.id}><span>{item.label}</span></button>)}</div>}</div></header>
     <header className="vocabulary-toolbar"><label className="vocabulary-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻을 검색하세요" aria-label="단어장 검색"/></label><div className="vocabulary-language-navigation">
       <div className="story-selector-languages vocabulary-language-filters" role="tablist" aria-label="언어별 필터">
         <button type="button" role="tab" aria-selected={languageFilter === 'all'} className={languageFilter === 'all' ? 'active' : ''} onClick={() => setLanguageFilter('all')}><GlobeIcon weight="bold" aria-hidden="true"/>전체 언어</button>
@@ -122,7 +122,7 @@ export default function VocabularyPage() {
 
     {vocabulariesQuery.isPending ? <div className="empty-state"><p>단어장을 불러오고 있어요.</p></div>
       : vocabulariesQuery.isError ? <div className="empty-state"><p>{vocabulariesQuery.error.message}</p><button className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 시도</button></div>
-        : !saved.length ? <div className="empty-state vocabulary-empty"><BookmarkSimpleIcon/><h2>아직 저장한 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘에서 북마크를 누르면<br/>이곳에서 다시 학습할 수 있어요.</p></div>
+        : !saved.length ? <div className="empty-state vocabulary-empty"><StarIcon/><h2>아직 저장한 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘에서 즐겨찾기 별표를 누르면<br/>이곳에서 다시 학습할 수 있어요.</p></div>
           : !visibleWords.length ? <div className="empty-state vocabulary-empty"><MagnifyingGlassIcon/><h2>조건에 맞는 단어가 없어요</h2><p>검색어나 필터를 바꿔보세요.</p></div>
             : <div className="word-grid compact-word-grid">{visibleWords.map(word => {
               const expanded = expandedId === word.vocabularyId

@@ -16,10 +16,9 @@ import {
   TranslateIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
-import Icon from '../components/Icon'
 import SpeechControls from '../components/study/SpeechControls'
-import './AnalysisLoading.css'
-import { AlertDialog, Modal } from '../components/ui/Dialog'
+import AiLoadingOverlay from '../components/ui/AiLoadingOverlay'
+import { AlertDialog } from '../components/ui/Dialog'
 import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
@@ -195,14 +194,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
 
   return <div className="analysis-page analysis-page-v2 analysis-results-root">
     {error && <p role="alert" className="analysis-result-error">{error}</p>}
-    <Modal open={isLoading} title="AI 문장 분석 중" hideHeader onClose={() => {}} closeOnBackdrop={false} hideClose size="small" presentation="compact">
-      <div className="analysis-loading analysis-loading-progress" role="status" aria-label="AI 분석 중">
-        <div className="analysis-progress-spinner" aria-hidden="true"><Icon>✦</Icon></div>
-        <strong>AI가 분석 중이에요</strong>
-        <span>문장 길이에 따라 시간이 조금 걸릴 수 있어요.</span>
-        <div className="analysis-progress-track" role="progressbar" aria-label="문장 분석 진행 중"><i /></div>
-      </div>
-    </Modal>
+    <AiLoadingOverlay open={isLoading} kind="analysis"/>
 
     {analysis && <div className={`analysis-content-v2${isLoading ? ' refreshing' : ''}`}>
       {analysis.warnings.map((warning, index) => <div className="analysis-warning" role="status" key={`${warning}-${index}`}><WarningCircleIcon weight="fill"/><span>{warning}</span></div>)}

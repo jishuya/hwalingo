@@ -43,12 +43,12 @@ ocrRouter.post('/', requireAuth, (request, response) => {
       return
     }
     try {
-      const text = await extractImageText(image)
-      if (!text) {
+      const result = await extractImageText(image)
+      if (!result.text) {
         response.status(422).json({ message: '사진에서 글자를 찾지 못했습니다. 글자가 선명하게 나오도록 다시 촬영해 주세요.' })
         return
       }
-      response.json({ text })
+      response.json(result)
     } catch (error) {
       const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
       const [status, message] = code === 4

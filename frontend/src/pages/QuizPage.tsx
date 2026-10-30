@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, CheckCircleIcon, FireIcon, LightningIcon, QuotesIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
+import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, CheckCircleIcon, FireIcon, LightningIcon, QuotesIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
 import './QuizPage.css'
@@ -118,6 +118,7 @@ export default function QuizPage() {
   }
 
   if (sessionQuery.isPending) return <div className="quiz-page page"><div className="empty-state"><p>오늘의 테스트를 준비하고 있어요.</p></div></div>
+  if (sessionQuery.isError && sessionQuery.error.message === '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.') return <div className="quiz-page page"><div className="empty-state vocabulary-empty"><StarIcon/><h2>테스트할 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘를 단어장에 저장하면<br/>이곳에서 테스트로 복습할 수 있어요.</p></div></div>
   if (sessionQuery.isError) return <div className="quiz-page page"><div className="empty-state"><h2>테스트를 시작할 수 없어요</h2><p>{sessionQuery.error.message}</p><button className="primary" onClick={() => void sessionQuery.refetch()}>다시 시도</button></div></div>
   if (!session) return null
   if (!current) return <div className="quiz-page page"><section className="card quiz-complete"><CheckCircleIcon weight="fill"/><h1>오늘의 테스트 완료!</h1><p>{session.totalCount}문제 중 <b>{session.correctCount}문제</b>를 기억했어요.</p><strong className="quiz-total-xp">+{session.earnedXp} XP</strong><button className="primary" onClick={() => { queryClient.removeQueries({ queryKey: ['quiz'] }); void sessionQuery.refetch() }}>새 테스트 시작</button></section></div>
