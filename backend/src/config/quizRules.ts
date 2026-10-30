@@ -4,9 +4,9 @@ export const QUIZ_RULES = {
   maxQuestionCount: 40,
   selectionWeights: {
     due: 0.5,
-    new: 0.25,
-    mastered: 0.15,
-    weak: 0.1,
+    new: 0.5,
+    mastered: 0,
+    weak: 0,
   },
   multipleChoiceMaxLevel: 2,
   recallMaxLevel: 4,

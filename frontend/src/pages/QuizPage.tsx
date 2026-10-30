@@ -1,8 +1,9 @@
+import { AlertDialog } from '../components/ui/Dialog'
 import DialogCloseButton from '../components/ui/DialogCloseButton'
 import { useEffect, useRef, useState } from 'react'
 import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, FireIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TranslateIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
+import { QuizRequestError, createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
 import QuizComplete from '../components/quiz/QuizComplete'
 import './QuizPage.css'
 
@@ -47,7 +48,6 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   const session = sessionQuery.data
   const current = session?.items.find(item => !item.result)
   const answeredCount = session?.items.filter(item => !item.retryOfItemId && item.result).length ?? 0
-  const retryRemaining = session?.items.filter(item => item.retryOfItemId && !item.result).length ?? 0
   const retryWordCount = session?.items.filter(item => !item.retryOfItemId && item.result === 'incorrect').length ?? 0
 
   const resetCard = () => {
@@ -146,7 +146,7 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   if (sessionQuery.isError && sessionQuery.error.message === '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.') return <div className="quiz-page page"><div className="empty-state vocabulary-empty"><StarIcon/><h2>테스트할 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘를 단어장에 저장하면<br/>이곳에서 테스트로 복습할 수 있어요.</p></div></div>
   if (sessionQuery.isError && sessionQuery.error.message.startsWith('오늘 추가로 풀 단어')) return <div className="quiz-page page"><div className="empty-state"><h2>추가 학습을 모두 마쳤어요</h2><p>{sessionQuery.error.message}</p></div></div>
   if (sessionQuery.isError && sessionQuery.error.message === '테스트할 오답 단어가 없어요.') return <div className="quiz-page page"><div className="empty-state"><h2>테스트할 오답 단어가 없어요</h2><button className="primary" onClick={onHome}>단어장으로</button></div></div>
-  if (sessionQuery.isError && sessionQuery.error.message.startsWith('테스트는 단어장에 단어를 ')) return <div className="quiz-page page"><div className="empty-state vocabulary-empty"><StarIcon/><h2>단어를 10개 이상 모아 주세요</h2><p>{sessionQuery.error.message}</p><button className="primary" onClick={onHome}>홈으로</button></div></div>
+  if (sessionQuery.isError && sessionQuery.error instanceof QuizRequestError && sessionQuery.error.code === 'INSUFFICIENT_VOCABULARY') return <div className="quiz-page page"><AlertDialog open tone="warning" title="테스트할 단어가 부족해요" message={<>{sessionQuery.error.message.split(/(\d+개)/u).map((part, index) => index % 2 === 1 ? <strong key={index}>{part}</strong> : part)}</>} onClose={onHome}/></div>
   if (sessionQuery.isError) return <div className="quiz-page page"><div className="empty-state"><h2>테스트를 시작할 수 없어요</h2><p>{sessionQuery.error.message}</p><button className="primary" onClick={() => void sessionQuery.refetch()}>다시 시도</button></div></div>
   if (!session) return null
   if (!current) return <QuizComplete key={session.id} mode={mode}
@@ -162,6 +162,10 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   for (let index = answeredItems.length - 1; index >= 0 && answeredItems[index].result === 'correct'; index--) correctStreak++
   const example = current.exampleSentence || '저장된 예문이 아직 없어요.'
   const wordIndex = example.toLocaleLowerCase().indexOf(current.word.toLocaleLowerCase())
+  const reviewMinutes = current.reviewIntervalMinutes
+  const reviewLabel = reviewMinutes && reviewMinutes > 0
+    ? `${reviewMinutes >= 1440 ? `${Math.round(reviewMinutes / 1440)}일` : reviewMinutes >= 60 ? `${Math.round(reviewMinutes / 60)}시간` : `${reviewMinutes}분`} 뒤 복습`
+    : null
   const tilt = Math.max(-7, Math.min(7, dragOffset / 28))
 
   return <div className="quiz-page quiz-flash-page page">
@@ -172,11 +176,11 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
       </div>
     </div>}
     <div className="quiz-progress"><div><div className="quiz-progress-labels"><span className="quiz-progress-title"><span aria-hidden="true">🌱</span>{mode === 'incorrect' ? '오답 단어 테스트' : '오늘의 단어 챌린지'}</span>{correctStreak > 0 && <span className="quiz-progress-streak"><FireIcon weight="fill"/> 연속 {correctStreak}개 정답!</span>}</div><b className="quiz-progress-count">{progressCount}<small> / {session.totalCount}</small></b></div><div className="progress-track" role="progressbar" aria-label="테스트 진행률" aria-valuemin={0} aria-valuemax={session.totalCount} aria-valuenow={progressCount}><span style={{ width: `${progress}%` }}/></div></div>
-    {retryRemaining > 0 && <p className="quiz-retry-progress" aria-live="polite">{current.retryOfItemId ? `기본 ${session.totalCount}문제 완료 · 오답 ${retryRemaining}개 다시 풀기` : `오답 ${retryRemaining}개는 뒤에서 다시 풀어요`}</p>}
     <div className="quiz-swipe-stage">
       <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''} ${dragOffset < -15 ? 'swipe-wrong' : dragOffset > 15 ? 'swipe-correct' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className="quiz-card-badges">
           <span className="quiz-language-badge" aria-label={`현재 문제 언어 ${current.languageCode.toUpperCase()}`}>{languageFlags[current.languageCode] && <span className="quiz-language-flag" aria-hidden="true">{languageFlags[current.languageCode]}</span>}{current.languageCode.toUpperCase()}</span>
+          {reviewLabel && <span className="quiz-review-badge">{reviewLabel}</span>}
           {current.cefrLevel && <span className={`quiz-level level-${current.cefrLevel.toLowerCase()}`} aria-label={`단어 등급 ${current.cefrLevel}`}>{current.cefrLevel}</span>}
         </div>
         <button className="quiz-word-reveal" type="button" onClick={toggleMeaning} aria-label={revealed ? `${current.word} 뜻 숨기기` : `${current.word} 뜻 보기`} aria-pressed={revealed}>

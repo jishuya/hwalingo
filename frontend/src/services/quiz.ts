@@ -11,6 +11,7 @@ export interface QuizItem {
   result: 'correct' | 'incorrect' | null
   answeredAt: string | null
   word: string
+  reviewIntervalMinutes: number | null
   cefrLevel: string | null
   languageCode: string
   meaning: string
@@ -62,7 +63,17 @@ export interface VocabularyDeepAnalysis {
   usageTip: string
 }
 
-interface ErrorResponse { message?: string }
+interface ErrorResponse { message?: string; code?: string }
+
+export class QuizRequestError extends Error {
+  code?: string
+
+  constructor(message: string, code?: string) {
+    super(message)
+    this.name = 'QuizRequestError'
+    this.code = code
+  }
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -72,7 +83,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({})) as ErrorResponse
-    throw new Error(error.message ?? '테스트 요청을 처리하지 못했습니다.')
+    throw new QuizRequestError(error.message ?? '테스트 요청을 처리하지 못했습니다.', error.code)
   }
   return response.json() as Promise<T>
 }

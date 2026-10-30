@@ -42,7 +42,7 @@ npm run dev:backend    # 백엔드만 실행
 npm run build          # 전체 빌드
 npm run lint           # 전체 정적 검사
 npm run pm2:start      # 운영 백엔드 시작
-npm run pm2:restart    # 빌드/환경변수 변경 후 백엔드 재시작
+npm run pm2:restart    # 백엔드를 새로 빌드한 뒤 재시작
 npm run pm2:stop       # 운영 백엔드 중지
 ```
 
@@ -101,6 +101,10 @@ npm run build -w backend
 npm run pm2:restart
 curl http://127.0.0.1:5002/api/health
 ```
+
+`npm run pm2:restart`는 최신 백엔드 소스를 빌드한 뒤 PM2를 재시작합니다.
+`pm2 restart hwalingo-backend`만 직접 실행하면 기존 `backend/dist` 파일을 그대로 실행하므로 소스 변경이 반영되지 않을 수 있습니다.
+개발 서버와 PM2 백엔드를 동시에 실행하면 같은 API 포트(5002)를 사용할 수 없으므로 한 방식만 사용하세요.
 
 상태·로그 확인은 `pm2 status`, `pm2 logs hwalingo-backend`를 사용합니다.
 재시작·중지는 위의 `npm run pm2:*` 명령, 프로세스 삭제는

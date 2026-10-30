@@ -105,9 +105,13 @@ export default function StoryPage() {
   const selectDraftRecommended = () => {
     const ids = recommendedIds(visibleWords, languageFilter === 'all' ? undefined : languageFilter, draftSelectedIds)
     if (ids.length < 5) {
+      const recommendationLanguage = languageFilter === 'all'
+        ? visibleWords.find(word => word.vocabularyId === ids[0])?.languageCode
+        : languageFilter
+      const languageName = languageOptions.find(language => language.code === recommendationLanguage)?.label
       setAlert({
         title: '추천할 단어가 부족해요',
-        message: `현재 선택한 필터에 맞는 같은 언어의 단어가 ${ids.length}개뿐이에요. 추천 단어 5개를 선택하려면 검색어나 필터를 변경해주세요.`,
+        message: `추천 단어는 선택한 언어의 단어가 5개 이상일 때 가능합니다. ${languageName ? `현재 ${languageName} 단어는 ${ids.length}개뿐이에요.` : '현재 선택한 필터에 맞는 단어가 없어요.'}${search.trim() ? ' 검색 결과 기준이에요.' : ''}`,
       })
       return
     }
@@ -206,15 +210,26 @@ export default function StoryPage() {
     </Modal>
     <Modal open={selectorOpen} title="단어 선택" description={`같은 언어의 단어를 선택해주세요. (${draftSelectedIds.length}/30)`} onClose={closeSelector} size="large" footer={<><button className="ui-dialog-secondary" type="button" onClick={closeSelector}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySelection}>선택한 {draftSelectedIds.length}개 적용</button></>}>
       <div className="story-selector">
-        <div className="story-selector-languages" role="tablist" aria-label="언어별 필터"><button type="button" role="tab" aria-selected={languageFilter === 'all'} className={languageFilter === 'all' ? 'active' : ''} onClick={() => setLanguageFilter('all')}>전체 언어</button>{availableLanguages.map(language => <button type="button" role="tab" aria-selected={languageFilter === language.code} className={languageFilter === language.code ? 'active' : ''} onClick={() => setLanguageFilter(language.code)} key={language.code}><span className="vocabulary-language-flag" aria-hidden="true">{languageFlags[language.code]}</span>{language.label}<small>{language.code.toUpperCase()}</small></button>)}</div>
         <label className="story-selector-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻 검색" aria-label="스토리 단어 검색"/></label>
-        <div className="story-selector-filters vocabulary-toolbar story-selector-filterbar">
-          <div className="vocab-filters" role="tablist" aria-label="단어 필터">{([{ id: 'all', label: '전체' }, { id: 'favorite', label: '즐겨찾기' }, { id: 'incorrect', label: '오답단어' }] as const).map(filter => <button type="button" role="tab" aria-selected={wordFilter === filter.id} className={`vocabulary-filter-${filter.id}${wordFilter === filter.id ? ' active' : ''}`} onClick={() => setWordFilter(filter.id)} key={filter.id}>
+        <fieldset className="story-filter-group">
+          <legend><span>언어 선택</span></legend>
+          <div className="story-selector-languages" role="group" aria-label="언어별 필터"><button type="button" aria-pressed={languageFilter === 'all'} className={languageFilter === 'all' ? 'active' : ''} onClick={() => setLanguageFilter('all')}>전체 언어</button>{availableLanguages.map(language => <button type="button" aria-pressed={languageFilter === language.code} className={languageFilter === language.code ? 'active' : ''} onClick={() => setLanguageFilter(language.code)} key={language.code}><span className="vocabulary-language-flag" aria-hidden="true">{languageFlags[language.code]}</span>{language.label}<small>{language.code.toUpperCase()}</small></button>)}</div>
+        </fieldset>
+        <fieldset className="story-filter-group">
+          <legend><span>단어분류</span></legend>
+          <div className="story-selector-filters vocabulary-toolbar story-selector-filterbar">
+          <div className="vocab-filters" role="group" aria-label="단어 필터">{([{ id: 'all', label: '전체' }, { id: 'favorite', label: '즐겨찾기' }, { id: 'incorrect', label: '오답단어' }] as const).map(filter => <button type="button" aria-pressed={wordFilter === filter.id} className={`vocabulary-filter-${filter.id}${wordFilter === filter.id ? ' active' : ''}`} onClick={() => setWordFilter(filter.id)} key={filter.id}>
             {filter.id === 'all' ? <ListBulletsIcon weight="bold" aria-hidden="true"/> : filter.id === 'favorite' ? <StarIcon weight="bold" aria-hidden="true"/> : <XCircleIcon weight="bold" aria-hidden="true"/>}
             <span className="vocabulary-filter-label">{filter.label} <b>{matchingWords.filter(word => matchesWordFilter(word, filter.id)).length}</b></span>
           </button>)}</div>
-          <button type="button" className={`recommend${recommendSparkling ? ' sparkling' : ''}`} onClick={selectDraftRecommended} onAnimationEnd={() => setRecommendSparkling(false)}><SparkleIcon weight="fill"/> 추천</button>
         </div>
+        </fieldset>
+        <button type="button" className={`story-selector-recommend${recommendSparkling ? ' sparkling' : ''}`} onClick={selectDraftRecommended} onAnimationEnd={() => setRecommendSparkling(false)}>
+          <SparkleIcon weight="duotone" aria-hidden="true"/>
+          <strong>AI 스마트 추천</strong>
+          <span>AI가 취약한 단어를 추천해드려요</span>
+          <small>5개</small>
+        </button>
         <div className="story-word-grid story-selector-grid">{visibleWords.map(word => {
           const selected = draftSelectedIds.includes(word.vocabularyId)
           return <button type="button" className={selected ? 'selected' : ''} aria-pressed={selected} onClick={() => toggleDraftWord(word.vocabularyId)} key={word.vocabularyId}><span className="story-checkbox">{selected && <CheckIcon weight="bold"/>}</span><span><b>{word.word}<i className="story-language-badge">{word.languageCode.toUpperCase()}</i></b><small>{word.meaning}</small></span>{word.cefrLevel && <em className={`story-cefr-badge level-${word.cefrLevel.toLowerCase()}`} aria-label={`CEFR ${word.cefrLevel}`}>{word.cefrLevel}</em>}</button>

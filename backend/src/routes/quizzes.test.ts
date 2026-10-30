@@ -13,7 +13,7 @@ interface QuizSession {
   status: string
   totalCount: number
   correctCount: number
-  items: Array<{ id: string; word: string; choices: string[]; result: string | null; retryOfItemId: string | null }>
+  items: Array<{ id: string; word: string; reviewIntervalMinutes: number | null; choices: string[]; result: string | null; retryOfItemId: string | null }>
 }
 interface AnswerResult { isRetry?: boolean; xpEarned: number; nextReviewAt: string }
 
@@ -82,11 +82,30 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
         if ([0, 3, 6].includes(index)) {
           const response = await send('/sessions', { count: 10 })
           assert.equal(response.status, 409)
-          assert.equal((await response.json() as { code: string }).code, 'INSUFFICIENT_VOCABULARY')
+          const error = await response.json() as { code: string; message: string }
+          assert.equal(error.code, 'INSUFFICIENT_VOCABULARY')
+          assert.ok(error.message.includes(`현재 ${3 + index}개`))
+          assert.ok(error.message.includes(`${7 - index}개를 더 저장`))
           assert.equal((await pool.query('SELECT id FROM quiz_sessions')).rowCount, 0)
         }
         await seed(`future-padding-${index}`)
       }
+      const firstSession = await create(10)
+      assert.equal(firstSession.totalCount, 10)
+      assert.equal(firstSession.items.length, 10)
+      // An active session must not bypass the saved-word minimum when reopened.
+      const temporarilyArchived = ['future-padding-0', 'future-padding-1', 'future-padding-2', 'future-padding-3']
+      await pool.query(`UPDATE vocabularies SET archived_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND word = ANY($2::text[])`, [userId, temporarilyArchived])
+      const blockedResume = await send('/sessions', { count: 10 })
+      assert.equal(blockedResume.status, 409)
+      const resumeError = await blockedResume.json() as { code: string; message: string }
+      assert.equal(resumeError.code, 'INSUFFICIENT_VOCABULARY')
+      assert.ok(resumeError.message.includes('현재 6개'))
+      assert.ok(resumeError.message.includes('4개를 더 저장'))
+      assert.equal((await pool.query('SELECT status FROM quiz_sessions WHERE id = $1', [firstSession.id])).rows[0].status, 'active')
+      await pool.query(`UPDATE vocabularies SET archived_at = NULL WHERE user_id = $1 AND word = ANY($2::text[])`, [userId, temporarilyArchived])
+      assert.equal((await create(10)).id, firstSession.id)
+      await pool.query(`UPDATE quiz_sessions SET status = 'abandoned' WHERE id = $1`, [firstSession.id])
       await pool.query(`UPDATE vocabulary_progress p SET total_attempts = 1, correct_count = 1,
         next_review_at = CURRENT_TIMESTAMP + INTERVAL '30 days'
         FROM vocabularies v WHERE p.vocabulary_id = v.id AND v.word LIKE 'future-padding-%'`)
@@ -172,8 +191,12 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
       assert.equal((await send('/sessions', { count: 10 })).status, 409)
       // A new local learning day restores the normal session selection.
       await pool.query(`UPDATE quiz_sessions SET completed_at = CURRENT_TIMESTAMP - INTERVAL '2 days' WHERE user_id = $1`, [userId])
+      // Simulate a word becoming due on the new learning day.
+      await pool.query(`UPDATE vocabulary_progress p SET next_review_at = CURRENT_TIMESTAMP - INTERVAL '1 minute'
+        FROM vocabularies v WHERE p.vocabulary_id = v.id AND v.word = 'future'`)
       session = await create(1)
       assert.equal(session.totalCount, 1)
+      assert.equal(session.items[0].word, 'future')
       await answer(session, true)
     })
     await t.test('a single remaining word stays active through repeated wrong answers', async () => {
@@ -271,6 +294,60 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
       session = await get(session.id)
       assert.equal(session.status, 'abandoned')
       assert.equal(session.totalCount, 0)
+    })
+
+    await t.test('short legacy sessions gain eligible words without losing answers, XP, or retries', async () => {
+      const result = await pool.query<{ id: string }>(`INSERT INTO users(email, password_hash, display_name)
+        VALUES ('short@test.local', 'test', 'test') RETURNING id`)
+      const owner = result.rows[0].id
+      const ownerCookie = `hwalingo_session=${jwt.sign({ userId: owner }, 'quiz-retry-test')}`
+      const post = async (path: string, body: object) => {
+        const response = await fetch(`${base}${path}`, { method: 'POST',
+          headers: { cookie: ownerCookie, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        assert.ok(response.ok, await response.clone().text())
+        return response.json()
+      }
+      const addWords = async (count: number, prefix: string) => {
+        const words = await pool.query<{ id: string }>(`INSERT INTO vocabularies(user_id, word, meaning)
+          SELECT $1, $2 || n, 'meaning ' || n FROM generate_series(1, $3::int) n RETURNING id`, [owner, prefix, count])
+        for (const word of words.rows) await pool.query(
+          'INSERT INTO vocabulary_progress(user_id, vocabulary_id) VALUES ($1, $2)', [owner, word.id])
+      }
+      await addWords(10, 'legacy-')
+      let session = (await post('/sessions', { count: 10 })).session as QuizSession
+      assert.ok(session.items.every(item => item.reviewIntervalMinutes === null))
+      // Reproduce a six-question session left behind by an older version.
+      await pool.query('DELETE FROM quiz_session_items WHERE session_id = $1 AND position > 6', [session.id])
+      await pool.query('UPDATE quiz_sessions SET total_count = 6 WHERE id = $1', [session.id])
+      for (let index = 0; index < 6; index++) await post(
+        `/sessions/${session.id}/items/${session.items[index].id}/answer`, { selfReportedCorrect: index !== 0 })
+      const before = (await pool.query('SELECT correct_count, earned_xp FROM quiz_sessions WHERE id = $1', [session.id])).rows[0]
+      const history = (await pool.query('SELECT * FROM quiz_session_items WHERE session_id = $1 ORDER BY position', [session.id])).rows
+      // Future reviews must not be pulled forward merely to make ten questions.
+      await pool.query(`UPDATE vocabulary_progress SET total_attempts = 1, correct_count = 1,
+        next_review_at = CURRENT_TIMESTAMP + INTERVAL '30 days' WHERE user_id = $1 AND total_attempts = 0`, [owner])
+      session = (await post('/sessions', { count: 10 })).session
+      assert.equal(session.totalCount, 6)
+      await addWords(4, 'new-')
+      const resumed = await Promise.all([post('/sessions', { count: 10 }), post('/sessions', { count: 10 })])
+      for (const response of resumed) {
+        assert.equal(response.session.id, session.id)
+        assert.equal(response.session.totalCount, 10)
+        assert.equal(response.session.items.filter((item: QuizSession['items'][number]) => !item.retryOfItemId).length, 10)
+        assert.equal(response.session.items.filter((item: QuizSession['items'][number]) => item.retryOfItemId && !item.result).length, 1)
+      }
+      assert.deepEqual((await pool.query('SELECT correct_count, earned_xp FROM quiz_sessions WHERE id = $1', [session.id])).rows[0], before)
+      assert.deepEqual((await pool.query('SELECT * FROM quiz_session_items WHERE session_id = $1 ORDER BY position LIMIT 7', [session.id])).rows, history)
+      assert.equal((await post('/sessions', { count: 10 })).session.items.length, 11)
+      await pool.query(`UPDATE vocabulary_progress SET total_attempts = 1, correct_count = 1, incorrect_count = 0,
+        last_reviewed_at = CURRENT_TIMESTAMP, next_review_at = CURRENT_TIMESTAMP + INTERVAL '7 days'
+        WHERE user_id = $1`, [owner])
+      const scheduled = (await post('/sessions', { count: 10 })).session as QuizSession
+      assert.ok(scheduled.items.every(item => item.reviewIntervalMinutes === 7 * 24 * 60))
+      await pool.query(`UPDATE vocabulary_progress SET next_review_at = last_reviewed_at + INTERVAL '10 minutes'
+        WHERE user_id = $1`, [owner])
+      const shortReview = (await post('/sessions', { count: 10 })).session as QuizSession
+      assert.ok(shortReview.items.every(item => item.reviewIntervalMinutes === 10))
     })
 
   } finally {

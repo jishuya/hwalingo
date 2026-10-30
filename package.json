@@ -14,6 +14,7 @@
     "lint": "npm run lint -w frontend && npm run lint -w backend",
     "start": "npm run start -w backend",
     "pm2:start": "pm2 start ecosystem.config.cjs --env production",
+    "prepm2:restart": "npm run build -w backend",
     "pm2:restart": "pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
     "pm2:stop": "pm2 stop hwalingo-backend"
   },

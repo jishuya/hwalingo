@@ -47,6 +47,7 @@ interface SessionItemRow {
   acceptable_answers: string[]
   choices: string[]
   explanation: string | null
+  review_interval_minutes: number | null
   generation_source: 'deterministic' | 'ai'
   result: 'correct' | 'incorrect' | null
   answered_at: string | null
@@ -145,9 +146,13 @@ async function getSession(userId: string, sessionId: string) {
             i.question_type, i.prompt, i.correct_answer, i.acceptable_answers, i.choices,
             i.explanation, i.generation_source, i.result, i.answered_at, i.retry_of_item_id,
             v.word, v.cefr_level, v.language_code, v.meaning, v.context_meaning,
-            v.example_sentence, v.example_translation, v.etymology, v.memory_tip
+            v.example_sentence, v.example_translation, v.etymology, v.memory_tip,
+            CASE WHEN p.total_attempts > 0 AND p.next_review_at > p.last_reviewed_at
+              THEN ROUND(EXTRACT(EPOCH FROM (p.next_review_at - p.last_reviewed_at)) / 60)::int
+              END AS review_interval_minutes
      FROM quiz_session_items i
      JOIN vocabularies v ON v.id = i.vocabulary_id
+     LEFT JOIN vocabulary_progress p ON p.vocabulary_id = v.id AND p.user_id = v.user_id
      WHERE i.session_id = $1 ORDER BY i.position`,
     [sessionId],
   )
@@ -178,6 +183,7 @@ async function getSession(userId: string, sessionId: string) {
       exampleTranslation: item.example_translation,
       etymology: item.etymology,
       memoryTip: item.memory_tip,
+      reviewIntervalMinutes: item.review_interval_minutes,
       generationSource: item.generation_source,
       ...(item.result ? { correctAnswer: item.correct_answer, explanation: item.explanation } : {}),
     })),
@@ -191,15 +197,6 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
     await client.query('BEGIN')
     await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.auth!.userId])
     await reconcileArchivedQuizItems(client, request.auth!.userId)
-    const active = await client.query<{ id: string }>(
-      `SELECT id FROM quiz_sessions WHERE user_id = $1 AND status = 'active' AND mode = $2 ORDER BY started_at DESC LIMIT 1`,
-      [request.auth!.userId, mode],
-    )
-    if (active.rows[0]) {
-      await client.query('COMMIT')
-      response.json({ session: await getSession(request.auth!.userId, active.rows[0].id) })
-      return
-    }
     const configuredCountResult = await client.query<{ quiz_question_count: number }>(
       `SELECT quiz_question_count FROM user_settings WHERE user_id = $1`,
       [request.auth!.userId],
@@ -217,7 +214,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
        WHERE v.user_id = $1 AND v.archived_at IS NULL`,
       [request.auth!.userId],
     )
-    if (!candidatesResult.rowCount) {
+    if (!candidatesResult.rowCount && mode === 'incorrect') {
       await client.query('ROLLBACK')
       response.status(409).json({ status: 'error', message: '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.' })
       return
@@ -227,7 +224,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       response.status(409).json({
         status: 'error',
         code: 'INSUFFICIENT_VOCABULARY',
-        message: `테스트는 단어장에 단어를 ${QUIZ_RULES.minimumVocabularyCount}개 이상 저장한 뒤 시작할 수 있어요. 현재 ${candidatesResult.rows.length}개가 저장되어 있어요.`,
+        message: `테스트를 하려면 단어장에 ${QUIZ_RULES.minimumVocabularyCount}개 이상의 단어가 필요해요. 현재 ${candidatesResult.rows.length}개의 단어가 저장되어있어요. ${QUIZ_RULES.minimumVocabularyCount - candidatesResult.rows.length}개를 더 저장해주세요`,
       })
       return
     }
@@ -258,6 +255,45 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       [request.auth!.userId],
     )
     const today = todayResult.rows[0]
+    const active = await client.query<{ id: string; requested_count: number; total_count: number }>(
+      `SELECT id, requested_count, total_count FROM quiz_sessions
+       WHERE user_id = $1 AND status = 'active' AND mode = $2 ORDER BY started_at DESC LIMIT 1 FOR UPDATE`,
+      [request.auth!.userId, mode],
+    )
+    const existing = active.rows[0]
+    if (existing) {
+      // Older or shortened sessions can be filled without losing answers or retry history.
+      if (mode === 'standard' && existing.total_count < existing.requested_count) {
+        const items = await client.query<{ vocabulary_id: string; position: number }>(
+          'SELECT vocabulary_id, position FROM quiz_session_items WHERE session_id = $1', [existing.id],
+        )
+        const used = new Set(items.rows.map(item => item.vocabulary_id))
+        const available = candidates.filter(item => !used.has(item.vocabularyId))
+        const additions = selectAdditionalTestCandidates(
+          available, existing.requested_count - existing.total_count, new Set(today.answered_ids),
+        )
+        const lastPosition = Math.max(0, ...items.rows.map(item => item.position))
+        for (const [index, selectedItem] of additions.entries()) {
+          const candidate = rowsById.get(selectedItem.vocabularyId)!
+          const question = buildQuestion(candidate, candidatesResult.rows)
+          await client.query(
+            `INSERT INTO quiz_session_items
+               (session_id, vocabulary_id, position, selection_group, question_type, prompt,
+                correct_answer, acceptable_answers, choices, explanation, generation_source)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11)`,
+            [existing.id, candidate.vocabulary_id, lastPosition + index + 1, selectedItem.selectionGroup,
+              question.questionType, question.prompt, question.correctAnswer, JSON.stringify(question.acceptableAnswers),
+              JSON.stringify(question.choices), question.explanation, question.generationSource],
+          )
+        }
+        if (additions.length) await client.query(
+          'UPDATE quiz_sessions SET total_count = total_count + $2 WHERE id = $1', [existing.id, additions.length],
+        )
+      }
+      await client.query('COMMIT')
+      response.json({ session: await getSession(request.auth!.userId, existing.id) })
+      return
+    }
     const selected = mode === 'incorrect'
       ? selectIncorrectTestCandidates(candidates, requestedCount)
       : today.completed_today
