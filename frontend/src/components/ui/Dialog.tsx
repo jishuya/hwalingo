@@ -8,6 +8,7 @@ type DialogSize = 'small' | 'medium' | 'large'
 interface ModalProps {
   open: boolean
   title: string
+  titleBadge?: ReactNode
   description?: ReactNode
   children?: ReactNode
   footer?: ReactNode
@@ -23,7 +24,7 @@ interface ModalProps {
   tone?: DialogTone
 }
 
-export function Modal({ open, title, description, children, footer, onClose, closeOnBackdrop = true, size = 'medium', ariaLabel, role = 'dialog', presentation = 'sheet', icon, hideClose = false, hideHeader = false, tone = 'info' }: ModalProps) {
+export function Modal({ open, title, titleBadge, description, children, footer, onClose, closeOnBackdrop = true, size = 'medium', ariaLabel, role = 'dialog', presentation = 'sheet', icon, hideClose = false, hideHeader = false, tone = 'info' }: ModalProps) {
   const titleId = useId()
   const descriptionId = useId()
   const dialogRef = useRef<HTMLElement>(null)
@@ -84,7 +85,7 @@ export function Modal({ open, title, description, children, footer, onClose, clo
     <section ref={dialogRef} className={`ui-dialog ui-dialog-${size} ui-dialog-${presentation} ui-dialog-${tone}${hideHeader ? ' ui-dialog-headerless' : ''}`} role={role} aria-modal="true" aria-labelledby={ariaLabel || hideHeader ? undefined : titleId} aria-label={ariaLabel ?? (hideHeader ? title : undefined)} aria-describedby={description ? descriptionId : undefined}>
       {presentation === 'sheet' && <div className="ui-dialog-handle" aria-hidden="true"><span/></div>}
       {!hideHeader && <header className="ui-dialog-header">
-        <div>{icon && <span className="ui-dialog-heading-icon">{icon}</span>}<h2 id={titleId}>{title}</h2>{description && <p id={descriptionId}>{description}</p>}</div>
+        <div>{icon && <span className="ui-dialog-heading-icon">{icon}</span>}<h2 id={titleId}>{title}{titleBadge && <span className="ui-dialog-title-badge">{titleBadge}</span>}</h2>{description && <p id={descriptionId}>{description}</p>}</div>
         {!hideClose && <button type="button" onClick={onClose} aria-label={`${title} 닫기`}><X weight="bold"/></button>}
       </header>}
       {children && <div className="ui-dialog-body">{children}</div>}

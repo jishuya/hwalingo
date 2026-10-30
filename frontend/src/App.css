@@ -412,3 +412,26 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 .story-intro p{max-width:520px;margin:0;color:#526174;font-size:var(--font-sm);line-height:1.45;word-break:keep-all}
 @media(max-width:600px){.story-intro{padding:16px;margin-bottom:14px;border-radius:16px}.story-intro-badge{padding:2px 9px;letter-spacing:-.4px}.story-intro h1{margin-top:7px}}
 @media(max-width:360px){.story-intro{padding:14px}}
+
+.ui-dialog-title-badge{display:inline-flex;align-items:center;margin-left:8px;vertical-align:middle;letter-spacing:normal;font-weight:normal}
+
+.ui-dialog-sheet:has(.photo-text-content) .ui-dialog-header{padding-bottom:10px}
+
+.ui-dialog-sheet:has(.image-cropper) { color: #172033; background: #fff; }
+.ui-dialog-sheet:has(.image-cropper) .ui-dialog-header p { color: #7285a3; }
+.ui-dialog-sheet:has(.image-cropper) .ui-dialog-header>button { background: #f1f5f9; color: #41516e; }
+.ui-dialog-sheet:has(.image-cropper) .photo-crop-smart-badge { border-color: #a7f3d0; background: #ecfdf5; color: #009b77; }
+
+.ui-dialog-sheet:has(.photo-ocr-extract) { color: #172033; background: #fff; }
+.ui-dialog-sheet:has(.photo-ocr-extract) .photo-crop-smart-badge { border-color: #a7f3d0; background: #ecfdf5; color: #009b77; }
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-header>button { color: #94a3b8; }
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-footer { border-top: 0; padding-top: 0; }
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-secondary, .ui-dialog-sheet:has(.photo-ocr-editor) .ui-dialog-secondary { border: 1px solid #e0e8f2; background: #f7f9fc; color: #475569; }
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-secondary:hover, .ui-dialog-sheet:has(.photo-ocr-editor) .ui-dialog-secondary:hover { background: #eef2f7; }
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-primary, .ui-dialog-sheet:has(.photo-ocr-editor) .ui-dialog-primary { background: #009b77; color: #fff; box-shadow: 0 4px 10px #009b7733; }
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-primary:hover:not(:disabled), .ui-dialog-sheet:has(.photo-ocr-editor) .ui-dialog-primary:hover:not(:disabled) { background: #008563; }
+
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-footer .ui-dialog-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-footer .ui-dialog-primary svg{flex-shrink:0}
+
+.ui-dialog-sheet:has(.photo-ocr-extract) .ui-dialog-body{padding-bottom:16px}

@@ -1,4 +1,4 @@
-import { ArrowsCounterClockwiseIcon, ImageIcon, CheckCircleIcon, SlidersHorizontalIcon } from '@phosphor-icons/react'
+import { ArrowsCounterClockwiseIcon, ImageIcon, CheckCircleIcon, CornersOutIcon, SlidersHorizontalIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 
 type Crop = { x: number; y: number; width: number; height: number }
@@ -6,10 +6,11 @@ type Handle = 'nw' | 'ne' | 'sw' | 'se' | 'move' | 'new'
 const fullImage: Crop = { x: 0, y: 0, width: 100, height: 100 }
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
-export default function ImageCropper({ file, onComplete, onError }: { file: File; onComplete: (file: File) => void; onError: (message: string) => void }) {
+export default function ImageCropper({ file, extracting = false, onComplete, onError }: { file: File; extracting?: boolean; onComplete: (file: File) => void | Promise<void>; onError: (message: string) => void }) {
   const [crop, setCrop] = useState<Crop>({ x: 8, y: 12, width: 84, height: 76 })
   const [ready, setReady] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [preparing, setBusy] = useState(false)
+  const busy = preparing || extracting
   const image = useRef<HTMLImageElement>(null)
   const stage = useRef<HTMLDivElement>(null)
   const alive = useRef(true)
@@ -71,7 +72,7 @@ export default function ImageCropper({ file, onComplete, onError }: { file: File
       context.drawImage(img, sx, sy, width, height, 0, 0, canvas.width, canvas.height)
       const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('이미지 저장에 실패했습니다. 다시 시도해 주세요.')), 'image/jpeg', 0.92))
       if (blob.size > 10 * 1024 * 1024) throw new Error('선택한 이미지가 너무 큽니다. 영역을 더 작게 선택해 주세요.')
-      if (alive.current) onComplete(new File([blob], 'cropped-photo.jpg', { type: 'image/jpeg' }))
+      if (alive.current) await onComplete(new File([blob], 'cropped-photo.jpg', { type: 'image/jpeg' }))
     } catch (error) {
       if (alive.current) onError(error instanceof Error ? error.message : '이미지를 자르지 못했습니다.')
     } finally {
@@ -79,20 +80,19 @@ export default function ImageCropper({ file, onComplete, onError }: { file: File
     }
   }
   return <div className="image-cropper">
-    <p id="crop-instructions">인식할 문장이 상자 안에 오도록 조절해 주세요.</p>
     <div className="image-cropper-stage" ref={stage} onPointerDown={start} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={() => { drag.current = null }}>
       <img ref={image} alt="자르기 영역을 선택할 원본 사진" draggable={false} onLoad={() => setReady(true)} onError={() => onError('사진을 열 수 없습니다. JPEG, PNG, WebP 사진을 다시 선택해 주세요.')}/>
       {ready && <div className="image-cropper-selection" data-handle="move" style={{ left: `${crop.x}%`, top: `${crop.y}%`, width: `${crop.width}%`, height: `${crop.height}%` }}>
-        <span className="image-cropper-grid" aria-hidden="true"/><span className="image-cropper-badge" aria-hidden="true">✦ 선택 영역</span>
+        <span className="image-cropper-grid" aria-hidden="true"/>
         {(['nw', 'ne', 'sw', 'se'] as const).map(handle => <span key={handle} data-handle={handle} className={`image-cropper-handle image-cropper-${handle}`}/>)}
       </div>}
     </div>
     <section className="image-cropper-adjustments" aria-labelledby="crop-adjustments-title">
-      <div className="image-cropper-adjustments-heading"><h3 id="crop-adjustments-title"><SlidersHorizontalIcon aria-hidden="true"/>영역 미세 조절</h3><span>좌표 &amp; 크기</span></div>
-      <fieldset disabled={!ready || busy} className="image-cropper-controls" aria-describedby="crop-instructions"><legend>자르기 영역 미세 조절</legend>
+      <div className="image-cropper-adjustments-heading"><h3 id="crop-adjustments-title"><SlidersHorizontalIcon aria-hidden="true"/>영역 미세 조절</h3><button type="button" className="image-cropper-select-all" disabled={!ready || busy} onClick={() => setCrop(fullImage)}><CornersOutIcon aria-hidden="true"/>전체영역</button></div>
+      <fieldset disabled={!ready || busy} className="image-cropper-controls"><legend>자르기 영역 미세 조절</legend>
       {(['x', 'y', 'width', 'height'] as const).map(key => <label key={key}><span className="image-cropper-control-label">{({ x: '가로 위치', y: '세로 위치', width: '영역 너비', height: '영역 높이' })[key]}<output>{Math.round(crop[key])}%</output></span><input type="range" min="0" max={key === 'x' ? 100 - crop.width : key === 'y' ? 100 - crop.height : key === 'width' ? 100 - crop.x : 100 - crop.y} step="0.1" value={crop[key]} onChange={event => setCrop(current => ({ ...current, [key]: Number(event.target.value) }))}/></label>)}
       </fieldset>
     </section>
-    <div className="image-cropper-buttons"><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy} onClick={() => setCrop(fullImage)}><ArrowsCounterClockwiseIcon aria-hidden="true"/>선택 초기화</button><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy || !ready} onClick={() => onComplete(file)}><ImageIcon aria-hidden="true"/>전체 이미지 사용</button><button type="button" className="ui-dialog-primary ui-dialog-action" disabled={!ready || busy || crop.width < 1 || crop.height < 1} onClick={() => void complete()}><CheckCircleIcon aria-hidden="true"/>{busy ? '이미지 자르는 중...' : '선택 영역 사용'}</button></div>
+    <div className="image-cropper-buttons"><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy} onClick={() => setCrop(fullImage)}><ArrowsCounterClockwiseIcon aria-hidden="true"/>선택 초기화</button><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy || !ready} onClick={() => onComplete(file)}><ImageIcon aria-hidden="true"/>전체 이미지 사용</button><button type="button" className="ui-dialog-primary ui-dialog-action" disabled={!ready || busy || crop.width < 1 || crop.height < 1} onClick={() => void complete()}><CheckCircleIcon aria-hidden="true"/>{extracting ? '글자 추출 중...' : preparing ? '이미지 자르는 중...' : '선택 영역에서 글자 추출'}</button></div>
   </div>
 }
