@@ -4,7 +4,7 @@ import './SpeechControls.css'
 
 const rates = [0.75, 1, 1.5, 2]
 
-export default function SpeechControls({ rate, onRateChange, onPlay }: { rate: number; onRateChange: (rate: number) => void; onPlay: () => void }) {
+export default function SpeechControls({ rate, onRateChange, onPlay, playLabel = '문장 발음 듣기' }: { rate: number; onRateChange: (rate: number) => void; onPlay: () => void; playLabel?: string }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -41,6 +41,6 @@ export default function SpeechControls({ rate, onRateChange, onPlay }: { rate: n
       }}><span>{value}×</span></button>)}
     </div>}
     </div>
-    <button type="button" className="speech-play-button" aria-label="문장 발음 듣기" title="문장 발음 듣기" onClick={onPlay}><SpeakerHighIcon weight="regular" aria-hidden="true"/></button>
+    <button type="button" className="speech-play-button" aria-label={playLabel} title={playLabel} onClick={onPlay}><SpeakerHighIcon weight="regular" aria-hidden="true"/></button>
   </div>
 }

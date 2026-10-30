@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowClockwiseIcon, BookOpenIcon, CaretRightIcon, CheckCircleIcon, CheckIcon, MagnifyingGlassIcon, ListBulletsIcon, XCircleIcon, LightningIcon, PlusIcon, SlidersHorizontalIcon, SpeakerHighIcon, SparkleIcon, StarIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
+import { ArrowClockwiseIcon, BookOpenIcon, CaretRightIcon, CheckCircleIcon, CheckIcon, ChecksIcon, MagnifyingGlassIcon, ListBulletsIcon, XCircleIcon, LightningIcon, PlusIcon, SlidersHorizontalIcon, SparkleIcon, StarIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { AlertDialog, Modal } from '../components/ui/Dialog'
 import { recommendStoryWords } from '../domain/storyRecommendation'
 import AiLoadingOverlay from '../components/ui/AiLoadingOverlay'
+import SpeechControls from '../components/study/SpeechControls'
 import { languageOptions, type LanguageCode } from '../services/analysis'
 import { getVocabularies, type Vocabulary } from '../services/vocabulary'
-import { createStory, getStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
+import { createStory, getStoryTranslation, isKoreanStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
 
 const languageFlags: Record<LanguageCode, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵', zh: '🇨🇳', fr: '🇫🇷' }
 
@@ -42,6 +43,7 @@ export default function StoryPage() {
   const [draftLength, setDraftLength] = useState<StoryLength>('short')
   const [draftDifficulty, setDraftDifficulty] = useState<StoryDifficulty>('normal')
   const [translationVisible, setTranslationVisible] = useState(false)
+  const [speechRate, setSpeechRate] = useState(1)
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
   const translationMutation = useMutation({ mutationFn: getStoryTranslation })
   const storyMutation = useMutation({ mutationFn: createStory, onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }); setTranslationVisible(false); translationMutation.reset(); window.setTimeout(() => document.querySelector('.story-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) } })
@@ -51,7 +53,7 @@ export default function StoryPage() {
   const languageFilter = selectedLanguageFilter === 'all' || savedLanguages.has(selectedLanguageFilter) ? selectedLanguageFilter : 'all'
   const selectedWords = words.filter(word => selectedIds.includes(word.vocabularyId))
   const selectedLanguage = selectedWords[0]?.languageCode
-  const storyTranslation = storyMutation.data?.translation
+  const storyTranslation = (isKoreanStoryTranslation(storyMutation.data?.translation) ? storyMutation.data.translation : '')
     || (translationMutation.variables?.story === storyMutation.data?.story ? translationMutation.data : '')
   const draftWords = words.filter(word => draftSelectedIds.includes(word.vocabularyId))
   const draftLanguage = draftWords[0]?.languageCode
@@ -132,6 +134,7 @@ export default function StoryPage() {
     if (!selectedLanguage || !('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = speechRate
     utterance.lang = selectedLanguage === 'en' ? 'en-US' : selectedLanguage === 'fr' ? 'fr-FR' : selectedLanguage
     window.speechSynthesis.speak(utterance)
   }
@@ -198,11 +201,35 @@ export default function StoryPage() {
               {storyMutation.isError && <p className="story-error" role="alert">{storyMutation.error.message} 선택한 단어는 그대로 유지됩니다.</p>}
             </section>
             {storyMutation.data && <article className="card story-card story-result">
-              <div className="story-title"><div><span>AI STORY · {genres.find(item => item.value === genre)?.label}</span><h2>{storyMutation.data.title}</h2></div><button className="round" aria-label="스토리 전체 듣기" onClick={() => speak(storyMutation.data.story)}><SpeakerHighIcon/></button></div>
-              <h3>STORY</h3><p>{storyMutation.data.segments.map((segment, index) => segment.vocabularyId ? <mark key={index}>{segment.text}</mark> : <span key={index}>{segment.text}</span>)}</p>
-              <hr/><section className="story-translation"><button type="button" aria-expanded={translationVisible} onClick={toggleTranslation}><TranslateIcon weight="bold"/>한국어 번역 {translationVisible ? '숨기기' : '보기'}</button>{translationVisible && <div><h3>한국어 번역</h3>{translationMutation.isPending && <p className="translation">번역하고 있어요…</p>}{translationMutation.isError && <p className="story-error" role="alert">{translationMutation.error.message}</p>}{storyTranslation && <p className="translation">{storyTranslation}</p>}</div>}</section>
-              <div className="story-usage"><h3>사용한 단어 {storyMutation.data.vocabularyUsages.length}/{selectedIds.length}</h3><div>{storyMutation.data.vocabularyUsages.map(usage => <span key={usage.vocabularyId}><CheckCircleIcon weight="fill"/>{usage.word}<small>{usage.meaning}</small></span>)}</div></div>
-              <div className="story-result-actions"><button onClick={generate} disabled={storyMutation.isPending}><ArrowClockwiseIcon/> 같은 단어로 다시 만들기</button><button onClick={startWithNewWords}>새 단어 선택</button></div>
+              <div className="story-title">
+                <dl className="story-result-filters" aria-label="스토리 생성 설정">
+                  <div className="story-result-length"><dt className="story-filter-sr-only">길이</dt><dd>{lengths.find(item => item.value === storyMutation.variables?.length)?.label}</dd></div>
+                  <div className="story-result-genre"><dt className="story-filter-sr-only">장르</dt><dd>{genres.find(item => item.value === storyMutation.variables?.genre)?.label}</dd></div>
+                  <div className="story-result-difficulty"><dt className="story-filter-sr-only">난이도</dt><dd>{difficulties.find(item => item.value === storyMutation.variables?.difficulty)?.label.replace(/\s*\([^)]*\)/u, '')}</dd></div>
+                </dl>
+                <h2>{storyMutation.data.title}</h2>
+              </div>
+              <section className="story-example">
+                <div className="word-detail-heading"><b><SparkleIcon weight="fill" aria-hidden="true"/>STORY</b><div>
+                  <SpeechControls rate={speechRate} onRateChange={setSpeechRate} onPlay={() => speak(storyMutation.data.story)} playLabel="스토리 전체 듣기"/>
+                  <button type="button" className={translationVisible ? 'active' : ''} aria-label={`스토리 한국어 해석 ${translationVisible ? '숨기기' : '보기'}`} aria-expanded={translationVisible} aria-controls="story-korean-translation" onClick={toggleTranslation}><TranslateIcon/></button>
+                </div></div>
+                <blockquote><button type="button" className="vocabulary-example-toggle" aria-label={`스토리 한국어 해석 ${translationVisible ? '숨기기' : '보기'}`} aria-expanded={translationVisible} aria-controls="story-korean-translation" onClick={toggleTranslation}>{storyMutation.data.segments.map((segment, index) => segment.vocabularyId ? <mark key={index}>{segment.text}</mark> : <span key={index}>{segment.text}</span>)}</button></blockquote>
+                {translationVisible && <div id="story-korean-translation" className="story-example-translation" aria-live="polite" aria-busy={translationMutation.isPending}>
+                  {translationMutation.isPending && <p>번역하고 있어요…</p>}
+                  {translationMutation.isError && <p className="story-error" role="alert">{translationMutation.error.message}</p>}
+                  {storyTranslation && <p>{storyTranslation}</p>}
+                </div>}
+              </section>
+              <section className="story-used-words" aria-label="사용한 단어">
+                <div className="story-used-heading"><h3><ChecksIcon weight="bold" aria-hidden="true"/>사용한 단어</h3><span>{storyMutation.data.vocabularyUsages.length} / {selectedIds.length} 완료</span></div>
+                <ul>{storyMutation.data.vocabularyUsages.map(usage => <li key={usage.vocabularyId}>
+                  <CheckCircleIcon className="story-used-check" weight="fill" aria-hidden="true"/>
+                  <div className="story-used-word"><strong>{usage.word}</strong>{usage.pronunciation && <small>{usage.pronunciation}</small>}</div>
+                  <span className="story-used-meaning">{usage.meaning}</span>
+                </li>)}</ul>
+              </section>
+              <div className="story-result-actions"><button type="button" onClick={generate} disabled={storyMutation.isPending}><ArrowClockwiseIcon/> 같은 단어로 다시 만들기</button><button type="button" onClick={startWithNewWords}><SparkleIcon/> 새 단어로 스토리 생성</button></div>
             </article>}
           </>}
     <Modal open={settingsOpen} title="스토리 설정" onClose={() => setSettingsOpen(false)} size="medium" footer={<><button className="ui-dialog-secondary" type="button" onClick={() => setSettingsOpen(false)}>취소</button><button className="ui-dialog-primary" type="button" onClick={applySettings}>설정 적용</button></>}>
@@ -224,12 +251,12 @@ export default function StoryPage() {
           </button>)}</div>
         </div>
         </fieldset>
-        <button type="button" className={`story-selector-recommend${recommendSparkling ? ' sparkling' : ''}`} onClick={selectDraftRecommended} onAnimationEnd={() => setRecommendSparkling(false)}>
-          <SparkleIcon weight="duotone" aria-hidden="true"/>
-          <strong>AI 스마트 추천</strong>
-          <span>AI가 취약한 단어를 추천해드려요</span>
-          <small>5개</small>
-        </button>
+        <div className="story-selector-actions">
+          <button type="button" className={`story-selector-recommend${recommendSparkling ? ' sparkling' : ''}`} aria-label="AI 스마트 추천으로 단어 5개 선택" onClick={selectDraftRecommended} onAnimationEnd={() => setRecommendSparkling(false)}>
+            <SparkleIcon weight="duotone" aria-hidden="true"/><strong>AI 스마트 추천</strong>
+          </button>
+          <button type="button" className="story-selector-reset" disabled={!draftSelectedIds.length} onClick={() => { setDraftSelectedIds([]); setRecommendSparkling(false) }}><ArrowClockwiseIcon aria-hidden="true"/>초기화</button>
+        </div>
         <div className="story-word-grid story-selector-grid">{visibleWords.map(word => {
           const selected = draftSelectedIds.includes(word.vocabularyId)
           return <button type="button" className={selected ? 'selected' : ''} aria-pressed={selected} onClick={() => toggleDraftWord(word.vocabularyId)} key={word.vocabularyId}><span className="story-checkbox">{selected && <CheckIcon weight="bold"/>}</span><span><b>{word.word}<i className="story-language-badge">{word.languageCode.toUpperCase()}</i></b><small>{word.meaning}</small></span>{word.cefrLevel && <em className={`story-cefr-badge level-${word.cefrLevel.toLowerCase()}`} aria-label={`CEFR ${word.cefrLevel}`}>{word.cefrLevel}</em>}</button>

@@ -1,3 +1,4 @@
+import { isKoreanStoryTranslation } from '../services/storyTranslationValidation.js'
 import { Router } from 'express'
 import { pool } from '../config/database.js'
 import { requireAuth } from '../middleware/requireAuth.js'
@@ -25,14 +26,17 @@ storiesRouter.post('/translation', requireAuth, async (request, response, next) 
     if (!(languageCode in languageNames)) {
       response.status(400).json({ message: '스토리 언어가 올바르지 않습니다.' }); return
     }
-    const translation = await readAIResponseCache<string>({
+    const cachedTranslation = await readAIResponseCache<unknown>({
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_translation_v1',
+      operation: 'vocabulary_story_translation_ko_v2',
       keyParts: { story, languageCode },
-    }) ?? await generateStoryTranslation({ story, languageCode }, abortController.signal)
+    })
+    const translation = isKoreanStoryTranslation(cachedTranslation)
+      ? cachedTranslation
+      : await generateStoryTranslation({ story, languageCode }, abortController.signal)
     await writeAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_translation_v1',
+      operation: 'vocabulary_story_translation_ko_v2',
       keyParts: { story, languageCode },
       value: translation,
       ttlMs: AI_RULES.cache.storyTranslationTtlMs,
@@ -68,13 +72,13 @@ storiesRouter.post('/', requireAuth, async (request, response, next) => {
     }
     const cacheIdentity = {
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_v4',
+      operation: 'vocabulary_story_v5',
       keyParts: { vocabularyIds: [...ids].sort(), languageCode, genre, length, difficulty },
     }
     if (!forceRegenerate) {
       const cachedStory = await readAIResponseCache<Awaited<ReturnType<typeof generateStory>>>(cacheIdentity)
       if (cachedStory) {
-        response.json({ story: cachedStory, source: 'cache' })
+        response.json({ story: { ...cachedStory, translation: isKoreanStoryTranslation(cachedStory.translation) ? cachedStory.translation : '' }, source: 'cache' })
         return
       }
     }
