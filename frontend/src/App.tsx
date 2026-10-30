@@ -63,7 +63,7 @@ export default function App() {
       : page === 'vocabulary'
         ? <VocabularyPage/>
         : page === 'quiz'
-          ? <QuizPage/>
+          ? <QuizPage onHome={() => go('study')}/>
         : page === 'story'
           ? <StoryPage/>
           : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>

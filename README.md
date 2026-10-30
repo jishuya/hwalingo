@@ -123,7 +123,8 @@ curl https://api.hwalingo.example.com/api/health
 사진 위에서 영역을 이동하거나 모서리를 드래그하고, 미세 조절 슬라이더로 위치와 크기를
 조정한 뒤 `선택 영역에서 글자 추출`을 누르면 바로 OCR을 시작합니다.
 별도 추출 시작 화면 없이 완료 후 추출한 글 확인 화면으로 이동합니다. 자른 부분만 OCR로 전송하며,
-`영역 다시 자르기`는 원본 사진에서 시작합니다. `전체 이미지 사용`을 누르면 전체 사진에서 바로 글자를 추출합니다.
+`영역 다시 자르기`는 원본 사진에서 시작합니다. `전체 이미지 사용`을 누르면 사진 전체 영역이 선택됩니다. 선택을 확인한 뒤
+`선택 영역에서 글자 추출`을 눌러 추출합니다.
 JPEG, PNG, WebP 사진 한 장(최대 10MB, 4천만 화소)을 지원합니다.
 추출 결과에는 Google 응답의 감지 언어와 인식 신뢰도(페이지별 점수의 산술 평균)를 표시합니다.
 신뢰도는 실제 정답률이 아니며, 응답에 값이 없으면 정보 없음으로 표시합니다.
@@ -155,3 +156,18 @@ OCR API 자동 검증(Google 호출은 모의 응답으로 대체):
 ```bash
 JWT_SECRET=ocr-test-secret node --import tsx --test backend/src/routes/ocr.test.ts
 ```
+
+## 테스트 오답 재도전
+
+`backend/sql/015_quiz_retries.sql`을 DB에 적용한 뒤 백엔드를 실행합니다.
+오답은 테스트 맨 뒤에서 맞힐 때까지 다시 출제되며, 재도전은 숙련도·복습일·XP·첫 시도 통계를 변경하지 않습니다.
+진행 중인 테스트는 페이지를 다시 열면 이어서 풀 수 있습니다.
+
+독립 임시 PostgreSQL DB를 사용하는 API 통합 검증(실제 앱 DB는 사용하지 않음):
+
+```bash
+node --import tsx --test backend/src/routes/quizzes.test.ts
+```
+
+PostgreSQL 서버 실행 도구가 필요하며, 기본 경로는 `/usr/lib/postgresql/16/bin`입니다.
+다른 위치에 설치했다면 `PG_BINDIR`로 지정합니다.

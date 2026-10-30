@@ -153,12 +153,7 @@
 .photo-zoom-image img { display: block; width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; object-fit: contain; user-select: none; pointer-events: none; }
 .photo-zoom-controls button:focus-visible, .photo-zoom-viewport:focus-visible { outline: 2px solid #0cba87; outline-offset: -2px; }
 
-.image-cropper-select-all { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 26px; height: 26px; padding: 3px 8px; border: 1px solid #b9e8d8; border-radius: 6px; background: #ecfdf5; color: #007f61; font-size: 12px; line-height: 1.4; font-weight: 600; }
-.image-cropper-select-all:hover:not(:disabled) { background: #d5f8e9; border-color: #6ed9b6; }
-.image-cropper-select-all:disabled { opacity: .5; cursor: default; }
-.image-cropper-select-all:focus-visible { outline: 2px solid #009b77; outline-offset: 2px; }
 
-.image-cropper-select-all svg { width: 12px; height: 12px; flex-shrink: 0; }
 
 .photo-ocr-notice.photo-ocr-success { gap: 10px; padding: 13px 12px; border: 1px solid #c9f8e5; border-radius: 16px; background: #effcf6; }
 .photo-ocr-success .photo-ocr-notice-icon { width: 30px; height: 30px; background: #ccf8e5; color: #008b6c; }

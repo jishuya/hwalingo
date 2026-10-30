@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  ArrowUpIcon,
   ArrowsClockwiseIcon,
   StarIcon,
   BookOpenIcon,
@@ -40,6 +41,14 @@ function highlightExampleWord(text: string, word: string, memoryTip = false) {
 }
 
 export default function AnalysisPage({ request, requestId, onLoadingChange }: { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void }) {
+  const [showScrollTop, setShowScrollTop] = useState(false)
+  useEffect(() => {
+    const updateScrollTop = () => setShowScrollTop(window.scrollY > 400)
+    updateScrollTop()
+    window.addEventListener('scroll', updateScrollTop, { passive: true })
+    return () => window.removeEventListener('scroll', updateScrollTop)
+  }, [])
+
   const [analysis, setAnalysis] = useState<SentenceAnalysis>()
   const [isLoading, setIsLoading] = useState(false)
   const [speechRate, setSpeechRate] = useState(1)
@@ -270,6 +279,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         </article>
       })}
     </div>}
+    {showScrollTop && <button type="button" className="analysis-scroll-top" aria-label="맨 위로 이동" title="맨 위로 이동" onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}><ArrowUpIcon weight="bold" aria-hidden="true"/></button>}
     <AlertDialog open={Boolean(wordActionAlert)} title={wordActionAlert?.title ?? ''} message={wordActionAlert?.message ?? ''} tone="warning" onClose={() => setWordActionAlert(undefined)}/>
   </div>
 }

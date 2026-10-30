@@ -14,7 +14,10 @@
 .sentence-speech-control button:focus-visible{outline:2px solid #405dcc;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.sentence-analysis-header .sentence-speech-control button{transition:none}}
 
-.sentence-analysis-header .sentence-speech-control .speech-play-button{width:32px;height:32px;padding:0;border-radius:50%;background:#e7f1eb;color:#57836a;box-shadow:0 1px 0 #cbded2}
-.sentence-analysis-header .sentence-speech-control .speech-play-button svg{width:16px;height:16px}
-.sentence-analysis-header .sentence-speech-control .speech-play-button:hover{background:#dbeade;color:#376b4e}
-.sentence-analysis-header .sentence-speech-control .speech-play-button:active{transform:translateY(1px);box-shadow:none}
+.sentence-analysis-header .sentence-speech-control .speech-play-button{width:32px;height:32px;padding:0;border:0;border-radius:50%;background:#e7f4eb;color:#008c44;box-shadow:none}
+.sentence-analysis-header .sentence-speech-control .speech-play-button svg{width:18px;height:18px}
+.sentence-analysis-header .sentence-speech-control .speech-play-button:hover{background:#d4ebdc;color:#006f36}
+.sentence-analysis-header .sentence-speech-control .speech-play-button:active{transform:scale(.95);background:#c3e2cf;box-shadow:none}
+
+html[data-theme='dark'] .sentence-analysis-header .sentence-speech-control .speech-play-button{background:#203b2b;color:#78d69b}
+html[data-theme='dark'] .sentence-analysis-header .sentence-speech-control .speech-play-button:hover{background:#2b4d38;color:#a0e7b8}

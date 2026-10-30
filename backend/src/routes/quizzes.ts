@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import type { PoolClient } from 'pg'
 import { pool } from '../config/database.js'
 import { QUIZ_RULES, type QuestionType, type SelectionGroup } from '../config/quizRules.js'
 import type { MasteryLevel } from '../config/learningRules.js'
@@ -37,6 +38,7 @@ interface SessionItemRow {
   session_id: string
   vocabulary_id: string
   position: number
+  retry_of_item_id: string | null
   selection_group: SelectionGroup
   question_type: QuestionType
   prompt: string
@@ -130,7 +132,7 @@ async function getSession(userId: string, sessionId: string) {
   const itemResult = await pool.query<SessionItemRow>(
     `SELECT i.id, i.session_id, i.vocabulary_id, i.position, i.selection_group,
             i.question_type, i.prompt, i.correct_answer, i.acceptable_answers, i.choices,
-            i.explanation, i.generation_source, i.result, i.answered_at,
+            i.explanation, i.generation_source, i.result, i.answered_at, i.retry_of_item_id,
             v.word, v.cefr_level, v.language_code, v.meaning, v.context_meaning,
             v.example_sentence, v.example_translation, v.etymology, v.memory_tip
      FROM quiz_session_items i
@@ -149,6 +151,7 @@ async function getSession(userId: string, sessionId: string) {
     items: itemResult.rows.map(item => ({
       id: item.id,
       position: item.position,
+      retryOfItemId: item.retry_of_item_id,
       selectionGroup: item.selection_group,
       questionType: item.question_type,
       prompt: item.prompt,
@@ -173,6 +176,17 @@ async function getSession(userId: string, sessionId: string) {
 quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => {
   const client = await pool.connect()
   try {
+    await client.query('BEGIN')
+    await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.auth!.userId])
+    const active = await client.query<{ id: string }>(
+      `SELECT id FROM quiz_sessions WHERE user_id = $1 AND status = 'active' ORDER BY started_at DESC LIMIT 1`,
+      [request.auth!.userId],
+    )
+    if (active.rows[0]) {
+      await client.query('COMMIT')
+      response.json({ session: await getSession(request.auth!.userId, active.rows[0].id) })
+      return
+    }
     const configuredCountResult = await client.query<{ quiz_question_count: number }>(
       `SELECT quiz_question_count FROM user_settings WHERE user_id = $1`,
       [request.auth!.userId],
@@ -191,6 +205,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       [request.auth!.userId],
     )
     if (!candidatesResult.rowCount) {
+      await client.query('ROLLBACK')
       response.status(409).json({ status: 'error', message: '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.' })
       return
     }
@@ -205,11 +220,10 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       lastReviewedAt: item.last_reviewed_at ? new Date(item.last_reviewed_at) : null,
     }))
     const selected = selectTestCandidates(candidates, requestedCount)
-    await client.query('BEGIN')
-    await client.query(`UPDATE quiz_sessions SET status = 'abandoned' WHERE user_id = $1 AND status = 'active'`, [request.auth!.userId])
     const sessionResult = await client.query<{ id: string }>(
-      `INSERT INTO quiz_sessions (user_id, requested_count, total_count) VALUES ($1, $2, $3) RETURNING id`,
-      [request.auth!.userId, requestedCount, selected.length],
+      `INSERT INTO quiz_sessions (user_id, requested_count, total_count, status, completed_at)
+       VALUES ($1, $2, $3, $4, CASE WHEN $3::smallint = 0 THEN CURRENT_TIMESTAMP END) RETURNING id`,
+      [request.auth!.userId, requestedCount, selected.length, selected.length ? 'active' : 'completed'],
     )
     const sessionId = sessionResult.rows[0].id
     for (const [index, selectedItem] of selected.entries()) {
@@ -274,9 +288,35 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/image', requireAuth, asyn
       return
     }
     const image = await getOrGenerateVocabularyImage(request.auth!.userId, vocabulary)
-    response.json({ imageDataUrl: `data:${image.mimeType};base64,${image.base64}` })
+    response.json({ imageDataUrl: `data:${image.mimeType};base64,${image.base64}`, explanation: image.explanation })
   } catch (error) { next(error) }
 })
+
+async function recordAttempt(client: PoolClient, item: SessionItemRow, correct: boolean, reviewedAt: Date, responseTimeMs: number | null) {
+  await client.query(
+    `UPDATE quiz_session_items SET result = $1, answered_at = $2, response_time_ms = $3 WHERE id = $4`,
+    [correct ? 'correct' : 'incorrect', reviewedAt, responseTimeMs, item.id],
+  )
+  if (!correct) {
+    const choices = shuffled(item.choices)
+    if (choices.length > 1 && choices.every((choice, index) => choice === item.choices[index])) choices.push(choices.shift()!)
+    await client.query(
+      `INSERT INTO quiz_session_items
+         (session_id, vocabulary_id, position, selection_group, question_type, prompt,
+          correct_answer, acceptable_answers, choices, explanation, generation_source, retry_of_item_id)
+       SELECT $1, $2, COALESCE(MAX(position), 0) + 1, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10, $11
+       FROM quiz_session_items WHERE session_id = $1`,
+      [item.session_id, item.vocabulary_id, item.selection_group, item.question_type, item.prompt,
+        item.correct_answer, JSON.stringify(item.acceptable_answers), JSON.stringify(choices),
+        item.explanation, item.generation_source, item.retry_of_item_id ?? item.id],
+    )
+  }
+  await client.query(
+    `UPDATE quiz_sessions SET status = 'completed', completed_at = $1
+     WHERE id = $2 AND NOT EXISTS (SELECT 1 FROM quiz_session_items WHERE session_id = $2 AND result IS NULL)`,
+    [reviewedAt, item.session_id],
+  )
+}
 
 quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, async (request, response, next) => {
   const submittedAnswer = typeof request.body.answer === 'string' ? request.body.answer.trim() : ''
@@ -291,6 +331,15 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
+    const lockedSession = await client.query<{ status: string }>(
+      'SELECT status FROM quiz_sessions WHERE id = $1 AND user_id = $2 FOR UPDATE',
+      [request.params.sessionId, request.auth!.userId],
+    )
+    if (lockedSession.rows[0]?.status !== 'active') {
+      await client.query('ROLLBACK')
+      response.status(409).json({ status: 'error', message: '진행 중인 테스트가 아닙니다.' })
+      return
+    }
     const itemResult = await client.query<SessionItemRow>(
       `SELECT i.*, v.word, v.cefr_level
        FROM quiz_session_items i
@@ -309,6 +358,15 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
     if (item.result) {
       await client.query('ROLLBACK')
       response.status(409).json({ status: 'error', message: '이미 답변한 문제입니다.' })
+      return
+    }
+    const nextItem = await client.query<{ id: string }>(
+      'SELECT id FROM quiz_session_items WHERE session_id = $1 AND result IS NULL ORDER BY position LIMIT 1',
+      [item.session_id],
+    )
+    if (nextItem.rows[0]?.id !== item.id) {
+      await client.query('ROLLBACK')
+      response.status(409).json({ status: 'error', message: '현재 문제부터 답변해주세요.' })
       return
     }
     const progressResult = await client.query<{
@@ -332,6 +390,22 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
       correctStreak: progress.correct_streak,
       incorrectStreak: progress.incorrect_streak,
       masteredAt: progress.mastered_at ? new Date(progress.mastered_at) : null,
+    }
+    if (item.retry_of_item_id) {
+      await recordAttempt(client, item, correct, reviewedAt, responseTimeMs)
+      const userProgress = await client.query<{ total_xp: string }>(
+        'SELECT total_xp FROM user_progress WHERE user_id = $1', [request.auth!.userId],
+      )
+      const totalXp = Number(userProgress.rows[0]?.total_xp ?? 0)
+      const growth = calculateLevelProgress(totalXp)
+      await client.query('COMMIT')
+      response.json({
+        correct, isRetry: true, correctAnswer: item.correct_answer, questionExplanation: item.explanation,
+        mastery: { before: state.masteryLevel, after: state.masteryLevel },
+        nextReviewAt: new Date(progress.next_review_at).toISOString(), xpEarned: 0,
+        growth: { ...growth, totalXp, hwarangGrade: hwarangGradeForLevel(growth.level), leveledUp: false, gradeChanged: false },
+      })
+      return
     }
     const outcome = calculateReviewOutcome(state, correct, reviewedAt)
     const xpEarned = calculateQuizXp({
@@ -358,10 +432,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
         outcome.incorrectCount, outcome.correctStreak, outcome.incorrectStreak, outcome.lastReviewedAt,
         outcome.nextReviewAt, outcome.masteredAt, outcome.algorithmVersion, request.auth!.userId, item.vocabulary_id],
     )
-    await client.query(
-      `UPDATE quiz_session_items SET result = $1, answered_at = $2 WHERE id = $3`,
-      [correct ? 'correct' : 'incorrect', reviewedAt, item.id],
-    )
+    await recordAttempt(client, item, correct, reviewedAt, responseTimeMs)
     const quizResult = await client.query<{ id: string }>(
       `INSERT INTO quizzes
          (user_id, vocabulary_id, submitted_answer, result, used_hint, response_time_ms,
@@ -395,15 +466,6 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
        WHERE id = $3`,
       [correct ? 1 : 0, xpEarned, item.session_id],
     )
-    const remainingResult = await client.query<{ count: string }>(
-      `SELECT count(*) FROM quiz_session_items WHERE session_id = $1 AND result IS NULL`, [item.session_id],
-    )
-    if (remainingResult.rows[0].count === '0') {
-      await client.query(
-        `UPDATE quiz_sessions SET status = 'completed', completed_at = $1 WHERE id = $2`,
-        [reviewedAt, item.session_id],
-      )
-    }
     const totalXpAfter = totalXpBefore + xpEarned
     const growthAfter = calculateLevelProgress(totalXpAfter)
     const gradeBefore = hwarangGradeForLevel(growthBefore.level)

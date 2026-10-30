@@ -1,4 +1,4 @@
-import { ArrowsCounterClockwiseIcon, ImageIcon, CheckCircleIcon, CornersOutIcon, SlidersHorizontalIcon } from '@phosphor-icons/react'
+import { ArrowsCounterClockwiseIcon, CornersOutIcon, CheckCircleIcon, SlidersHorizontalIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 
 type Crop = { x: number; y: number; width: number; height: number }
@@ -88,11 +88,11 @@ export default function ImageCropper({ file, extracting = false, onComplete, onE
       </div>}
     </div>
     <section className="image-cropper-adjustments" aria-labelledby="crop-adjustments-title">
-      <div className="image-cropper-adjustments-heading"><h3 id="crop-adjustments-title"><SlidersHorizontalIcon aria-hidden="true"/>영역 미세 조절</h3><button type="button" className="image-cropper-select-all" disabled={!ready || busy} onClick={() => setCrop(fullImage)}><CornersOutIcon aria-hidden="true"/>전체영역</button></div>
+      <div className="image-cropper-adjustments-heading"><h3 id="crop-adjustments-title"><SlidersHorizontalIcon aria-hidden="true"/>영역 미세 조절</h3></div>
       <fieldset disabled={!ready || busy} className="image-cropper-controls"><legend>자르기 영역 미세 조절</legend>
       {(['x', 'y', 'width', 'height'] as const).map(key => <label key={key}><span className="image-cropper-control-label">{({ x: '가로 위치', y: '세로 위치', width: '영역 너비', height: '영역 높이' })[key]}<output>{Math.round(crop[key])}%</output></span><input type="range" min="0" max={key === 'x' ? 100 - crop.width : key === 'y' ? 100 - crop.height : key === 'width' ? 100 - crop.x : 100 - crop.y} step="0.1" value={crop[key]} onChange={event => setCrop(current => ({ ...current, [key]: Number(event.target.value) }))}/></label>)}
       </fieldset>
     </section>
-    <div className="image-cropper-buttons"><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy} onClick={() => setCrop(fullImage)}><ArrowsCounterClockwiseIcon aria-hidden="true"/>선택 초기화</button><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy || !ready} onClick={() => onComplete(file)}><ImageIcon aria-hidden="true"/>전체 이미지 사용</button><button type="button" className="ui-dialog-primary ui-dialog-action" disabled={!ready || busy || crop.width < 1 || crop.height < 1} onClick={() => void complete()}><CheckCircleIcon aria-hidden="true"/>{extracting ? '글자 추출 중...' : preparing ? '이미지 자르는 중...' : '선택 영역에서 글자 추출'}</button></div>
+    <div className="image-cropper-buttons"><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy} onClick={() => setCrop(fullImage)}><ArrowsCounterClockwiseIcon aria-hidden="true"/>선택 초기화</button><button type="button" className="ui-dialog-secondary ui-dialog-action" disabled={busy || !ready} onClick={() => setCrop(fullImage)}><CornersOutIcon aria-hidden="true"/>전체 이미지 사용</button><button type="button" className="ui-dialog-primary ui-dialog-action" disabled={!ready || busy || crop.width < 1 || crop.height < 1} onClick={() => void complete()}><CheckCircleIcon aria-hidden="true"/>{extracting ? '글자 추출 중...' : preparing ? '이미지 자르는 중...' : '선택 영역에서 글자 추출'}</button></div>
   </div>
 }

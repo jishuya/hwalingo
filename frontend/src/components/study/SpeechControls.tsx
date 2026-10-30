@@ -41,6 +41,6 @@ export default function SpeechControls({ rate, onRateChange, onPlay }: { rate: n
       }}><span>{value}×</span></button>)}
     </div>}
     </div>
-    <button type="button" className="speech-play-button" aria-label="문장 발음 듣기" onClick={onPlay}><SpeakerHighIcon weight="fill" aria-hidden="true"/></button>
+    <button type="button" className="speech-play-button" aria-label="문장 발음 듣기" title="문장 발음 듣기" onClick={onPlay}><SpeakerHighIcon weight="regular" aria-hidden="true"/></button>
   </div>
 }

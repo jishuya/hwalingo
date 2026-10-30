@@ -2,6 +2,7 @@ export type QuestionType = 'multiple_choice' | 'recall' | 'context' | 'translati
 
 export interface QuizItem {
   id: string
+  retryOfItemId: string | null
   position: number
   selectionGroup: 'due' | 'new' | 'mastered' | 'weak' | 'fallback'
   questionType: QuestionType
@@ -35,6 +36,7 @@ export interface QuizSession {
 }
 
 export interface AnswerResult {
+  isRetry?: boolean
   correct: boolean
   correctAnswer: string
   mastery: { before: number; after: number }
@@ -97,7 +99,7 @@ export async function getVocabularyDeepAnalysis(sessionId: string, itemId: strin
   return result.analysis
 }
 
-export async function generateVocabularyImage(sessionId: string, itemId: string): Promise<string> {
-  const result = await request<{ imageDataUrl: string }>(`/api/quizzes/sessions/${sessionId}/items/${itemId}/image`, { method: 'POST' })
-  return result.imageDataUrl
+export async function generateVocabularyImage(sessionId: string, itemId: string): Promise<{ imageDataUrl: string; explanation: string }> {
+  const result = await request<{ imageDataUrl: string; explanation: string }>(`/api/quizzes/sessions/${sessionId}/items/${itemId}/image`, { method: 'POST' })
+  return result
 }
