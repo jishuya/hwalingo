@@ -47,6 +47,14 @@ export default function App() {
     window.scrollTo(0, 0)
   }
 
+  const startIncorrectTest = () => {
+    queryClient.removeQueries({ queryKey: ['quiz'] })
+    history.pushState(null, '', '/quiz?mode=incorrect')
+    setQuizMode('incorrect')
+    setPage('quiz')
+    window.scrollTo(0, 0)
+  }
+
   const finishAuth = (user: AuthUser) => {
     queryClient.setQueryData(['auth', 'me'], { user })
     go('study')
@@ -64,17 +72,13 @@ export default function App() {
   const content = page === 'study'
     ? <StudyPage/>
       : page === 'vocabulary'
-        ? <VocabularyPage onIncorrectTest={() => {
-          queryClient.removeQueries({ queryKey: ['quiz'] })
-          history.pushState(null, '', '/quiz?mode=incorrect')
-          setQuizMode('incorrect'); setPage('quiz'); window.scrollTo(0, 0)
-        }}/>
+        ? <VocabularyPage onIncorrectTest={startIncorrectTest}/>
         : page === 'quiz'
           ? <QuizPage key={quizMode} mode={quizMode} onHome={() => go(quizMode === 'incorrect' ? 'vocabulary' : 'study')}/>
         : page === 'story'
           ? <StoryPage/>
           : page === 'learning-progress'
-            ? <LearningProgressPage onNavigate={go}/>
+            ? <LearningProgressPage onNavigate={go} onIncorrectTest={startIncorrectTest}/>
           : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>
 
   return <AppShell page={page} go={go}>{content}</AppShell>

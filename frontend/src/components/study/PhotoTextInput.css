@@ -189,7 +189,7 @@ button.photo-ocr-confidence:hover { background: #a4ebd0; }
 .study-composer-v2 .study-input-body { padding: 0 14px; border: 1px solid var(--line); border-radius: 18px; background: #fcfdfc; }
 .study-composer-v2 .study-input-body:focus-within { border-color: var(--green); box-shadow: 0 0 0 3px rgba(8,122,67,.1); }
 .study-composer-v2 .study-input-body textarea { min-height: 160px; padding: 16px 0 42px; border: 0; border-radius: 0; background: transparent; box-shadow: none; line-height: 1.6; }
-.study-composer-v2 .study-input-body textarea::placeholder { color: var(--muted); }
+.study-composer-v2 .study-input-body textarea::placeholder { color: var(--muted); font-size: 13px; }
 .study-composer-v2 .study-clear-text { right: 0; bottom: 6px; width: 30px; height: 30px; }
 .study-input-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0 12px; border-top: 1px solid var(--line); }
 .study-composer-v2 .study-photo-actions { position: static; gap: 8px; }

@@ -1,9 +1,9 @@
 import LearningTimer from '../components/learning/LearningTimer'
 import { useEffect, useRef, useState } from 'react'
-import { SparkleIcon, LightbulbIcon, PlantIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TranslateIcon, StarIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
+import { SignInIcon, ArrowClockwiseIcon, SparkleIcon, LightbulbIcon, PlantIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TranslateIcon, StarIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { languageOptions, type LanguageCode } from '../services/analysis'
-import { deleteVocabulary, getVocabularies, setVocabularyFavorite } from '../services/vocabulary'
+import { VocabularyRequestError, deleteVocabulary, getVocabularies, setVocabularyFavorite } from '../services/vocabulary'
 
 type VocabularyFilter = 'all' | 'favorite' | 'incorrect' | 'mastered'
 type VocabularyView = 'word' | 'meaning' | 'both'
@@ -78,6 +78,7 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
       return next
     })
   }
+  const needsLogin = vocabulariesQuery.error instanceof VocabularyRequestError && vocabulariesQuery.error.status === 401
   const saved = vocabulariesQuery.data ?? []
   const savedLanguages = new Set(saved.map(word => word.languageCode))
   const availableLanguages = languageOptions.filter(language => savedLanguages.has(language.code))
@@ -128,7 +129,7 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
 
     {filter === 'incorrect' && <div className="vocabulary-incorrect-test"><span>오답 단어 {saved.filter(word => word.progress.incorrectCount > 0).length}개</span><button type="button" className="primary" disabled={vocabulariesQuery.isPending || vocabulariesQuery.isError || !saved.some(word => word.progress.incorrectCount > 0)} onClick={onIncorrectTest}>오답 단어 테스트</button></div>}
     {vocabulariesQuery.isPending ? <div className="empty-state"><p>단어장을 불러오고 있어요.</p></div>
-      : vocabulariesQuery.isError ? <div className="empty-state"><p>{vocabulariesQuery.error.message}</p><button className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 시도</button></div>
+      : vocabulariesQuery.isError ? <section className="vocabulary-load-error" role="alert"><span className="vocabulary-load-error-icon" aria-hidden="true">{needsLogin ? <SignInIcon/> : <ArrowClockwiseIcon/>}</span><h2>{needsLogin ? '로그인을 다시 해주세요' : '단어장을 불러오지 못했어요'}</h2><p>{needsLogin ? '저장한 단어를 보려면 다시 로그인해 주세요.' : '잠시 후 다시 시도해 주세요.'}</p>{needsLogin ? <a className="primary" href="/login">로그인하기</a> : <button type="button" className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 불러오기</button>}</section>
         : !saved.length ? <div className="empty-state vocabulary-empty"><StarIcon/><h2>아직 저장한 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘에서 즐겨찾기 별표를 누르면<br/>이곳에서 다시 학습할 수 있어요.</p></div>
           : !visibleWords.length ? <div className="empty-state vocabulary-empty"><MagnifyingGlassIcon/><h2>조건에 맞는 단어가 없어요</h2></div>
             : <div className="word-grid compact-word-grid">{visibleWords.map(word => {

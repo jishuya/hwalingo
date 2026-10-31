@@ -37,11 +37,21 @@ export interface SaveVocabularyInput {
 
 interface ErrorResponse { message?: string }
 
+export class VocabularyRequestError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'VocabularyRequestError'
+    this.status = status
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, { ...options, credentials: 'include', headers: options?.body ? { 'Content-Type': 'application/json', ...options.headers } : options?.headers })
   if (!response.ok) {
     const error = await response.json().catch(() => ({})) as ErrorResponse
-    throw new Error(error.message ?? '단어장 요청을 처리하지 못했습니다.')
+    throw new VocabularyRequestError(error.message ?? '단어장 요청을 처리하지 못했습니다.', response.status)
   }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>
 }

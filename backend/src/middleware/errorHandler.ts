@@ -1,6 +1,10 @@
 import type { ErrorRequestHandler } from 'express'
 
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
+  if (error instanceof Error && error.message === 'INVALID_ANALYTICS_RANGE') {
+    response.status(400).json({ message: '조회 기간이 올바르지 않습니다.' })
+    return
+  }
   console.error(error)
 
   if (error instanceof Error && (error.name === 'APIConnectionTimeoutError' || error.name === 'APIConnectionError')) {

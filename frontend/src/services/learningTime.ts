@@ -1,6 +1,7 @@
+import { analyticsQuery, type AnalyticsSelection, type AnalyticsRange } from './analytics'
 export type LearningActivity = 'analysis' | 'vocabulary' | 'quiz' | 'story'
 export interface TimeEvent { id: string; activity: LearningActivity; startedAt: string; endedAt: string }
-export interface LearningTimeSummary { measurementStartedAt: string; days: Array<{ date: string; seconds: number }> }
+export interface LearningTimeSummary { range?: AnalyticsRange; measurementStartedAt: string; days: Array<{ date: string; endDate: string; seconds: number; measuredDays: number; activeDays: number; byActivity: Record<LearningActivity,number> }> }
 const key = (userId: string) => `hwalingo-learning-time:${userId}`
 function read(userId: string): TimeEvent[] {
   try { return JSON.parse(localStorage.getItem(key(userId)) ?? '[]') as TimeEvent[] } catch { return [] }
@@ -33,8 +34,8 @@ export async function flushLearningTime(userId: string) {
   } catch { /* Retry from persistent queue when online or on next heartbeat. */ }
   finally { sending = false }
 }
-export async function getLearningTime(): Promise<LearningTimeSummary> {
-  const response = await fetch('/api/learning-time/me', { credentials: 'include' })
+export async function getLearningTime(selection: AnalyticsSelection = {}): Promise<LearningTimeSummary> {
+  const response = await fetch(`/api/learning-time/me?${analyticsQuery(selection)}`, { credentials: 'include' })
   if (!response.ok) throw new Error('학습 시간을 불러오지 못했어요.')
   return response.json() as Promise<LearningTimeSummary>
 }

@@ -1,3 +1,4 @@
+import { analyticsQuery, type AnalyticsSelection, type AnalyticsRange } from './analytics'
 export interface UserProgress {
   totalXp: number
   level: number
@@ -26,4 +27,34 @@ export async function getUserProgress(): Promise<UserProgress> {
   if (!response.ok) throw new Error('성장 정보를 불러오지 못했습니다.')
   const result = await response.json() as { progress: UserProgress }
   return result.progress
+}
+
+export interface LearningVolume {
+  range?: AnalyticsRange
+  uniqueWords: number
+  days: Array<{ date: string; newAnswers: number; reviewAnswers: number; uniqueWords: number; correctAnswers: number }>
+}
+export async function getLearningVolume(selection: AnalyticsSelection = {}): Promise<LearningVolume> {
+  const response = await fetch(`/api/progress/activity?${analyticsQuery(selection)}`, { credentials: 'include' })
+  if (!response.ok) throw new Error('학습량을 불러오지 못했어요.')
+  return response.json() as Promise<LearningVolume>
+}
+
+export interface LearningCalendar {
+  days: Array<{ date: string; activityCount: number; earnedXp: number; answerCount: number }>
+}
+export async function getLearningCalendar(): Promise<LearningCalendar> {
+  const response = await fetch('/api/progress/calendar', { credentials: 'include' })
+  if (!response.ok) throw new Error('학습 잔디를 불러오지 못했어요.')
+  return response.json() as Promise<LearningCalendar>
+}
+
+export interface RelearningProgress {
+  range?: AnalyticsRange
+  days: Array<{ date: string; completed: number; remaining: number; unavailable: number; standardRemaining: number; incorrectRemaining: number }>
+}
+export async function getRelearningProgress(selection: AnalyticsSelection = {}): Promise<RelearningProgress> {
+  const response = await fetch(`/api/progress/relearning?${analyticsQuery(selection)}`, { credentials: 'include' })
+  if (!response.ok) throw new Error('오답 재학습 기록을 불러오지 못했어요.')
+  return response.json() as Promise<RelearningProgress>
 }

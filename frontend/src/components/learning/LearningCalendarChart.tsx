@@ -1,0 +1,58 @@
+import { useState, type CSSProperties } from 'react'
+import { CalendarDotsIcon, ArrowClockwiseIcon, FireIcon } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
+import { getLearningCalendar, getUserProgress } from '../../services/progress'
+import './LearningCalendarChart.css'
+
+const weekday = ['월', '화', '수', '목', '금', '토', '일']
+const mondayOffset = (date: string) => (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7
+const dateLabel = (date: string) => new Date(`${date}T00:00:00+09:00`).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
+function intensity(count: number) { return count === 0 ? 0 : count < 5 ? 1 : count < 15 ? 2 : count < 30 ? 3 : 4 }
+
+export default function LearningCalendarChart() {
+  const query = useQuery({ queryKey: ['progress', 'calendar'], queryFn: getLearningCalendar, refetchInterval: 20_000 })
+  const progress = useQuery({ queryKey: ['progress', 'me'], queryFn: getUserProgress })
+  const [period, setPeriod] = useState<'recent' | 'year'>('recent')
+  const [selectedDate, setSelectedDate] = useState<string>()
+  const all = query.data?.days ?? []
+  const today = all.at(-1)
+  const recentLength = today ? 78 + mondayOffset(today.date) : 0
+  const days = period === 'year' ? all : all.slice(-recentLength)
+  const selected = days.find(day => day.date === selectedDate) ?? days.at(-1)
+  const leading = days[0] ? mondayOffset(days[0].date) : 0
+  const columns = Math.ceil((leading + days.length) / 7)
+  const cells = Array.from({ length: columns * 7 }, (_, index) => days[index - leading])
+  const activeDays = days.filter(day => day.activityCount > 0).length
+  const total = days.reduce((sum, day) => sum + day.activityCount, 0)
+
+  return <section className="card learning-calendar-card" aria-labelledby="learning-calendar-title">
+    <div className="learning-calendar-heading"><div><span className="learning-calendar-eyebrow"><CalendarDotsIcon weight="duotone"/> 꾸준함이 만드는 변화</span><h2 id="learning-calendar-title">학습 잔디</h2><p>하루하루 쌓아 온 학습 활동이에요.</p></div><button className="learning-calendar-refresh" type="button" aria-label="학습 잔디 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowClockwiseIcon/>새로고침</button></div>
+    <div className="learning-calendar-period" role="group" aria-label="학습 잔디 기간"><button type="button" aria-pressed={period === 'recent'} onClick={() => setPeriod('recent')}>최근 12주</button><button type="button" aria-pressed={period === 'year'} onClick={() => setPeriod('year')}>최근 1년</button></div>
+    {query.isPending ? <p role="status">학습 잔디를 불러오는 중이에요.</p>
+      : query.isError && !query.data ? <div role="alert"><p>학습 잔디를 불러오지 못했어요.</p><button className="primary" type="button" onClick={() => void query.refetch()}>다시 시도</button></div>
+        : query.data && <>
+          <div className="learning-calendar-summary"><div><span>기간 내 학습</span><strong>{activeDays.toLocaleString('ko-KR')}<small>일</small></strong></div><div><span><FireIcon weight="fill"/> 현재 연속</span><strong>{progress.data ? `${progress.data.currentStreak}일` : '–'}</strong></div><div><span>최장 연속 · 전체</span><strong>{progress.data ? `${progress.data.longestStreak}일` : '–'}</strong></div></div>
+          <p className="learning-calendar-range">{days[0] && dateLabel(days[0].date)} ~ {today && dateLabel(today.date)}</p>
+          <div className={`learning-calendar-scroll ${period === 'year' ? 'year' : ''}`} tabIndex={period === 'year' ? 0 : undefined} role="region" aria-label={period === 'year' ? '최근 1년 학습 잔디, 가로로 스크롤해 확인하세요' : '최근 12주 학습 잔디'}>
+            <div className="learning-calendar-layout" style={{ '--calendar-columns': columns } as CSSProperties}>
+              <div className="learning-calendar-months" aria-hidden="true">{Array.from({ length: columns }, (_, column) => {
+                const week = cells.slice(column * 7, column * 7 + 7).filter(Boolean)
+                const first = week[0]
+                const previous = cells.slice(Math.max(0, (column - 1) * 7), column * 7).filter(Boolean).at(-1)
+                const monthStart = week.find(day => day.date.endsWith('-01'))
+                const month = monthStart ?? (!previous ? first : undefined)
+                return <span key={column}>{month ? `${Number(month.date.slice(5, 7))}월` : ''}</span>
+              })}</div>
+              <div className="learning-calendar-weekdays" aria-hidden="true">{weekday.map(label => <span key={label}>{label}</span>)}</div>
+              <div className="learning-calendar-grid" role="group" aria-label="날짜별 학습 활동, 월요일부터 일요일 순서">{cells.map((day, index) => day ? <button key={day.date} type="button" className={`level-${intensity(day.activityCount)} ${selected?.date === day.date ? 'selected' : ''}`} aria-pressed={selected?.date === day.date} aria-label={`${dateLabel(day.date)}, ${day.activityCount ? `학습 활동 ${day.activityCount}회` : '학습 기록 없음'}${day.date === today?.date ? ', 오늘' : ''}`} title={`${dateLabel(day.date)} · ${day.activityCount}회`} onClick={() => setSelectedDate(day.date)}/> : <span key={`empty-${index}`} aria-hidden="true"/>)}</div>
+            </div>
+          </div>
+          <div className="learning-calendar-legend" aria-label="활동 수에 따른 색상: 없음, 1~4회, 5~14회, 15~29회, 30회 이상"><span>적게</span>{[0, 1, 2, 3, 4].map(level => <i key={level} className={`level-${level}`} aria-hidden="true"/>)}<span>많이</span></div>
+          {selected && <div className="learning-calendar-detail" aria-live="polite"><h3>{dateLabel(selected.date)}{selected.date === today?.date ? ' · 오늘' : ''}</h3><dl><div><dt>학습 활동</dt><dd>{selected.activityCount}회</dd></div><div><dt>첫 답안 풀이</dt><dd>{selected.answerCount}문제</dd></div><div><dt>획득 경험치</dt><dd>{selected.earnedXp} XP</dd></div></dl>{!selected.activityCount && <p>이 날짜에는 기록된 학습 활동이 없어요.</p>}</div>}
+          {!total && <p className="learning-calendar-note">문장을 분석하거나 단어를 저장하고 테스트를 풀면 잔디가 채워져요.</p>}
+          <p className="learning-calendar-note">색 농도는 기록된 학습 활동 수 기준이에요. 학습 시간과는 별개이며 오답 재도전은 활동 수에 중복 반영하지 않아요. 한국 시간 자정 기준으로 집계해요.</p>
+          {period === 'year' && <p className="learning-calendar-note">연간 잔디는 가로로 스크롤해 확인할 수 있어요.</p>}
+          {query.isError && <p className="learning-calendar-note" role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+        </>}
+  </section>
+}

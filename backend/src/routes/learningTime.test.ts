@@ -25,6 +25,9 @@ test('learning time deduplicates events and overlapping intervals, splits Seoul 
     const { pool } = await import('../config/database.js')
     closePool = () => pool.end()
     await pool.query(await readFile(new URL('../../../docs/db.sql', import.meta.url), 'utf8'))
+    for (const file of ['003_quiz_sessions.sql','004_user_growth.sql','005_learning_streaks.sql']) {
+      await pool.query(await readFile(process.env.TEST_MIGRATION_DIR ? join(process.env.TEST_MIGRATION_DIR,file) : new URL('../../sql/'+file,import.meta.url),'utf8'))
+    }
     const migration = await readFile(new URL('../../sql/018_learning_time.sql', import.meta.url), 'utf8')
     await pool.query(migration)
     await pool.query(migration)
