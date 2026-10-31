@@ -47,7 +47,10 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   const sessionQuery = useQuery({ queryKey: ['quiz', 'new-session', mode], queryFn: () => createQuizSession(undefined, mode), retry: false, staleTime: Infinity, refetchOnMount: 'always' })
   const session = sessionQuery.data
   const current = session?.items.find(item => !item.result)
-  const answeredCount = session?.items.filter(item => !item.retryOfItemId && item.result).length ?? 0
+  // 재도전도 원래 문제 ID로 묶어, 정답을 맞힌 문제만 한 번씩 완료 처리한다.
+  const completedCount = new Set(session?.items
+    .filter(item => item.result === 'correct')
+    .map(item => item.retryOfItemId ?? item.id)).size
   const retryWordCount = session?.items.filter(item => !item.retryOfItemId && item.result === 'incorrect').length ?? 0
 
   const resetCard = () => {
@@ -155,7 +158,7 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
     onRestart={() => { queryClient.removeQueries({ queryKey: ['quiz'] }); void sessionQuery.refetch() }}/>
 
 
-  const progressCount = Math.min(session.totalCount, answeredCount + (current.retryOfItemId ? 0 : 1))
+  const progressCount = Math.min(session.totalCount, completedCount)
   const progress = session.totalCount ? (progressCount / session.totalCount) * 100 : 100
   const answeredItems = session.items.filter(item => !item.retryOfItemId && item.result)
   let correctStreak = 0

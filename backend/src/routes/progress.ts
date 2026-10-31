@@ -32,10 +32,9 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
     const row = result.rows[0]
     const totalXp = Number(row?.total_xp ?? 0)
     const level = calculateLevelProgress(totalXp)
-    const settingsResult = await pool.query<{ timezone: string; weekly_goal_days: number; today: string }>(
-      `SELECT COALESCE(us.timezone, 'Asia/Seoul') AS timezone,
-              COALESCE(us.weekly_goal_days, 5) AS weekly_goal_days,
-              to_char(CURRENT_TIMESTAMP AT TIME ZONE COALESCE(us.timezone, 'Asia/Seoul'), 'YYYY-MM-DD') AS today
+    const settingsResult = await pool.query<{ weekly_goal_days: number; today: string }>(
+      `SELECT COALESCE(us.weekly_goal_days, 5) AS weekly_goal_days,
+              to_char(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS today
        FROM users u LEFT JOIN user_settings us ON us.user_id = u.id
        WHERE u.id = $1`,
       [request.auth!.userId],
@@ -87,13 +86,13 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
                 COALESCE((SELECT sum(uld.reviewed_word_count) FROM user_learning_days uld
                  WHERE uld.user_id = $1 AND uld.learning_date >= w.week_start AND uld.learning_date < w.week_start + 7), 0)::integer AS reviewed_word_count,
                 (SELECT count(*) FROM quizzes q WHERE q.user_id = $1 AND q.result IN ('correct', 'incorrect')
-                 AND (q.answered_at AT TIME ZONE $3)::date >= w.week_start
-                 AND (q.answered_at AT TIME ZONE $3)::date < w.week_start + 7)::integer AS total_answers,
+                 AND (q.answered_at AT TIME ZONE 'Asia/Seoul')::date >= w.week_start
+                 AND (q.answered_at AT TIME ZONE 'Asia/Seoul')::date < w.week_start + 7)::integer AS total_answers,
                 (SELECT count(*) FROM quizzes q WHERE q.user_id = $1 AND q.result = 'correct'
-                 AND (q.answered_at AT TIME ZONE $3)::date >= w.week_start
-                 AND (q.answered_at AT TIME ZONE $3)::date < w.week_start + 7)::integer AS correct_answers
+                 AND (q.answered_at AT TIME ZONE 'Asia/Seoul')::date >= w.week_start
+                 AND (q.answered_at AT TIME ZONE 'Asia/Seoul')::date < w.week_start + 7)::integer AS correct_answers
          FROM weeks w ORDER BY w.week_start`,
-        [request.auth!.userId, settings.today, settings.timezone],
+        [request.auth!.userId, settings.today],
       ),
     ])
     const masteryDistribution = Array.from({ length: 8 }, (_, masteryLevel) => ({ masteryLevel, wordCount: 0 }))
@@ -113,7 +112,6 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
         longestStreak: streak.longestStreak,
         weeklyCompletedDays: streak.weeklyCompletedDays,
         weeklyGoalDays: settings.weekly_goal_days,
-        timezone: settings.timezone,
         masteryDistribution,
         totalAnswers,
         correctAnswers,

@@ -23,7 +23,7 @@ export async function recordLearningActivity(
        (user_id, learning_date, activity_count, earned_xp, reviewed_word_count)
      VALUES (
        $1,
-       ($2::timestamptz AT TIME ZONE COALESCE((SELECT timezone FROM user_settings WHERE user_id = $1), 'Asia/Seoul'))::date,
+       ($2::timestamptz AT TIME ZONE 'Asia/Seoul')::date,
        1, $3, $4
      )
      ON CONFLICT (user_id, learning_date) DO UPDATE SET

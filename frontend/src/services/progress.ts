@@ -13,7 +13,6 @@ export interface UserProgress {
   longestStreak: number
   weeklyCompletedDays: number
   weeklyGoalDays: number
-  timezone: string
   masteryDistribution: Array<{ masteryLevel: number; wordCount: number }>
   totalAnswers: number
   correctAnswers: number

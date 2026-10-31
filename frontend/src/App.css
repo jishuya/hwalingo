@@ -655,7 +655,7 @@ html[data-theme='dark'] .story-filter-group{border-color:#344d3d;background:#1b2
 html[data-theme='dark'] .story-filter-group legend{color:#e1ece5}
 html[data-theme='dark'] .story-filter-group legend small{color:#a8b9af}
 
-.sentence-vocab-name h4{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:2px}
+.sentence-vocab-name h4{display:flex;flex-wrap:nowrap;align-items:center;gap:6px}
 .sentence-vocab-word{min-width:0;max-width:100%;overflow-wrap:anywhere}
 
 .story-example .word-detail-heading>b{display:inline-flex;align-items:center;gap:4px;color:#059669;font-size:var(--font-sm);font-weight:700;line-height:1.6}

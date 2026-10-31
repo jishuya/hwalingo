@@ -3,7 +3,6 @@ export type Theme = 'light' | 'dark' | 'system'
 export interface UserSettings {
   theme: Theme
   notificationsEnabled: boolean
-  timezone: string
   weeklyGoalDays: number
   quizQuestionCount: number
 }

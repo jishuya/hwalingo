@@ -240,18 +240,16 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
     }))
     const todayResult = await client.query<{ completed_today: boolean; answered_ids: string[] }>(
       `WITH day AS (
-         SELECT (CURRENT_TIMESTAMP AT TIME ZONE COALESCE(
-           (SELECT timezone FROM user_settings WHERE user_id = $1), 'Asia/Seoul'))::date AS today,
-           COALESCE((SELECT timezone FROM user_settings WHERE user_id = $1), 'Asia/Seoul') AS timezone
+         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date AS today
        )
        SELECT EXISTS (
          SELECT 1 FROM quiz_sessions s, day d WHERE s.user_id = $1 AND s.status = 'completed' AND s.mode = 'standard'
-           AND s.total_count > 0 AND (s.completed_at AT TIME ZONE d.timezone)::date = d.today
+           AND s.total_count > 0 AND (s.completed_at AT TIME ZONE 'Asia/Seoul')::date = d.today
        ) AS completed_today,
        ARRAY(SELECT DISTINCT i.vocabulary_id::text FROM quiz_session_items i
          JOIN quiz_sessions s ON s.id = i.session_id CROSS JOIN day d
          WHERE s.user_id = $1 AND i.result IS NOT NULL
-           AND (i.answered_at AT TIME ZONE d.timezone)::date = d.today) AS answered_ids`,
+           AND (i.answered_at AT TIME ZONE 'Asia/Seoul')::date = d.today) AS answered_ids`,
       [request.auth!.userId],
     )
     const today = todayResult.rows[0]

@@ -109,7 +109,7 @@
 .quiz-progress .quiz-progress-count { color: #047857; align-self: center; white-space: nowrap; font-size: var(--font-md); }
 .quiz-progress-count small { color: #526477; font-size: var(--font-xs); font-weight: 600; }
 .quiz-progress .progress-track { height: 10px; background: #e2f3e9; box-shadow: inset 0 1px 3px #cce7d8; }
-.quiz-progress .progress-track > span { position: relative; min-width: 10px; background: #047857; box-shadow: 0 1px 3px #04785740; }
+.quiz-progress .progress-track > span { position: relative; background: #047857; box-shadow: 0 1px 3px #04785740; }
 .quiz-progress .progress-track > span::after { content: ''; position: absolute; right: 5px; top: 3px; width: 4px; height: 4px; border-radius: 50%; background: #fff9; }
 
 .quiz-flash-card .quiz-example { border: 1px solid #a7d9c0; border-radius: 18px; background: #f0faf4; padding: 16px; }
