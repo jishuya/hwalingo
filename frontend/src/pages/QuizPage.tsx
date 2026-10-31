@@ -1,3 +1,4 @@
+import LearningTimer from '../components/learning/LearningTimer'
 import { AlertDialog } from '../components/ui/Dialog'
 import DialogCloseButton from '../components/ui/DialogCloseButton'
 import { useEffect, useRef, useState } from 'react'
@@ -172,6 +173,7 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   const tilt = Math.max(-7, Math.min(7, dragOffset / 28))
 
   return <div className="quiz-page quiz-flash-page page">
+    <LearningTimer activity="quiz" enabled/>
     {showSwipeGuide && <div className="quiz-swipe-guide-overlay" role="presentation" onPointerDown={() => setShowSwipeGuide(false)}>
       <div className="quiz-swipe-guide" role="dialog" aria-label="테스트 사용 안내" onPointerDown={event => event.stopPropagation()}>
         <DialogCloseButton label="안내 닫기" onClose={() => setShowSwipeGuide(false)}/>

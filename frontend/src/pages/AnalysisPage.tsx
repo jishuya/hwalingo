@@ -1,3 +1,4 @@
+import LearningTimer from '../components/learning/LearningTimer'
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -202,6 +203,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   }, [onLoadingChange, request, requestId])
 
   return <div className="analysis-page analysis-page-v2 analysis-results-root">
+    <LearningTimer activity="analysis" enabled={Boolean(analysis) && !isLoading}/>
     {error && <p role="alert" className="analysis-result-error">{error}</p>}
     <AiLoadingOverlay open={isLoading} kind="analysis"/>
 

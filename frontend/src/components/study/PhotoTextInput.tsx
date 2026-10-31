@@ -7,7 +7,7 @@ import ImageCropper from './ImageCropper'
 import PhotoZoomViewer from './PhotoZoomViewer'
 import './PhotoTextInput.css'
 
-export default function PhotoTextInput({ hasText, disabled, onApply, children, controls }: { hasText: boolean; disabled: boolean; onApply: (text: string) => void; children: ReactNode; controls: ReactNode }) {
+export default function PhotoTextInput({ hasText, disabled, onApply, children, controls, characterCount }: { hasText: boolean; disabled: boolean; onApply: (text: string) => void; children: ReactNode; controls: ReactNode; characterCount: number }) {
   const cameraRef = useRef<HTMLInputElement>(null)
   const uploadRef = useRef<HTMLInputElement>(null)
   const controller = useRef<AbortController | null>(null)
@@ -105,9 +105,12 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
     {controls}
     <div className="study-input-body">
       {children}
+      <div className="study-input-toolbar">
       <div className="study-photo-actions" role="group" aria-label="사진에서 글자 가져오기">
         <button type="button" aria-label="사진 촬영" title="사진 촬영" disabled={disabled} onClick={() => cameraRef.current?.click()}><CameraIcon weight="duotone" aria-hidden="true"/></button>
         <button type="button" aria-label="이미지 선택" title="이미지 선택" disabled={disabled} onClick={() => uploadRef.current?.click()}><ImageIcon weight="duotone" aria-hidden="true"/></button>
+      </div>
+      <span className="study-text-count" aria-label="입력 글자 수">{characterCount} / 500자</span>
       </div>
     </div>
     <Modal open={Boolean(file) && !confirm && !error} title={cropping ? '사진 자르기' : '추출한 글 확인'} titleBadge={<span className="photo-crop-smart-badge">{cropping ? 'AI OCR' : 'OCR 정밀인식'}</span>} description={cropping ? '인식할 문장이 상자 안에 오도록 조절해 주세요.' : undefined} onClose={close} footer={cropping ? undefined : <><button className="ui-dialog-secondary" onClick={close}>취소</button><button className="ui-dialog-primary" disabled={!result?.trim() || result.length > 500} onClick={() => hasText ? setConfirm(true) : apply()}>입력창에 적용</button></>}>

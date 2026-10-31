@@ -9,6 +9,7 @@ import { ocrRouter } from './routes/ocr.js'
 import { authRouter } from './routes/auth.js'
 import { healthRouter } from './routes/health.js'
 import { quizzesRouter } from './routes/quizzes.js'
+import { learningTimeRouter } from './routes/learningTime.js'
 import { progressRouter } from './routes/progress.js'
 import { storiesRouter } from './routes/stories.js'
 import { settingsRouter } from './routes/settings.js'
@@ -32,6 +33,7 @@ app.use('/api/ocr', ocrRouter)
 app.use('/api/vocabularies', vocabulariesRouter)
 app.use('/api/quizzes', quizzesRouter)
 app.use('/api/progress', progressRouter)
+app.use('/api/learning-time', learningTimeRouter)
 app.use('/api/stories', storiesRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/support', supportRouter)

@@ -1,3 +1,4 @@
+import LearningTimer from '../components/learning/LearningTimer'
 import { useEffect, useRef, useState } from 'react'
 import { SparkleIcon, LightbulbIcon, PlantIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, SpeakerHighIcon, TranslateIcon, StarIcon, TrashIcon, TrophyIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -116,7 +117,7 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
     }
   }, [viewMenuOpen])
 
-  return <div className="page vocabulary-page">
+  return <div className="page vocabulary-page"><LearningTimer activity="vocabulary" enabled={Boolean(expandedId) && saved.some(word => word.vocabularyId === expandedId)}/>
     <header className="page-title vocabulary-page-title"><span className="page-title-icon"><StarIcon weight="fill"/></span><h1>내 단어장</h1><strong>{saved.length}개</strong><div className={`vocabulary-view-menu${viewMenuOpen ? ' open' : ''}`} ref={viewMenuRef}><button type="button" className="vocabulary-view-trigger" aria-haspopup="listbox" aria-expanded={viewMenuOpen} onClick={() => setViewMenuOpen(open => !open)}><span>{views.find(item => item.id === view)?.label}</span><CaretDownIcon weight="bold"/></button>{viewMenuOpen && <div className="vocabulary-view-options" role="listbox" aria-label="단어 표시 방식">{views.map(item => <button type="button" role="option" aria-selected={view === item.id} className={view === item.id ? 'active' : ''} onClick={() => { setView(item.id); setViewMenuOpen(false) }} key={item.id}><span>{item.label}</span></button>)}</div>}</div></header>
     <header className="vocabulary-toolbar"><label className="vocabulary-search"><MagnifyingGlassIcon/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="단어나 뜻을 검색하세요" aria-label="단어장 검색"/></label><div className="vocabulary-language-navigation">
       <div className="story-selector-languages vocabulary-language-filters" role="tablist" aria-label="언어별 필터">

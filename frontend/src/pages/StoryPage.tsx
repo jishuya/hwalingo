@@ -1,3 +1,4 @@
+import LearningTimer from '../components/learning/LearningTimer'
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowClockwiseIcon, BookOpenIcon, CaretRightIcon, CheckCircleIcon, CheckIcon, ChecksIcon, MagnifyingGlassIcon, ListBulletsIcon, XCircleIcon, LightningIcon, PlusIcon, SlidersHorizontalIcon, SparkleIcon, StarIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
@@ -159,6 +160,7 @@ export default function StoryPage() {
   }
 
   return <div className="page story-page">
+    <LearningTimer activity="story" enabled={Boolean(storyMutation.data) && !storyMutation.isPending}/>
     <AiLoadingOverlay open={storyMutation.isPending} kind="story"/>
     <section className="story-intro" aria-labelledby="story-intro-title">
       <div className="story-intro-copy">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
+import LearningProgressPage from './pages/LearningProgressPage'
 import ProfilePage from './pages/ProfilePage'
 import QuizPage from './pages/QuizPage'
 import StoryPage from './pages/StoryPage'
@@ -72,6 +73,8 @@ export default function App() {
           ? <QuizPage key={quizMode} mode={quizMode} onHome={() => go(quizMode === 'incorrect' ? 'vocabulary' : 'study')}/>
         : page === 'story'
           ? <StoryPage/>
+          : page === 'learning-progress'
+            ? <LearningProgressPage onNavigate={go}/>
           : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>
 
   return <AppShell page={page} go={go}>{content}</AppShell>

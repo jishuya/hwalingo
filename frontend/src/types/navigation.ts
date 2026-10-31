@@ -1,6 +1,6 @@
-export type Page = 'study' | 'vocabulary' | 'quiz' | 'story' | 'profile' | 'login'
+export type Page = 'study' | 'vocabulary' | 'quiz' | 'story' | 'profile' | 'learning-progress' | 'login'
 
-export const pages: Page[] = ['study', 'vocabulary', 'quiz', 'story', 'profile', 'login']
+export const pages: Page[] = ['study', 'vocabulary', 'quiz', 'story', 'profile', 'learning-progress', 'login']
 
 export function readRoute(): Page {
   const legacyHashPath = location.hash.replace(/^#\/?/, '')

@@ -5,8 +5,8 @@ import TopNavigation from './navigation/TopNavigation'
 
 export default function AppShell({ page, go, children }: { page: Page; go: (page: Page) => void; children: ReactNode }) {
   return <div className="app-shell">
-    <TopNavigation currentPage={page} onNavigate={go}/>
+    <TopNavigation currentPage={page === 'learning-progress' ? 'profile' : page} onNavigate={go}/>
     <main>{children}</main>
-    <BottomNavigation currentPage={page} onNavigate={go}/>
+    <BottomNavigation currentPage={page === 'learning-progress' ? 'profile' : page} onNavigate={go}/>
   </div>
 }
