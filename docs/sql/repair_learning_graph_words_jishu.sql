@@ -168,7 +168,7 @@ BEGIN
   LOOP
     SELECT d.* INTO entry FROM graph_real_dictionary d
     WHERE d.language=item.language_code AND NOT EXISTS(
-      SELECT 1 FROM vocabularies v WHERE v.user_id=target_id AND v.language_code=d.language AND v.word=d.word AND v.id<>item.id
+      SELECT 1 FROM vocabularies v WHERE v.user_id=target_id AND v.language_code=d.language AND lower(v.word)=lower(d.word) AND v.id<>item.id
     ) ORDER BY CASE WHEN d.ordinal=item.original_level+1 THEN 0 WHEN d.ordinal>8 THEN 1 ELSE 2 END,d.ordinal LIMIT 1;
     IF NOT FOUND THEN RAISE EXCEPTION '% 언어에 중복되지 않는 실제 단어가 부족합니다.',item.language_code; END IF;
     UPDATE vocabularies SET word=entry.word,meaning=entry.meaning,context_meaning=entry.meaning,

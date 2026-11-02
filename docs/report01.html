@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Hwalingo 마이페이지 - 학습 현황 통계 대시보드</title>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- FontAwesome for refined UI icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              dark: '#064e3b'
+            },
+            activity: {
+              blue: '#38bdf8',
+              yellow: '#fbbf24',
+              green: '#10b981',
+              purple: '#a78bfa'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', '"Pretendard"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="custom-layout">
+    body {
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #f7f9fa;
+    }
+    /* Safe areas for iOS mobile viewports */
+    .pb-safe {
+      padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 72px);
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style data-purpose="charts-visual">
+    /* Subtle glow and interactive states */
+    .card-shadow {
+      box-shadow: 0 4px 24px -2px rgba(16, 24, 40, 0.05), 0 2px 6px -1px rgba(16, 24, 40, 0.03);
+    }
+    .card-shadow-sm {
+      box-shadow: 0 2px 10px 0 rgba(16, 185, 129, 0.08);
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="text-slate-900 bg-[#f8faf9] flex justify-center min-h-screen">
+<!-- Mobile Container (Apple iOS viewport wrapper) -->
+<div class="w-full max-w-[420px] bg-[#f8faf9] min-h-screen flex flex-col relative pb-safe">
+<!-- BEGIN: TopGlobalHeader -->
+<header class="sticky top-0 z-40 bg-[#f8faf9]/90 backdrop-blur-md px-5 pt-3 pb-3.5 border-b border-emerald-900/5">
+<div class="flex items-center justify-between">
+<!-- Brand Logo -->
+<div class="flex items-center space-x-2">
+<div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-sm ring-2 ring-emerald-200/60">
+<i class="fa-solid fa-feather-pointed text-base"></i>
+</div>
+<span class="font-extrabold text-xl tracking-tight text-slate-800">
+            Hwal<span class="text-emerald-600">ingo</span>
+</span>
+</div>
+<!-- Streak Capsule Badge (Amber Orange) -->
+<div class="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold text-amber-700 shadow-sm">
+<i class="fa-solid fa-fire text-amber-500 animate-pulse text-sm"></i>
+<span>0일 연속</span>
+</div>
+</div>
+</header>
+<!-- END: TopGlobalHeader -->
+<!-- BEGIN: NavigationTitleSection -->
+<section class="px-5 pt-4 pb-2" data-purpose="page-title-banner">
+<button class="inline-flex items-center space-x-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 mb-2.5 transition-colors" type="button">
+<i class="fa-solid fa-arrow-left text-[11px]"></i>
+<span>마이페이지</span>
+</button>
+<h1 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+        학습 현황
+      </h1>
+<p class="text-[13px] text-slate-500 mt-1 font-medium leading-relaxed">
+        얼마나 쌓았는지 확인하고, 다음 배움을 이어가세요.
+      </p>
+</section>
+<!-- END: NavigationTitleSection -->
+<!-- BEGIN: MainKPISection -->
+<section class="px-5 pt-3" data-purpose="kpi-summary-grid">
+<div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 grid grid-cols-2 gap-4">
+<!-- KPI 1: Current Streak -->
+<div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100/80 flex flex-col justify-between">
+<div class="flex items-center space-x-1.5 text-slate-500">
+<i class="fa-regular fa-calendar-check text-xs"></i>
+<span class="text-[11px] font-semibold">현재 연속 학습</span>
+</div>
+<div class="mt-2.5 flex items-baseline space-x-1">
+<span class="text-2xl font-extrabold text-slate-800 tracking-tight">0</span>
+<span class="text-xs font-bold text-slate-500">일</span>
+</div>
+</div>
+<!-- KPI 2: Weekly Goal with Ring Progress -->
+<div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100/80 flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between text-slate-500">
+<div class="flex items-center space-x-1.5">
+<i class="fa-solid fa-bullseye text-xs text-amber-500"></i>
+<span class="text-[11px] font-semibold">이번 주 목표</span>
+</div>
+<!-- Circular Progress Indicator -->
+<div class="relative w-5 h-5">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<circle cx="18" cy="18" fill="none" r="14" stroke="#e2e8f0" stroke-width="4"></circle>
+<circle cx="18" cy="18" fill="none" r="14" stroke="#10b981" stroke-dasharray="88" stroke-dashoffset="88" stroke-linecap="round" stroke-width="4"></circle>
+</svg>
+</div>
+</div>
+<div class="mt-2.5 flex items-baseline space-x-1">
+<span class="text-2xl font-extrabold text-slate-800 tracking-tight">0</span>
+<span class="text-xs font-bold text-slate-400">/ 5일</span>
+</div>
+</div>
+<!-- KPI 3: Saved Words -->
+<div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100/80 flex flex-col justify-between">
+<div class="flex items-center space-x-1.5 text-slate-500">
+<i class="fa-solid fa-bookmark text-xs"></i>
+<span class="text-[11px] font-semibold">보관 단어</span>
+</div>
+<div class="mt-2.5 flex items-baseline space-x-0.5">
+<span class="text-2xl font-black text-slate-800 tracking-tight">123</span>
+<span class="text-xs font-bold text-slate-500">개</span>
+</div>
+</div>
+<!-- KPI 4: Ready to Review (Call to Action Emerald) -->
+<div class="p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-100 flex flex-col justify-between group cursor-pointer active:scale-95 transition-all">
+<div class="flex items-center space-x-1.5 text-emerald-800">
+<i class="fa-solid fa-rotate text-xs text-emerald-600"></i>
+<span class="text-[11px] font-bold">지금 복습 가능</span>
+</div>
+<div class="mt-2.5 flex items-center justify-between">
+<div class="flex items-baseline space-x-0.5">
+<span class="text-2xl font-black text-emerald-600 tracking-tight">58</span>
+<span class="text-xs font-bold text-emerald-600">개</span>
+</div>
+<div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] group-hover:translate-x-0.5 transition-transform shadow-xs">
+<i class="fa-solid fa-arrow-right"></i>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: MainKPISection -->
+<!-- BEGIN: SubNavigationTabs -->
+<nav class="px-5 mt-5">
+<div class="flex border-b border-slate-200 text-sm font-semibold">
+<!-- Active Tab -->
+<button class="pb-3 px-3 text-emerald-600 border-b-2 border-emerald-500 font-bold relative flex-1 text-center transition-all" type="button">
+          학습 기록
+        </button>
+<!-- Inactive Tabs -->
+<button class="pb-3 px-3 text-slate-400 hover:text-slate-600 flex-1 text-center transition-all" type="button">
+          어휘와 복습
+        </button>
+<button class="pb-3 px-3 text-slate-400 hover:text-slate-600 flex-1 text-center transition-all" type="button">
+          성장
+        </button>
+</div>
+</nav>
+<!-- END: SubNavigationTabs -->
+<!-- BEGIN: PeriodFilterBar -->
+<section class="px-5 mt-4" data-purpose="period-selector-card">
+<div class="bg-white rounded-2xl p-3.5 border border-slate-100 card-shadow">
+<!-- Pill Segment Toggle -->
+<div class="grid grid-cols-4 bg-slate-100/80 p-1 rounded-xl text-xs font-semibold text-slate-500 text-center">
+<button class="py-1.5 bg-white text-emerald-700 font-bold rounded-lg shadow-sm" type="button">주</button>
+<button class="py-1.5 hover:text-slate-700" type="button">월</button>
+<button class="py-1.5 hover:text-slate-700" type="button">년</button>
+<button class="py-1.5 hover:text-slate-700" type="button">전체</button>
+</div>
+<!-- Date Range Navigator -->
+<div class="flex items-center justify-between mt-3 px-2 text-xs font-semibold text-slate-600">
+<button class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors" type="button">
+<i class="fa-solid fa-chevron-left text-[10px]"></i>
+</button>
+<span class="tracking-tight text-slate-800 font-bold">2026.10.27 ~ 2026.11.02</span>
+<button class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors" type="button">
+<i class="fa-solid fa-chevron-right text-[10px]"></i>
+</button>
+</div>
+<p class="text-[11px] text-slate-400 text-center mt-2 font-normal leading-tight">
+          기간별 통계에 적용해요. 잔디·요일 패턴·현재 어휘 상태·복습 일정은 각 카드의 기준을 따라요.
+        </p>
+</div>
+</section>
+<!-- END: PeriodFilterBar -->
+<!-- BEGIN: ChartCard1_StudyTime -->
+<article class="px-5 mt-5" data-purpose="stacked-barchart-study-time">
+<div class="bg-white rounded-3xl p-5 border border-slate-100 card-shadow">
+<!-- Card Header -->
+<div class="flex items-start justify-between">
+<div>
+<div class="inline-flex items-center space-x-1.5 text-emerald-700 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-md mb-1.5">
+<i class="fa-regular fa-clock"></i>
+<span>나의 학습 습관</span>
+</div>
+<h2 class="text-lg font-black text-slate-900">학습 시간</h2>
+<p class="text-[11px] text-slate-400 font-medium">2026-10-27 ~ 2026-11-02 · 한국 시간 기준</p>
+</div>
+<button class="text-xs font-medium text-slate-400 hover:text-emerald-600 flex items-center space-x-1 border border-slate-200 px-2.5 py-1 rounded-full transition-colors" type="button">
+<i class="fa-solid fa-rotate text-[10px]"></i>
+<span class="text-[11px]">새로고침</span>
+</button>
+</div>
+<!-- Metric Badges (Dual Cards) -->
+<div class="grid grid-cols-2 gap-3 mt-4">
+<div class="bg-gradient-to-br from-emerald-50/70 to-emerald-50/20 p-3 rounded-2xl border border-emerald-100">
+<span class="text-[11px] font-semibold text-emerald-800">오늘 학습</span>
+<div class="text-lg font-black text-emerald-950 mt-1">16초</div>
+</div>
+<div class="bg-gradient-to-br from-amber-50/80 to-amber-50/20 p-3 rounded-2xl border border-amber-100">
+<span class="text-[11px] font-semibold text-amber-800">선택 기간 합계</span>
+<div class="text-lg font-black text-amber-950 mt-1">35분 30초</div>
+</div>
+</div>
+<!-- Category Legend Chips -->
+<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mt-4 pt-2 border-t border-slate-100 text-[11px] font-medium text-slate-600">
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#38bdf8]"></span>
+<span>문장 분석</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#fbbf24]"></span>
+<span>단어 학습</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#10b981]"></span>
+<span>테스트</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#a78bfa]"></span>
+<span>스토리</span>
+</div>
+</div>
+<!-- Stacked Bar Chart Graphic Canvas Layout -->
+<div class="mt-6 relative" data-purpose="chart-container">
+<!-- Background Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-300 font-medium">
+<div class="border-b border-dashed border-slate-100 w-full flex justify-between">
+<span>18분</span>
+</div>
+<div class="border-b border-dashed border-slate-100 w-full flex justify-between">
+<span>9분</span>
+</div>
+<div class="border-b border-slate-200 w-full flex justify-between">
+<span>0분</span>
+</div>
+</div>
+<!-- Stacked Bars Grid -->
+<div class="h-44 pt-3 flex items-end justify-between px-2 relative z-10">
+<!-- 10/27 (Sun) -->
+<div class="flex flex-col items-center flex-1">
+<div class="w-4 bg-slate-100 rounded-t-sm flex flex-col-reverse overflow-hidden h-3">
+<div class="bg-[#a78bfa] h-[40%]"></div>
+<div class="bg-[#10b981] h-[30%]"></div>
+<div class="bg-[#38bdf8] h-[30%]"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-400 mt-2">10/27</span>
+</div>
+<!-- 10/28 (Mon) -->
+<div class="flex flex-col items-center flex-1">
+<div class="w-4 bg-slate-100 rounded-t-sm flex flex-col-reverse overflow-hidden h-20 shadow-xs">
+<div class="bg-[#a78bfa] h-[25%]"></div>
+<div class="bg-[#10b981] h-[30%]"></div>
+<div class="bg-[#fbbf24] h-[25%]"></div>
+<div class="bg-[#38bdf8] h-[20%]"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-400 mt-2">10/28</span>
+</div>
+<!-- 10/29 (Tue - Peak) -->
+<div class="flex flex-col items-center flex-1">
+<div class="w-4.5 bg-slate-100 rounded-t-md flex flex-col-reverse overflow-hidden h-36 ring-2 ring-emerald-400/40 shadow-sm">
+<div class="bg-[#a78bfa] h-[25%]"></div>
+<div class="bg-[#10b981] h-[30%]"></div>
+<div class="bg-[#fbbf24] h-[25%]"></div>
+<div class="bg-[#38bdf8] h-[20%]"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-700 mt-2">10/29</span>
+</div>
+<!-- 10/30 (Wed) -->
+<div class="flex flex-col items-center flex-1">
+<div class="w-4 bg-slate-100 rounded-t-sm flex flex-col-reverse overflow-hidden h-10">
+<div class="bg-[#a78bfa] h-[20%]"></div>
+<div class="bg-[#10b981] h-[35%]"></div>
+<div class="bg-[#fbbf24] h-[30%]"></div>
+<div class="bg-[#38bdf8] h-[15%]"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-400 mt-2">10/30</span>
+</div>
+<!-- 10/31 (Thu) -->
+<div class="flex flex-col items-center flex-1">
+<div class="w-4 bg-slate-100 rounded-t-sm flex flex-col-reverse overflow-hidden h-8">
+<div class="bg-[#a78bfa] h-[25%]"></div>
+<div class="bg-[#10b981] h-[35%]"></div>
+<div class="bg-[#fbbf24] h-[20%]"></div>
+<div class="bg-[#38bdf8] h-[20%]"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-400 mt-2">10/31</span>
+</div>
+<!-- 11/1 (Fri - Empty) -->
+<div class="flex flex-col items-center flex-1">
+<span class="text-[9px] font-semibold text-slate-300">0</span>
+<div class="w-4 h-0.5 bg-slate-200 rounded-full my-0.5"></div>
+<span class="text-[10px] font-medium text-slate-400 mt-2">11/1</span>
+</div>
+<!-- 11/2 (Today - Highlighted) -->
+<div class="flex flex-col items-center flex-1">
+<div class="w-4.5 bg-amber-400 h-1.5 rounded-full shadow-xs ring-2 ring-amber-300/40"></div>
+<span class="text-[10px] font-bold text-emerald-600 mt-2">오늘</span>
+</div>
+</div>
+</div>
+<!-- Selected Day Highlight Pill -->
+<div class="mt-4 p-3 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+<div class="flex items-center justify-center space-x-2 text-xs font-semibold text-slate-700">
+<span>11/2</span>
+<span class="font-black text-slate-900 text-sm">16초</span>
+</div>
+<p class="text-[11px] text-slate-400 mt-1">
+            문장 분석 0분 · 단어 학습 16초 · 테스트 0분 · 스토리 0분
+          </p>
+</div>
+</div>
+</article>
+<!-- END: ChartCard1_StudyTime -->
+<!-- BEGIN: ChartCard2_AccuracyTrend -->
+<article class="px-5 mt-5" data-purpose="smooth-linechart-accuracy">
+<div class="bg-white rounded-3xl p-5 border border-slate-100 card-shadow">
+<!-- Header -->
+<div class="flex items-start justify-between">
+<div>
+<div class="inline-flex items-center space-x-1.5 text-emerald-700 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-md mb-1.5">
+<i class="fa-regular fa-circle-check"></i>
+<span>기억을 확인하는 시간</span>
+</div>
+<h2 class="text-lg font-black text-slate-900">첫 시도 정답률</h2>
+<p class="text-[11px] text-slate-400 font-medium">2026-10-27 ~ 2026-11-02 · 한국 시간 기준</p>
+</div>
+<button class="text-xs font-medium text-slate-400 hover:text-emerald-600 flex items-center space-x-1 border border-slate-200 px-2.5 py-1 rounded-full transition-colors" type="button">
+<i class="fa-solid fa-rotate text-[10px]"></i>
+<span class="text-[11px]">새로고침</span>
+</button>
+</div>
+<!-- Highlight Banner -->
+<div class="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 flex items-center justify-between">
+<div>
+<span class="text-[11px] font-bold text-amber-800">선택 기간 정답률</span>
+<div class="text-2xl font-black text-amber-900 tracking-tight mt-0.5">55%</div>
+</div>
+<div class="text-right">
+<span class="text-xs text-amber-900/80 font-medium">첫 시도 74문제 중</span>
+<div class="text-xs font-bold text-amber-950 mt-0.5">41문제 정답</div>
+</div>
+</div>
+<!-- Curved Wave Chart (Custom SVG Vector) -->
+<div class="mt-6 relative">
+<!-- Horizontal Guides -->
+<div class="text-[10px] text-slate-300 font-medium space-y-7 pointer-events-none mb-1">
+<div class="border-b border-slate-100 flex justify-between pb-0.5"><span>100%</span></div>
+<div class="border-b border-slate-100 flex justify-between pb-0.5"><span>50%</span></div>
+<div class="border-b border-slate-200 flex justify-between pb-0.5"><span>0%</span></div>
+</div>
+<!-- SVG Spline Graph -->
+<div class="relative -mt-24 h-24 w-full">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 320 90">
+<!-- Defs for Gradient Fill -->
+<defs>
+<lineargradient id="accuracyGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#10b981" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#10b981" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Gradient Shadow Area Below Curve -->
+<path d="M 15,15 Q 40,40 65,42 T 115,62 T 165,65 T 215,26 L 215,85 L 15,85 Z" fill="url(#accuracyGradient)"></path>
+<!-- Spline Stroke -->
+<path d="M 15,15 Q 40,40 65,42 T 115,62 T 165,65 T 215,26" fill="none" stroke="#059669" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+<!-- Data Dots -->
+<circle cx="15" cy="15" fill="#ffffff" r="4.5" stroke="#059669" stroke-width="2.5"></circle>
+<circle cx="65" cy="42" fill="#ffffff" r="4.5" stroke="#059669" stroke-width="2.5"></circle>
+<circle cx="115" cy="62" fill="#ffffff" r="4.5" stroke="#059669" stroke-width="2.5"></circle>
+<circle cx="165" cy="65" fill="#ffffff" r="4.5" stroke="#059669" stroke-width="2.5"></circle>
+<circle cx="215" cy="26" fill="#ffffff" r="4.5" stroke="#059669" stroke-width="2.5"></circle>
+</svg>
+<!-- Today column focus tint -->
+<div class="absolute right-0 top-0 bottom-0 w-11 bg-emerald-500/10 rounded-xl pointer-events-none -mt-4 mb-1"></div>
+</div>
+<!-- Bottom Axis Metric Columns -->
+<div class="grid grid-cols-7 text-center pt-5 border-t border-slate-100 text-[10px]">
+<div>
+<div class="text-slate-400">10/27</div>
+<div class="font-extrabold text-emerald-600 mt-1">83%</div>
+<div class="text-[9px] text-slate-400 scale-90">6문제</div>
+</div>
+<div>
+<div class="text-slate-400">10/28</div>
+<div class="font-extrabold text-emerald-600 mt-1">58%</div>
+<div class="text-[9px] text-slate-400 scale-90">12문제</div>
+</div>
+<div>
+<div class="text-slate-400">10/29</div>
+<div class="font-extrabold text-emerald-600 mt-1">40%</div>
+<div class="text-[9px] text-slate-400 scale-90">5문제</div>
+</div>
+<div>
+<div class="text-slate-400">10/30</div>
+<div class="font-extrabold text-emerald-600 mt-1">38%</div>
+<div class="text-[9px] text-slate-400 scale-90">29문제</div>
+</div>
+<div>
+<div class="text-slate-400">10/31</div>
+<div class="font-extrabold text-emerald-600 mt-1">73%</div>
+<div class="text-[9px] text-slate-400 scale-90">22문제</div>
+</div>
+<div>
+<div class="text-slate-400">11/1</div>
+<div class="font-bold text-slate-400 mt-1">-</div>
+<div class="text-[9px] text-slate-400 scale-90">기록 없음</div>
+</div>
+<div class="font-bold text-emerald-700">
+<div class="text-emerald-700">오늘</div>
+<div class="font-black text-emerald-600 mt-1">-</div>
+<div class="text-[9px] text-emerald-600 scale-90">기록 없음</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+<!-- END: ChartCard2_AccuracyTrend -->
+<!-- BEGIN: ChartCard3_StudyHeatmapGrass -->
+<article class="px-5 mt-5" data-purpose="study-grass-activity-matrix">
+<div class="bg-white rounded-3xl p-5 border border-slate-100 card-shadow">
+<!-- Header & Toggle -->
+<div class="flex items-start justify-between">
+<div>
+<h2 class="text-lg font-black text-slate-900 tracking-tight">학습 잔디</h2>
+<p class="text-[12px] text-slate-500 font-medium mt-0.5">하루하루 쌓아 온 학습 활동이에요.</p>
+</div>
+<!-- 12-week / 1-year pill -->
+<div class="flex bg-slate-100 p-0.5 rounded-lg text-xs font-semibold text-slate-500">
+<span class="px-2.5 py-1 bg-white text-emerald-700 rounded-md font-bold shadow-xs">최근 12주</span>
+<span class="px-2.5 py-1 hover:text-slate-800">최근 1년</span>
+</div>
+</div>
+<!-- Streak Stats Banner -->
+<div class="grid grid-cols-3 gap-2 mt-4 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 text-center">
+<div>
+<div class="text-[11px] font-semibold text-slate-400">기간 내 학습</div>
+<div class="text-base font-extrabold text-slate-800 mt-0.5">71<span class="text-xs font-semibold">일</span></div>
+</div>
+<div class="border-x border-slate-200/60">
+<div class="text-[11px] font-semibold text-slate-400 flex items-center justify-center space-x-1">
+<i class="fa-solid fa-fire text-amber-500 text-[10px]"></i>
+<span>현재 연속</span>
+</div>
+<div class="text-base font-extrabold text-slate-800 mt-0.5">0<span class="text-xs font-semibold">일</span></div>
+</div>
+<div>
+<div class="text-[11px] font-semibold text-slate-400">최장 연속</div>
+<div class="text-base font-extrabold text-slate-800 mt-0.5">56<span class="text-xs font-semibold">일</span></div>
+</div>
+</div>
+<div class="text-[11px] text-slate-400 mt-3 font-medium">
+          2026년 8월 17일 월 ~ 2026년 11월 2일 월
+        </div>
+<!-- GitHub / Duolingo Style Activity Matrix -->
+<div class="mt-3 overflow-x-auto hide-scrollbar">
+<div class="min-w-[280px]">
+<!-- Months Label Row -->
+<div class="grid grid-cols-12 text-[10px] font-bold text-slate-400 mb-1.5 px-6">
+<span class="col-span-3">8월</span>
+<span class="col-span-3">9월</span>
+<span class="col-span-3">10월</span>
+<span class="col-span-3">11월</span>
+</div>
+<!-- Heatmap Rows (Mon - Sun) -->
+<div class="space-y-1.5 text-[10px] text-slate-400 font-medium">
+<!-- Monday -->
+<div class="flex items-center space-x-1.5">
+<span class="w-3 text-center">월</span>
+<div class="flex space-x-1.5">
+<span class="w-5 h-5 rounded-md bg-slate-100"></span>
+<span class="w-5 h-5 rounded-md bg-slate-100"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md border-2 border-slate-800 bg-white ring-2 ring-emerald-200"></span>
+</div>
+</div>
+<!-- Tuesday -->
+<div class="flex items-center space-x-1.5">
+<span class="w-3 text-center">화</span>
+<div class="flex space-x-1.5">
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-400"></span>
+<span class="w-5 h-5 rounded-md bg-transparent"></span>
+</div>
+</div>
+<!-- Wednesday -->
+<div class="flex items-center space-x-1.5">
+<span class="w-3 text-center">수</span>
+<div class="flex space-x-1.5">
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-400"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-400"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-400"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-400"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-transparent"></span>
+</div>
+</div>
+<!-- Thursday -->
+<div class="flex items-center space-x-1.5">
+<span class="w-3 text-center">목</span>
+<div class="flex space-x-1.5">
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-400"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-transparent"></span>
+</div>
+</div>
+<!-- Friday -->
+<div class="flex items-center space-x-1.5">
+<span class="w-3 text-center">금</span>
+<div class="flex space-x-1.5">
+<span class="w-5 h-5 rounded-md bg-emerald-200"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-200"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-transparent"></span>
+</div>
+</div>
+<!-- Saturday -->
+<div class="flex items-center space-x-1.5">
+<span class="w-3 text-center">토</span>
+<div class="flex space-x-1.5">
+<span class="w-5 h-5 rounded-md bg-slate-100"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-500"></span>
+<span class="w-5 h-5 rounded-md bg-slate-100"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-200"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-200"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-200"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-200"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-200"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-transparent"></span>
+</div>
+</div>
+<!-- Sunday -->
+<div class="flex items-center space-x-1.5">
+<span class="w-3 text-center">일</span>
+<div class="flex space-x-1.5">
+<span class="w-5 h-5 rounded-md bg-slate-100"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-700"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-emerald-300"></span>
+<span class="w-5 h-5 rounded-md bg-slate-100"></span>
+<span class="w-5 h-5 rounded-md bg-transparent"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Heatmap Intensity Legend -->
+<div class="flex items-center justify-end space-x-1.5 mt-3 pt-2 text-[10px] text-slate-400 font-medium">
+<span>적게</span>
+<span class="w-3 h-3 rounded-xs bg-slate-100 inline-block"></span>
+<span class="w-3 h-3 rounded-xs bg-emerald-200 inline-block"></span>
+<span class="w-3 h-3 rounded-xs bg-emerald-400 inline-block"></span>
+<span class="w-3 h-3 rounded-xs bg-emerald-600 inline-block"></span>
+<span class="w-3 h-3 rounded-xs bg-emerald-800 inline-block"></span>
+<span>많이</span>
+</div>
+<!-- Detailed Card for Selected Date -->
+<div class="mt-4 p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100">
+<div class="font-extrabold text-sm text-slate-800">2026년 11월 2일 월 · 오늘</div>
+<div class="grid grid-cols-3 gap-2 mt-3 text-center">
+<div>
+<div class="text-[10px] text-slate-500 font-medium">학습 활동</div>
+<div class="text-sm font-black text-slate-800 mt-0.5">0회</div>
+</div>
+<div>
+<div class="text-[10px] text-slate-500 font-medium">첫 답안 풀이</div>
+<div class="text-sm font-black text-slate-800 mt-0.5">0문제</div>
+</div>
+<div>
+<div class="text-[10px] text-slate-500 font-medium">획득 경험치</div>
+<div class="text-sm font-black text-slate-800 mt-0.5">0 XP</div>
+</div>
+</div>
+<p class="text-[11px] text-slate-400 text-center mt-2.5 font-medium">이 날짜에는 기록된 학습 활동이 없어요.</p>
+</div>
+</div>
+</article>
+<!-- END: ChartCard3_StudyHeatmapGrass -->
+<!-- BEGIN: ChartCard4_WeekdayPattern -->
+<article class="px-5 mt-5" data-purpose="weekday-learning-pattern">
+<div class="bg-white rounded-3xl p-5 border border-slate-100 card-shadow">
+<!-- Header -->
+<div class="flex items-start justify-between">
+<div>
+<h2 class="text-lg font-black text-slate-900">요일별 학습 패턴</h2>
+<p class="text-[11px] text-slate-400 font-medium">최근 8주(56일) · 요일별 평균</p>
+</div>
+<div class="flex bg-slate-100 p-0.5 rounded-lg text-xs font-semibold text-slate-500">
+<span class="px-2.5 py-1 bg-white text-emerald-700 rounded-md font-bold shadow-xs">풀이 수</span>
+<span class="px-2.5 py-1 hover:text-slate-800">학습 시간</span>
+</div>
+</div>
+<!-- Horizontal Activity Bars -->
+<div class="space-y-3 mt-5">
+<!-- Mon (Top Day) -->
+<div class="flex items-center space-x-3">
+<span class="w-4 text-xs font-bold text-slate-700">월</span>
+<div class="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full w-[95%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-800 w-12 text-right">6.8문제</span>
+</div>
+<!-- Tue -->
+<div class="flex items-center space-x-3">
+<span class="w-4 text-xs font-semibold text-slate-500">화</span>
+<div class="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full w-[42%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-800 w-12 text-right">2.9문제</span>
+</div>
+<!-- Wed -->
+<div class="flex items-center space-x-3">
+<span class="w-4 text-xs font-semibold text-slate-500">수</span>
+<div class="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full w-[80%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-800 w-12 text-right">5.5문제</span>
+</div>
+<!-- Thu -->
+<div class="flex items-center space-x-3">
+<span class="w-4 text-xs font-semibold text-slate-500">목</span>
+<div class="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full w-[95%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-800 w-12 text-right">6.8문제</span>
+</div>
+<!-- Fri -->
+<div class="flex items-center space-x-3">
+<span class="w-4 text-xs font-semibold text-slate-500">금</span>
+<div class="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full w-[98%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-800 w-12 text-right">6.9문제</span>
+</div>
+<!-- Sat -->
+<div class="flex items-center space-x-3">
+<span class="w-4 text-xs font-semibold text-slate-500">토</span>
+<div class="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full w-[72%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-800 w-12 text-right">5.1문제</span>
+</div>
+<!-- Sun -->
+<div class="flex items-center space-x-3">
+<span class="w-4 text-xs font-semibold text-slate-500">일</span>
+<div class="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full w-[68%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-800 w-12 text-right">4.9문제</span>
+</div>
+</div>
+<div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 font-medium leading-relaxed">
+          월요일 · 최근 8번 중 7일 학습 · 시간 측정 가능 8일
+        </div>
+</div>
+</article>
+<!-- END: ChartCard4_WeekdayPattern -->
+<!-- BEGIN: BottomNavigationBar -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-white/95 backdrop-blur-lg border-t border-slate-200/80 shadow-lg" data-purpose="bottom-tab-bar">
+<div class="w-full max-w-[420px] px-2 py-2 flex items-center justify-around">
+<!-- 1. 문장분석 -->
+<button class="flex flex-col items-center justify-center flex-1 text-slate-400 hover:text-slate-600 transition-colors py-1" type="button">
+<i class="fa-solid fa-robot text-lg"></i>
+<span class="text-[10px] font-semibold mt-1">문장분석</span>
+</button>
+<!-- 2. 단어장 -->
+<button class="flex flex-col items-center justify-center flex-1 text-slate-400 hover:text-slate-600 transition-colors py-1" type="button">
+<i class="fa-regular fa-bookmark text-lg"></i>
+<span class="text-[10px] font-semibold mt-1">단어장</span>
+</button>
+<!-- 3. 테스트 -->
+<button class="flex flex-col items-center justify-center flex-1 text-slate-400 hover:text-slate-600 transition-colors py-1" type="button">
+<i class="fa-solid fa-spell-check text-lg"></i>
+<span class="text-[10px] font-semibold mt-1">테스트</span>
+</button>
+<!-- 4. 스토리텔링 -->
+<button class="flex flex-col items-center justify-center flex-1 text-slate-400 hover:text-slate-600 transition-colors py-1" type="button">
+<i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+<span class="text-[10px] font-semibold mt-1">스토리텔링</span>
+</button>
+<!-- 5. 마이페이지 (Active) -->
+<button class="flex flex-col items-center justify-center flex-1 text-emerald-600 py-1 font-bold" type="button">
+<div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center ring-1 ring-emerald-200 shadow-xs">
+<i class="fa-solid fa-user text-sm"></i>
+</div>
+<span class="text-[10px] mt-0.5">마이페이지</span>
+</button>
+</div>
+</nav>
+<!-- END: BottomNavigationBar -->
+</div>
+</body></html>

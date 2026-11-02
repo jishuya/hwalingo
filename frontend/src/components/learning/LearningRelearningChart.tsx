@@ -32,7 +32,7 @@ export default function LearningRelearningChart({ onStandard, onIncorrect }: { o
           })}</div>
           {!total && <p className="learning-relearning-message">선택 기간에는 처음 틀린 문제 기록이 없어요.</p>}
           {total > 0 && completed === total && <p className="learning-relearning-message">틀린 문제를 모두 다시 맞혔어요. 끝까지 학습했네요!</p>}
-          {(standard > 0 || incorrect > 0) && <div className="learning-relearning-actions">{standard > 0 && <button type="button" className="primary" onClick={onStandard}>일반 테스트 이어하기</button>}{incorrect > 0 && <button type="button" className="primary" onClick={onIncorrect}>오답 테스트 이어하기</button>}</div>}
+          {(standard > 0 || incorrect > 0) && <div className="learning-relearning-actions">{standard > 0 && <button type="button" className="primary" onClick={onStandard}><ChecksIcon weight="fill"/>일반 테스트 이어하기</button>}{incorrect > 0 && <button type="button" className="primary" onClick={onIncorrect}><ChecksIcon weight="fill"/>오답 테스트 이어하기</button>}</div>}
           <p className="learning-relearning-note">같은 테스트의 재도전에서 정답을 맞히면 원래 오답 1문제를 완료로 계산해요. 같은 단어라도 다른 테스트에서 틀리면 별도 문제예요. 재도전은 첫 시도 정답률을 바꾸지 않아요.</p><p className="learning-relearning-note">재도전 이력이 없는 과거 기록, 삭제된 단어의 미완료 문제, 중단된 테스트는 확인·재개 불가로 구분해요. 날짜는 첫 오답을 제출한 한국 시간 기준이에요.</p>
           {query.isError && <p role="status" className="learning-relearning-note">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
         </>}

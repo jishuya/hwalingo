@@ -68,12 +68,18 @@ try{
   await evaluate(`document.querySelector('.learning-accuracy-card').scrollIntoView()`);await screenshot('accuracy-'+width)
   await evaluate(`document.querySelector('.analytics-card').scrollIntoView()`);await screenshot('weekdays-'+width)
   await click('.analytics-period button:nth-child(2)');await ready('하루 평균')
-  assert(await evaluate(`document.querySelector('.learning-time-bars').children.length>=28`),'month bars')
+  assert(await evaluate(`document.querySelector('.learning-time-bars').children.length===${Number(today.slice(8,10))}`),'month bars')
   await screenshot('month-'+width)
   await click('.analytics-period button:nth-child(3)');await ready('선택 기간 합계')
   await click('.analytics-period button:nth-child(4)');await ready('선택 기간 합계')
   await click('#analytics-tab-vocabulary');await ready('오답 재학습 완료');await ready('언어별 학습 현황')
   await screenshot('vocabulary-'+width)
+  assert.equal(await evaluate(`document.documentElement.scrollWidth>innerWidth`),false,'vocabulary overflow '+width)
+  for(const [selector,name] of [['.learning-mastery-card','mastery'],['.learning-review-card','review'],['.learning-weak-card','weak'],['.learning-relearning-card','relearning'],['.analytics-horizontal.languages','languages']]){
+   await evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView()`);await screenshot(name+'-'+width)
+  }
+  if(width===390){await evaluate(`document.documentElement.dataset.theme='dark';document.querySelector('.learning-mastery-card').scrollIntoView()`);await screenshot('vocabulary-dark');await evaluate(`document.documentElement.dataset.theme='light'`)}
+
   await click('.learning-mastery-rows>button');await ready('처음 만남 단어')
   await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);await pause(100)
   await click('#analytics-tab-growth');await ready('누적 XP 성장 곡선');await ready('기간 마지막 누적 XP')

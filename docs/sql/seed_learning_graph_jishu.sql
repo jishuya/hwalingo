@@ -1,7 +1,7 @@
 -- jishuya3015@naver.com 계정에 그래프 테스트 기록을 추가합니다.
 -- 기존 단어·답안·학습 기록·설정은 유지하고 통계는 기존 값에 합산합니다.
 -- 하나의 트랜잭션으로 처리합니다. 재실행은 중단하여 중복 추가를 방지합니다.
--- graph-preview- 접두어는 이 테스트 전용입니다.
+-- 실제 영어 단어를 사용하며, graph-preview-real-v1 XP 표식으로 중복 실행을 차단합니다.
 BEGIN;
 SELECT pg_advisory_xact_lock(20361031, 18);
 CREATE TEMP TABLE graph_real_dictionary(language TEXT, ordinal INTEGER, word TEXT, meaning TEXT, example TEXT, translation TEXT, PRIMARY KEY(language,ordinal)) ON COMMIT DROP;
@@ -319,7 +319,7 @@ BEGIN
   SELECT id INTO source_id FROM users WHERE email='graph-preview-staging@example.test';
   FOR item IN SELECT id FROM vocabularies WHERE user_id=source_id ORDER BY id LOOP
     SELECT d.* INTO entry FROM graph_real_dictionary d WHERE d.language='en' AND NOT EXISTS(
-      SELECT 1 FROM vocabularies v WHERE v.user_id IN(target_id,source_id) AND v.language_code='en' AND v.word=d.word
+      SELECT 1 FROM vocabularies v WHERE v.user_id IN(target_id,source_id) AND v.language_code='en' AND lower(v.word)=lower(d.word)
     ) ORDER BY d.ordinal LIMIT 1;
     IF NOT FOUND THEN RAISE EXCEPTION '중복되지 않는 실제 영어 예시 단어가 부족합니다.'; END IF;
     UPDATE vocabularies SET word=entry.word,meaning=entry.meaning,context_meaning=entry.meaning,cefr_level=NULL,

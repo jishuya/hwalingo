@@ -41,6 +41,8 @@ export default function LearningAccuracyChart() {
           <div className="learning-accuracy-summary"><div><span>선택 기간 정답률</span><strong>{total ? `${Math.round(correct / total * 100)}%` : '기록 없음'}</strong></div><p>첫 시도 {total.toLocaleString('ko-KR')}문제 중 <b>{correct.toLocaleString('ko-KR')}문제 정답</b></p></div>
           <div className="analytics-chart-scroll"><div className="learning-accuracy-chart" style={{minWidth: days.length > 14 ? days.length*48+44 : undefined}}><div className="learning-accuracy-axis" aria-hidden="true"><span>100%</span><span>50%</span><span>0%</span></div><div className="learning-accuracy-columns" style={{gridTemplateColumns: `repeat(${days.length},minmax(0,1fr))`}} role="group" aria-label="선택 기간 구간별 첫 시도 정답률">
             <svg viewBox="0 0 700 170" preserveAspectRatio="none" aria-hidden="true">
+              <defs><linearGradient id="report-accuracy-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity=".22"/><stop offset="100%" stopColor="#10b981" stopOpacity="0"/></linearGradient></defs>
+              {paths.map((segment,index) => { const coordinates = segment.match(/[\d.]+/g)?.map(Number) ?? []; return coordinates.length >= 4 ? <path key={index} d={`${segment} L ${coordinates.at(-2)} 160 L ${coordinates[0]} 160 Z`} fill="url(#report-accuracy-fill)"/> : null })}
               {[10, 85, 160].map(value => <line key={value} x1="0" x2="700" y1={value} y2={value} className="accuracy-grid"/>)}
               {paths.map((segment, index) => <path key={index} d={segment} className="accuracy-line"/>)}
             </svg>

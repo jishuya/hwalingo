@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowClockwiseIcon, CalendarCheckIcon, CaretRightIcon } from '@phosphor-icons/react'
+import { ArrowClockwiseIcon, CalendarCheckIcon, CaretRightIcon, PlayIcon } from '@phosphor-icons/react'
 import { getVocabularies } from '../../services/vocabulary'
 import { buildReviewSchedule } from '../../domain/reviewSchedule'
 import { Modal } from '../ui/Dialog'
@@ -32,7 +32,7 @@ export default function LearningReviewChart({ onStart }: { onStart: () => void }
         : query.data && <>
           <div className="learning-review-summary"><button type="button" className="learning-review-overdue" onClick={() => setSelected('overdue')} aria-label={`밀린 복습 ${schedule.overdue.length}개, 단어 목록 보기`}><span>밀린 복습 <CaretRightIcon/></span><strong>{number(schedule.overdue.length)}<small>개</small></strong><small>어제까지 예정된 단어</small></button><div><span>앞으로 7일 예정</span><strong>{number(total)}<small>개</small></strong><small>오늘 예정 포함 · 밀린 복습 제외</small></div></div>
           <div className="learning-review-plot"><div className="learning-review-axis" aria-hidden="true"><span>{ceiling}개</span><span>{ceiling / 2}개</span><span>0개</span></div><div className="learning-review-bars" role="group" aria-label="오늘부터 7일간 날짜별 복습 예정 단어 수">{schedule.days.map((day, index) => <button type="button" key={day.date} className={index === 0 ? 'today' : ''} aria-label={`${label(day.date)}, 복습 예정 ${day.words.length}개, 단어 목록 보기`} onClick={() => setSelected(day.date)}><strong>{number(day.words.length)}</strong><span className="learning-review-track"><span style={{ height: `${day.words.length / ceiling * 100}%` }}/></span><span className="learning-review-day">{index === 0 ? '오늘' : index === 1 ? '내일' : label(day.date)}</span></button>)}</div></div>
-          <div className="learning-review-action"><div><strong>지금 복습 가능한 단어 {number(schedule.dueNow.length)}개</strong><p>밀린 복습과 오늘 복습 시각이 된 단어예요.</p></div><button type="button" className="primary" onClick={onStart} disabled={!schedule.dueNow.length}>오늘의 테스트</button></div>
+          <div className="learning-review-action"><div><strong>지금 복습 가능한 단어 {number(schedule.dueNow.length)}개</strong><p>밀린 복습과 오늘 복습 시각이 된 단어예요.</p></div><button type="button" className="primary" onClick={onStart} disabled={!schedule.dueNow.length}><PlayIcon weight="fill"/>오늘의 테스트 시작하기</button></div>
           {!total && !schedule.overdue.length && <p className="learning-review-note">앞으로 7일 안에 예정된 복습이 없어요. 새 단어를 학습하면 복습 일정이 생겨요.</p>}
           <p className="learning-review-note">현재 보관 중이며 첫 답안 기록이 있는 단어만 집계해요. 마스터도 포함하며 학습 결과에 따라 일정이 바뀔 수 있어요. 막대를 누르면 단어 목록을 볼 수 있어요.</p><p className="learning-review-note">오늘의 테스트는 기존 출제 규칙에 따라 새 단어와 복습을 구성해요. 미래 복습 예정 단어를 미리 출제하지 않아요.</p>
           {query.isError && <p className="learning-review-note" role="status">최신 기록을 불러오지 못해 마지막으로 확인한 일정을 표시하고 있어요.</p>}

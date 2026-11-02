@@ -1,0 +1,123 @@
+/* Vocabulary report follows docs/report02.html. */
+#analytics-panel-vocabulary {
+  --vocab-soft:var(--report-soft);
+  --vocab-mint:var(--report-mint);
+  --vocab-amber:#fffbeb;
+  --vocab-amber-line:#fde68a;
+  --vocab-amber-ink:#92400e;
+}
+#analytics-panel-vocabulary>.card {
+  background:radial-gradient(ellipse at top right,#10b98108,transparent 180px),var(--report-surface);
+  box-shadow:0 10px 30px -4px #10b98112,0 4px 12px -2px #00000008;
+}
+#analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) {gap:8px}
+#analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) h2 {
+  margin:7px 0 4px;font-size:var(--font-xl);font-weight:800;letter-spacing:-.5px;
+}
+#analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) p {
+  margin:0;color:var(--report-muted);font-size:var(--font-sm);line-height:1.6;
+}
+#analytics-panel-vocabulary :is(.learning-mastery-eyebrow,.learning-review-eyebrow,.learning-weak-eyebrow,.learning-relearning-eyebrow) {
+  display:inline-flex;gap:5px;padding:5px 9px;border:1px solid #a7f3d080;border-radius:99px;background:var(--vocab-mint);color:var(--green);font-size:var(--font-sm);
+}
+#analytics-panel-vocabulary :is(.learning-mastery-eyebrow,.learning-review-eyebrow,.learning-weak-eyebrow,.learning-relearning-eyebrow) svg {width:16px;height:16px;flex-shrink:0}
+#analytics-panel-vocabulary .learning-weak-eyebrow {background:var(--vocab-amber);border-color:var(--vocab-amber-line);color:var(--vocab-amber-ink)}
+#analytics-panel-vocabulary :is(.learning-mastery-refresh,.learning-review-refresh,.learning-weak-refresh,.learning-relearning-refresh,.analytics-card-head>button) {
+  padding:7px 10px;border:1px solid var(--report-border);border-radius:99px;background:var(--vocab-soft);color:var(--report-muted);font-size:var(--font-xs);box-shadow:0 1px 2px #10182805;
+}
+#analytics-panel-vocabulary :is(.learning-mastery-refresh,.learning-review-refresh,.learning-weak-refresh,.learning-relearning-refresh,.analytics-card-head>button) svg {width:14px;height:14px;color:var(--green);flex-shrink:0}
+#analytics-panel-vocabulary :is(.learning-mastery-summary,.learning-review-summary) {gap:12px;margin:18px 0}
+#analytics-panel-vocabulary :is(.learning-mastery-summary>div,.learning-review-summary>div,.learning-review-summary>button) {
+  padding:15px;border:1px solid var(--report-border);border-radius:16px;background:var(--vocab-soft);
+}
+#analytics-panel-vocabulary .learning-mastery-summary>div+div,
+#analytics-panel-vocabulary .learning-review-summary>.learning-review-overdue {
+  background:linear-gradient(135deg,#f59e0b12,var(--vocab-amber));border-color:var(--vocab-amber-line);color:var(--vocab-amber-ink);
+}
+#analytics-panel-vocabulary .learning-review-summary>div {background:linear-gradient(135deg,#10b98112,var(--vocab-mint));border-color:#a7f3d0}
+#analytics-panel-vocabulary :is(.learning-mastery-summary,.learning-review-summary) strong {font-size:var(--font-2xl);font-weight:900;letter-spacing:-.7px}
+#analytics-panel-vocabulary :is(.learning-mastery-summary,.learning-review-summary) strong small {font-size:var(--font-sm);color:var(--report-muted);letter-spacing:0}
+#analytics-panel-vocabulary .learning-mastery-summary>div>span {gap:5px;font-size:var(--font-xs);font-weight:700;flex-wrap:wrap}
+#analytics-panel-vocabulary .learning-mastery-summary>div>span>svg {width:14px;height:14px;color:var(--green);flex-shrink:0}
+#analytics-panel-vocabulary .learning-mastery-summary>div+div>span>svg {color:#f59e0b}
+.learning-mastery-percent {margin-left:auto;padding:2px 5px;background:var(--report-surface);border:1px solid var(--vocab-amber-line);border-radius:99px;font-size:var(--font-xs);font-style:normal;color:var(--vocab-amber-ink)}
+#analytics-panel-vocabulary .learning-mastery-rows {gap:7px}
+#analytics-panel-vocabulary .learning-mastery-rows>button {padding:8px;border-radius:12px}
+#analytics-panel-vocabulary .learning-mastery-rows>button:hover {background:var(--vocab-soft)}
+#analytics-panel-vocabulary .learning-mastery-rows>button.mastered {background:var(--vocab-amber);border-color:var(--vocab-amber-line);color:var(--vocab-amber-ink)}
+#analytics-panel-vocabulary .learning-mastery-row-title {gap:6px}
+#analytics-panel-vocabulary .learning-mastery-row-title>span {gap:7px}
+#analytics-panel-vocabulary .learning-mastery-row-title :is(b,strong) {font-size:var(--font-sm);font-weight:800}
+#analytics-panel-vocabulary .learning-mastery-row-title .learning-mastery-stage {display:grid;place-items:center;min-width:22px;height:22px;border-radius:6px;background:#e2e8f080;font-size:var(--font-xs);font-weight:800}
+#analytics-panel-vocabulary .mastered .learning-mastery-stage {background:#fbbf24;color:#78350f}
+#analytics-panel-vocabulary .learning-mastery-track {height:11px;padding:2px;margin-top:7px;background:var(--vocab-soft)}
+#analytics-panel-vocabulary .learning-mastery-track>span {background:linear-gradient(90deg,#059669,#34d399)}
+#analytics-panel-vocabulary .mastered .learning-mastery-track {background:#fef3c7}
+#analytics-panel-vocabulary .mastered .learning-mastery-track>span {background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+#analytics-panel-vocabulary :is(.learning-mastery-note,.analytics-note) {padding:12px;border:1px solid var(--report-border);border-radius:16px;background:var(--vocab-soft)}
+#analytics-panel-vocabulary .learning-review-summary>*>span {font-weight:800;color:inherit}
+#analytics-panel-vocabulary .learning-review-plot {height:185px;margin-top:22px}
+#analytics-panel-vocabulary .learning-review-track>span {max-width:24px;border-radius:10px 10px 2px 2px;background:#a7f3d0cc}
+#analytics-panel-vocabulary .today .learning-review-track>span {background:linear-gradient(0deg,#059669,#34d399);box-shadow:0 4px 10px #10b98133;outline:2px solid #6ee7b766;outline-offset:1px}
+#analytics-panel-vocabulary .today {color:var(--green);font-weight:800}
+#analytics-panel-vocabulary .learning-review-action,
+#analytics-panel-vocabulary .learning-weak-action {flex-direction:column;align-items:stretch;gap:14px}
+#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action) button,
+#analytics-panel-vocabulary .learning-relearning-actions button {
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:0;border-radius:16px;background:linear-gradient(90deg,#059669,#10b981);color:white;font-size:var(--font-sm);font-weight:800;box-shadow:0 8px 20px -4px #05966961;transition:filter .2s,transform .2s;
+}
+#analytics-panel-vocabulary :is(.learning-review-action,.learning-relearning-actions) button svg {width:20px;height:20px}
+#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action,.learning-relearning-actions) button:hover {filter:brightness(1.05)}
+#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action,.learning-relearning-actions) button:active {transform:scale(.99)}
+#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action) button:disabled {box-shadow:none}
+#analytics-panel-vocabulary .learning-weak-ranking {gap:12px;margin:18px 0}
+#analytics-panel-vocabulary .learning-weak-ranking li>button {padding:14px;border-radius:16px;background:var(--report-surface);gap:10px}
+#analytics-panel-vocabulary .learning-weak-ranking li:first-child>button {background:var(--vocab-amber);border-color:var(--vocab-amber-line)}
+#analytics-panel-vocabulary .learning-weak-ranking li>button:hover {border-color:#6ee7b7}
+#analytics-panel-vocabulary .learning-weak-rank {width:25px;height:25px;border-radius:8px;background:var(--vocab-soft);color:var(--report-ink)}
+#analytics-panel-vocabulary .learning-weak-ranking li:first-child .learning-weak-rank {background:#fbbf24;color:#78350f}
+#analytics-panel-vocabulary .learning-weak-ranking li:nth-child(2) .learning-weak-rank {background:#fef3c7;color:#92400e}
+#analytics-panel-vocabulary .learning-weak-ranking li:nth-child(3) .learning-weak-rank {background:var(--vocab-amber);color:var(--vocab-amber-ink);border:1px solid var(--vocab-amber-line)}
+#analytics-panel-vocabulary .learning-weak-word {flex-wrap:wrap;gap:6px}
+#analytics-panel-vocabulary .learning-weak-word b {font-size:var(--font-md);font-weight:800}
+#analytics-panel-vocabulary .learning-weak-word small {padding:3px 6px;border-radius:6px;background:var(--vocab-soft)}
+#analytics-panel-vocabulary .learning-weak-track {background:var(--vocab-soft)}
+#analytics-panel-vocabulary .learning-weak-track>span {background:linear-gradient(90deg,#f59e0b,#f97316)}
+#analytics-panel-vocabulary .learning-weak-counts {font-size:var(--font-xs)}
+#analytics-panel-vocabulary .learning-weak-counts>span:last-child,
+#analytics-panel-vocabulary .learning-weak-counts>span:last-child strong {color:var(--vocab-amber-ink);font-weight:800}
+#analytics-panel-vocabulary .learning-relearning-summary {padding:16px;margin:18px 0 16px;border:1px solid #a7f3d0;border-radius:16px;background:linear-gradient(110deg,#10b98112,var(--vocab-mint))}
+#analytics-panel-vocabulary .learning-relearning-summary span {color:var(--green);font-weight:700}
+#analytics-panel-vocabulary .learning-relearning-summary>b {font-size:var(--font-2xl);font-weight:900}
+#analytics-panel-vocabulary .learning-relearning-total-bar {height:13px;padding:2px;background:var(--vocab-soft)}
+#analytics-panel-vocabulary .learning-relearning-card .completed {background:#059669}
+#analytics-panel-vocabulary .learning-relearning-card .remaining {background:#fbbf24}
+#analytics-panel-vocabulary .learning-relearning-card .unavailable {background:#cbd5e1}
+#analytics-panel-vocabulary .learning-relearning-legend {gap:8px 12px}
+#analytics-panel-vocabulary .learning-relearning-legend i {border-radius:50%}
+#analytics-panel-vocabulary .learning-relearning-days {gap:12px;padding-top:16px;border-top:1px solid var(--report-border)}
+#analytics-panel-vocabulary .learning-relearning-days>div>span {font-size:var(--font-xs);font-weight:700}
+#analytics-panel-vocabulary .learning-relearning-days>div>div {height:8px;background:var(--vocab-soft)}
+#analytics-panel-vocabulary .analytics-switch {gap:8px;background:transparent;padding:0;flex-wrap:wrap}
+#analytics-panel-vocabulary .analytics-switch button {padding:8px 14px;border-radius:12px;border:1px solid var(--report-border);background:var(--vocab-soft);box-shadow:none}
+#analytics-panel-vocabulary .analytics-switch button[aria-pressed='true'] {background:var(--vocab-mint);border-color:#a7f3d0;color:var(--green)}
+#analytics-panel-vocabulary .analytics-horizontal.languages {gap:14px}
+#analytics-panel-vocabulary .analytics-horizontal.languages>button {grid-template-columns:1fr auto;gap:8px;padding:6px}
+#analytics-panel-vocabulary .analytics-horizontal.languages>button>span:first-child {display:flex;align-items:center;gap:8px;font-weight:800}
+.analytics-language-flag {font-size:var(--font-lg)}
+#analytics-panel-vocabulary .analytics-horizontal.languages .analytics-track {grid-column:1/-1;grid-row:2;height:11px;padding:2px;background:var(--vocab-soft)}
+#analytics-panel-vocabulary .analytics-horizontal.languages .analytics-track>i {background:linear-gradient(90deg,#059669,#34d399)}
+#analytics-panel-vocabulary .analytics-horizontal.languages strong {grid-column:2;grid-row:1}
+html[data-theme='dark'] #analytics-panel-vocabulary {--vocab-amber:#393316;--vocab-amber-line:#67572b;--vocab-amber-ink:#fcd78b}
+html[data-theme='dark'] #analytics-panel-vocabulary :is(.learning-mastery-summary>div+div,.learning-review-summary>.learning-review-overdue) {background:var(--vocab-amber)}
+html[data-theme='dark'] #analytics-panel-vocabulary :is(.learning-review-summary>div,.learning-relearning-summary) {background:var(--vocab-mint);border-color:#355842}
+html[data-theme='dark'] #analytics-panel-vocabulary .mastered .learning-mastery-track {background:#59451e}
+html[data-theme='dark'] #analytics-panel-vocabulary .learning-mastery-summary>div>span {color:var(--report-muted)}
+@media(max-width:520px) {
+  #analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) h2 {font-size:var(--font-lg)}
+  #analytics-panel-vocabulary :is(.learning-mastery-eyebrow,.learning-review-eyebrow,.learning-weak-eyebrow,.learning-relearning-eyebrow) {font-size:var(--font-xs);padding:5px 7px}
+  #analytics-panel-vocabulary :is(.learning-mastery-refresh,.learning-review-refresh,.learning-weak-refresh,.learning-relearning-refresh) {padding:7px 8px}
+  #analytics-panel-vocabulary :is(.learning-mastery-summary>div,.learning-review-summary>div,.learning-review-summary>button) {padding:12px}
+  #analytics-panel-vocabulary .learning-mastery-row-title>span {gap:5px}
+  #analytics-panel-vocabulary .learning-mastery-row-title>span:last-child small {min-width:36px;text-align:right}
+}

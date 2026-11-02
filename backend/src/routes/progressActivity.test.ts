@@ -205,6 +205,7 @@ test('learning volume ranks full history, excludes retries, splits Seoul dates, 
     await pool.query(`INSERT INTO user_settings(user_id,weekly_goal_days) VALUES ($1,3)`, [targetId])
     const originalWord = await pool.query<{ id: string }>(`INSERT INTO vocabularies(user_id,word,meaning) VALUES ($1,'original-word','기존단어') RETURNING id`, [targetId])
     await pool.query(`INSERT INTO user_learning_days(user_id,learning_date,activity_count,earned_xp,reviewed_word_count) VALUES ($1,$2,2,47,1)`, [targetId,todayDate])
+    const collisionId = (await pool.query<{id:string}>(`INSERT INTO vocabularies(user_id,language_code,word,meaning) VALUES ($1,'en','resilience','사용자가 원래 저장한 뜻') RETURNING id`,[targetId])).rows[0].id
     const targetSeed = await readFile(new URL('../../../docs/sql/seed_learning_graph_jishu.sql', import.meta.url), 'utf8')
     await pool.query(targetSeed)
     assert.equal((await pool.query(`SELECT total_xp::integer AS xp FROM user_progress WHERE user_id=$1`, [targetId])).rows[0].xp, 337)
@@ -221,7 +222,6 @@ test('learning volume ranks full history, excludes retries, splits Seoul dates, 
     assert.equal((await pool.query(`SELECT total_xp::integer AS xp FROM user_progress WHERE user_id=$1`, [targetId])).rows[0].xp, 337)
     const extraSeed = await readFile(new URL('../../../docs/sql/seed_learning_graph_remaining_jishu.sql',import.meta.url),'utf8')
     const beforeExtra = (await pool.query(`SELECT total_xp::integer AS xp FROM user_progress WHERE user_id=$1`,[targetId])).rows[0].xp
-    const collisionId = (await pool.query<{id:string}>(`INSERT INTO vocabularies(user_id,language_code,word,meaning) VALUES ($1,'en','resilience','사용자가 원래 저장한 뜻') RETURNING id`,[targetId])).rows[0].id
     await pool.query(extraSeed)
     const extraIds = (await pool.query<{id:string}>(`SELECT jsonb_array_elements_text(metadata->'vocabulary_ids') AS id FROM xp_events WHERE user_id=$1 AND metadata->>'seed'='graph-extra-v1' AND metadata->>'purpose'='fixture-manifest'`,[targetId])).rows.map(row=>row.id)
     assert.equal(extraIds.length,40)
@@ -257,6 +257,8 @@ test('learning volume ranks full history, excludes retries, splits Seoul dates, 
     assert.equal((await pool.query(`SELECT meaning FROM vocabularies WHERE id=$1`,[collisionId])).rows[0].meaning,'사용자가 원래 저장한 뜻')
     // Simulate the earlier fixture already installed, then apply the standalone repair verbatim.
     await pool.query(`WITH words AS (SELECT id,language_code,row_number() OVER(PARTITION BY language_code ORDER BY id)-1 AS level FROM vocabularies WHERE id=ANY($1::bigint[])) UPDATE vocabularies v SET word='graph-extra-v1-'||w.language_code||'-'||w.level,meaning='그래프 확인용 단어' FROM words w WHERE w.id=v.id`,[extraIds])
+    const previewIds = (await pool.query<{id:string}>(`SELECT jsonb_array_elements_text(metadata->'vocabulary_ids') AS id FROM xp_events WHERE user_id=$1 AND metadata->>'seed'='graph-preview-real-v1'`,[targetId])).rows.map(row=>row.id)
+    await pool.query(`WITH words AS (SELECT id,row_number() OVER(ORDER BY id) AS ordinal FROM vocabularies WHERE id=ANY($1::bigint[])) UPDATE vocabularies v SET word='graph-preview-'||lpad(w.ordinal::text,3,'0'),meaning='그래프 테스트 어휘 '||w.ordinal FROM words w WHERE w.id=v.id`,[previewIds])
     const snapshot = async () => JSON.stringify(await Promise.all(['vocabulary_progress','quizzes','learning_activities','learning_time_events','user_progress'].map(async table=>(await pool.query(`SELECT * FROM ${table} WHERE user_id=$1 ORDER BY ${table==='learning_time_events'?'event_id':table==='user_progress'?'user_id':'id'}`,[targetId])).rows)))
     const originalSnapshot = await snapshot()
     const repair = await readFile(new URL('../../../docs/sql/repair_learning_graph_words_jishu.sql',import.meta.url),'utf8')
@@ -264,6 +266,7 @@ test('learning volume ranks full history, excludes retries, splits Seoul dates, 
     assert.equal(await snapshot(),originalSnapshot)
     const repaired = await pool.query(`SELECT word,meaning,example_sentence FROM vocabularies WHERE id=ANY($1::bigint[]) ORDER BY id`,[extraIds])
     assert.equal(repaired.rows.some(row=>row.word.startsWith('graph-')),false)
+    assert.equal((await pool.query(`SELECT count(*)::integer AS count FROM vocabularies WHERE user_id=$1 AND word LIKE 'graph-preview-%'`,[targetId])).rows[0].count,0)
     await pool.query(repair)
     assert.deepEqual((await pool.query(`SELECT word,meaning,example_sentence FROM vocabularies WHERE id=ANY($1::bigint[]) ORDER BY id`,[extraIds])).rows,repaired.rows)
     assert.equal((await pool.query(`SELECT meaning FROM vocabularies WHERE id=$1`,[collisionId])).rows[0].meaning,'사용자가 원래 저장한 뜻')
