@@ -2,6 +2,7 @@ import { QUIZ_RULES, type SelectionGroup } from '../../config/quizRules.js'
 import type { MasteryLevel } from '../../config/learningRules.js'
 
 export interface TestCandidate {
+  incorrectPracticeExcluded?: boolean
   vocabularyId: string
   masteryLevel: MasteryLevel
   totalAttempts: number
@@ -51,13 +52,13 @@ export function selectAdditionalTestCandidates(candidates: TestCandidate[], requ
   ].slice(0, requestedCount)
 }
 
-export function selectIncorrectTestCandidates(candidates: TestCandidate[], requestedCount: number, now = new Date()): SelectedCandidate[] {
-  return candidates.filter(item => item.incorrectCount > 0).sort((a, b) => {
+export function selectIncorrectTestCandidates(candidates: TestCandidate[], now = new Date()): SelectedCandidate[] {
+  return candidates.filter(item => item.incorrectCount > 0 && !item.incorrectPracticeExcluded).sort((a, b) => {
     const aDue = a.nextReviewAt <= now
     const bDue = b.nextReviewAt <= now
     return Number(bDue) - Number(aDue)
       || (aDue && bDue ? a.nextReviewAt.getTime() - b.nextReviewAt.getTime() : 0)
       || b.incorrectCount / Math.max(1, b.totalAttempts) - a.incorrectCount / Math.max(1, a.totalAttempts)
       || (a.lastReviewedAt?.getTime() ?? 0) - (b.lastReviewedAt?.getTime() ?? 0)
-  }).slice(0, requestedCount).map(item => ({ ...item, selectionGroup: 'weak' as const }))
+  }).map(item => ({ ...item, selectionGroup: 'weak' as const }))
 }

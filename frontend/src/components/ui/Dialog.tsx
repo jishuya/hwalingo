@@ -18,7 +18,7 @@ interface ModalProps {
   size?: DialogSize
   ariaLabel?: string
   role?: 'dialog' | 'alertdialog'
-  presentation?: 'sheet' | 'compact'
+  presentation?: 'sheet' | 'compact' | 'overlay'
   icon?: ReactNode
   hideClose?: boolean
   hideHeader?: boolean

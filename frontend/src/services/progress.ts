@@ -58,3 +58,18 @@ export async function getRelearningProgress(selection: AnalyticsSelection = {}):
   if (!response.ok) throw new Error('오답 재학습 기록을 불러오지 못했어요.')
   return response.json() as Promise<RelearningProgress>
 }
+
+export interface GrowingWord {
+  vocabularyId: string
+  word: string
+  meaning: string
+  languageCode: string
+  beforeLevel: number
+  currentLevel: number
+  gained: number
+}
+export async function getGrowingWords(): Promise<{ words: GrowingWord[] }> {
+  const response = await fetch('/api/progress/word-growth', { credentials: 'include' })
+  if (!response.ok) throw new Error('단어 성장 기록을 불러오지 못했어요.')
+  return response.json() as Promise<{ words: GrowingWord[] }>
+}

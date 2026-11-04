@@ -2,7 +2,7 @@ import LearningTimer from '../components/learning/LearningTimer'
 import { AlertDialog } from '../components/ui/Dialog'
 import DialogCloseButton from '../components/ui/DialogCloseButton'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, FireIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TranslateIcon } from '@phosphor-icons/react'
+import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, FireIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TargetIcon, PauseCircleIcon, InfoIcon, TranslateIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QuizRequestError, createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
 import QuizComplete from '../components/quiz/QuizComplete'
@@ -35,7 +35,7 @@ function submitTimedAnswer(sessionId: string, itemId: string, correct: boolean, 
   return submitQuizAnswer(sessionId, itemId, correct, startedAt ? Date.now() - startedAt : 0)
 }
 
-export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => void; mode?: 'standard' | 'incorrect' }) {
+export default function QuizPage({ onHome, mode = 'standard', vocabularyIds }: { onHome: () => void; mode?: 'standard' | 'incorrect'; vocabularyIds?: string[] }) {
   const queryClient = useQueryClient()
   const [showSwipeGuide, setShowSwipeGuide] = useState(true)
   const [revealed, setRevealed] = useState(false)
@@ -45,7 +45,8 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef<number | null>(null)
   const questionStartedAt = useRef(0)
-  const sessionQuery = useQuery({ queryKey: ['quiz', 'new-session', mode], queryFn: () => createQuizSession(undefined, mode), retry: false, staleTime: Infinity, refetchOnMount: 'always' })
+  const sessionKey = ['quiz','new-session',mode,vocabularyIds?.join(',')??'all']
+  const sessionQuery = useQuery({ queryKey: sessionKey, queryFn: () => createQuizSession(undefined, mode,vocabularyIds), retry: false, staleTime: Infinity, refetchOnMount: 'always' })
   const session = sessionQuery.data
   const current = session?.items.find(item => !item.result)
   // 재도전도 원래 문제 ID로 묶어, 정답을 맞힌 문제만 한 번씩 완료 처리한다.
@@ -67,7 +68,7 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   const next = async () => {
     if (!session) return
     const updated = await queryClient.fetchQuery({ queryKey: ['quiz', 'session', session.id], queryFn: () => getQuizSession(session.id) })
-    queryClient.setQueryData(['quiz', 'new-session', mode], updated)
+    queryClient.setQueryData(sessionKey, updated)
     resetCard()
   }
 
@@ -155,7 +156,7 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
   if (!session) return null
   if (!current) return <QuizComplete key={session.id} mode={mode}
     accuracy={session.totalCount ? Math.round(session.correctCount / session.totalCount * 100) : 0}
-    earnedXp={session.earnedXp} relearnedCount={retryWordCount} onHome={onHome}
+    practicedCount={session.totalCount} earnedXp={session.earnedXp} relearnedCount={retryWordCount} onHome={onHome}
     onRestart={() => { queryClient.removeQueries({ queryKey: ['quiz'] }); void sessionQuery.refetch() }}/>
 
 
@@ -174,18 +175,19 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
 
   return <div className="quiz-page quiz-flash-page page">
     <LearningTimer activity="quiz" enabled/>
+    {mode==='incorrect'&&<header className="quiz-practice-header quiz-practice-notice"><div className="quiz-practice-title"><span aria-hidden="true"><TargetIcon weight="duotone"/></span><h1>틀린단어 집중연습</h1></div><button type="button" onClick={onHome}><PauseCircleIcon weight="duotone" aria-hidden="true"/>나중에 이어하기</button></header>}
     {showSwipeGuide && <div className="quiz-swipe-guide-overlay" role="presentation" onPointerDown={() => setShowSwipeGuide(false)}>
       <div className="quiz-swipe-guide" role="dialog" aria-label="테스트 사용 안내" onPointerDown={event => event.stopPropagation()}>
         <DialogCloseButton label="안내 닫기" onClose={() => setShowSwipeGuide(false)}/>
         <p>아는 단어는 <strong className="direction-right">오른쪽</strong>으로<br/>모르는 단어는 <strong className="direction-left">왼쪽</strong>으로 스와이프하세요.</p>
       </div>
     </div>}
-    <div className="quiz-progress"><div><div className="quiz-progress-labels"><span className="quiz-progress-title"><span aria-hidden="true">🌱</span>{mode === 'incorrect' ? '오답 단어 테스트' : '오늘의 단어 챌린지'}</span>{correctStreak > 0 && <span className="quiz-progress-streak"><FireIcon weight="fill"/> 연속 {correctStreak}개 정답!</span>}</div><b className="quiz-progress-count">{progressCount}<small> / {session.totalCount}</small></b></div><div className="progress-track" role="progressbar" aria-label="테스트 진행률" aria-valuemin={0} aria-valuemax={session.totalCount} aria-valuenow={progressCount}><span style={{ width: `${progress}%` }}/></div></div>
+    <div className="quiz-progress"><div><div className="quiz-progress-labels"><span className="quiz-progress-title"><span aria-hidden="true">🌱</span>{mode === 'incorrect' ? '연습 진행' : '오늘의 단어 챌린지'}</span>{correctStreak > 0 && <span className="quiz-progress-streak"><FireIcon weight="fill"/> 연속 {correctStreak}개 정답!</span>}</div><b className="quiz-progress-count">{progressCount}<small> / {session.totalCount}</small></b></div><div className="progress-track" role="progressbar" aria-label="테스트 진행률" aria-valuemin={0} aria-valuemax={session.totalCount} aria-valuenow={progressCount}><span style={{ width: `${progress}%` }}/></div></div>
     <div className="quiz-swipe-stage">
       <section className={`quiz-flash-card card ${revealed ? 'revealed' : ''} ${dragging ? 'dragging' : ''} ${dragOffset < -15 ? 'swipe-wrong' : dragOffset > 15 ? 'swipe-correct' : ''}`} style={{ transform: `translateX(${dragOffset}px) rotate(${tilt}deg)` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className="quiz-card-badges">
           <span className="quiz-language-badge" aria-label={`현재 문제 언어 ${current.languageCode.toUpperCase()}`}>{languageFlags[current.languageCode] && <span className="quiz-language-flag" aria-hidden="true">{languageFlags[current.languageCode]}</span>}{current.languageCode.toUpperCase()}</span>
-          {reviewLabel && <span className="quiz-review-badge">{reviewLabel}</span>}
+          {mode !== 'incorrect' && reviewLabel && <span className="quiz-review-badge">{reviewLabel}</span>}
           {current.cefrLevel && <span className={`quiz-level level-${current.cefrLevel.toLowerCase()}`} aria-label={`단어 등급 ${current.cefrLevel}`}>{current.cefrLevel}</span>}
         </div>
         <button className="quiz-word-reveal" type="button" onClick={toggleMeaning} aria-label={revealed ? `${current.word} 뜻 숨기기` : `${current.word} 뜻 보기`} aria-pressed={revealed}>
@@ -222,5 +224,6 @@ export default function QuizPage({ onHome, mode = 'standard' }: { onHome: () => 
       </section>
     </div>
     {answerMutation.isError && <p className="quiz-answer-error" role="alert">{answerMutation.error.message}</p>}
+    {mode==='incorrect'&&<p className="quiz-practice-description"><InfoIcon aria-hidden="true"/>틀린단어 집중연습은 XP, 숙련도, 복습 일정, 공식 풀이 통계에 반영되지 않아요. 학습 시간과 학습한 날만 기록돼요.</p>}
   </div>
 }

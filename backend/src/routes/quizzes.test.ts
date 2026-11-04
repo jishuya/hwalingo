@@ -35,12 +35,17 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
     const { pool } = await import('../config/database.js')
     closePool = () => pool.end()
     await pool.query(await readFile(new URL('../../../docs/db.sql', import.meta.url), 'utf8'))
-    const sqlDirectory = new URL('../../sql/', import.meta.url)
+    const sqlDirectory = process.env.TEST_MIGRATION_DIR ? new URL('file://'+process.env.TEST_MIGRATION_DIR.replace(/\/$/,'')+'/') : new URL('../../sql/', import.meta.url)
     for (const file of (await readdir(sqlDirectory)).filter(file => /^(003|004|005|006|008|012|014|015|016)_/.test(file)).sort()) {
       try { await pool.query(await readFile(new URL(file, sqlDirectory), 'utf8')) } catch (error) { throw new Error(`Migration ${file} failed`, { cause: error }) }
     }
     // The migration can safely be reapplied.
     await pool.query(await readFile(new URL('015_quiz_retries.sql', sqlDirectory), 'utf8'))
+    await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS quiz_question_count smallint DEFAULT 10;
+      ALTER TABLE quiz_session_items ADD COLUMN IF NOT EXISTS acceptable_answers jsonb NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS explanation text,ADD COLUMN IF NOT EXISTS generation_source varchar(24) DEFAULT 'deterministic',
+      ADD COLUMN IF NOT EXISTS response_time_ms integer`)
+    await pool.query(await readFile(new URL('../../sql/019_incorrect_practice.sql',import.meta.url),'utf8'))
     const { quizzesRouter } = await import('./quizzes.js')
     const app = express()
     app.use(express.json(), cookieParser())

@@ -28,6 +28,9 @@ export interface QuizItem {
 export interface QuizSession {
   id: string
   status: 'active' | 'completed' | 'abandoned'
+  mode?: 'standard' | 'incorrect'
+  practiceVersion?: number
+  practiceVocabularyIds?: string[] | null
   totalCount: number
   correctCount: number
   earnedXp: number
@@ -88,8 +91,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function createQuizSession(count?: number, mode: 'standard' | 'incorrect' = 'standard'): Promise<QuizSession> {
-  const result = await request<{ session: QuizSession }>('/api/quizzes/sessions', { method: 'POST', body: JSON.stringify({ count, mode }) })
+export async function createQuizSession(count?: number, mode: 'standard' | 'incorrect' = 'standard', vocabularyIds?:string[]): Promise<QuizSession> {
+  const result = await request<{ session: QuizSession }>('/api/quizzes/sessions', { method: 'POST', body: JSON.stringify({ count, mode, vocabularyIds }) })
+  if(mode==='incorrect'&&(result.session.mode!=='incorrect'||result.session.practiceVersion!==1)) {
+    throw new QuizRequestError('집중 연습 업데이트가 아직 서버에 반영되지 않았어요.','PRACTICE_UPGRADE_REQUIRED')
+  }
   return result.session
 }
 
@@ -113,4 +119,8 @@ export async function getVocabularyDeepAnalysis(sessionId: string, itemId: strin
 export async function generateVocabularyImage(sessionId: string, itemId: string): Promise<{ imageDataUrl: string; explanation: string }> {
   const result = await request<{ imageDataUrl: string; explanation: string }>(`/api/quizzes/sessions/${sessionId}/items/${itemId}/image`, { method: 'POST' })
   return result
+}
+
+export async function getActiveIncorrectPractice(): Promise<QuizSession|null> {
+  return (await request<{session:QuizSession|null}>('/api/quizzes/sessions/active')).session
 }

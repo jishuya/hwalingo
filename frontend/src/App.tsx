@@ -16,6 +16,7 @@ import './App.css'
 export default function App() {
   const [page, setPage] = useState<Page>(readRoute)
   const [quizMode, setQuizMode] = useState<'standard' | 'incorrect'>(() => new URLSearchParams(location.search).get('mode') === 'incorrect' ? 'incorrect' : 'standard')
+  const [practiceIds,setPracticeIds] = useState<string[]|undefined>(()=>new URLSearchParams(location.search).get('words')?.split(',').filter(Boolean))
   const queryClient = useQueryClient()
   const authQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -35,21 +36,23 @@ export default function App() {
   }, [settingsQuery.data?.theme])
 
   useEffect(() => {
-    const syncRoute = () => { setPage(readRoute()); setQuizMode(new URLSearchParams(location.search).get('mode') === 'incorrect' ? 'incorrect' : 'standard') }
+    const syncRoute = () => { setPracticeIds(new URLSearchParams(location.search).get('words')?.split(',').filter(Boolean)); setPage(readRoute()); setQuizMode(new URLSearchParams(location.search).get('mode') === 'incorrect' ? 'incorrect' : 'standard') }
     window.addEventListener('popstate', syncRoute)
     return () => window.removeEventListener('popstate', syncRoute)
   }, [])
 
   const go = (nextPage: Page) => {
     setQuizMode('standard')
+    setPracticeIds(undefined)
     history.pushState(null, '', `/${nextPage}`)
     setPage(nextPage)
     window.scrollTo(0, 0)
   }
 
-  const startIncorrectTest = () => {
+  const startIncorrectTest = (vocabularyIds?:string[]) => {
     queryClient.removeQueries({ queryKey: ['quiz'] })
-    history.pushState(null, '', '/quiz?mode=incorrect')
+    history.pushState(null, '', '/quiz?mode=incorrect'+(vocabularyIds?.length?'&words='+encodeURIComponent(vocabularyIds.join(',')):''))
+    setPracticeIds(vocabularyIds)
     setQuizMode('incorrect')
     setPage('quiz')
     window.scrollTo(0, 0)
@@ -74,11 +77,11 @@ export default function App() {
       : page === 'vocabulary'
         ? <VocabularyPage onIncorrectTest={startIncorrectTest}/>
         : page === 'quiz'
-          ? <QuizPage key={quizMode} mode={quizMode} onHome={() => go(quizMode === 'incorrect' ? 'vocabulary' : 'study')}/>
+          ? <QuizPage key={`${quizMode}:${practiceIds?.join(',')??'all'}`} mode={quizMode} vocabularyIds={practiceIds} onHome={() => go(quizMode === 'incorrect' ? 'vocabulary' : 'study')}/>
         : page === 'story'
           ? <StoryPage/>
           : page === 'learning-progress'
-            ? <LearningProgressPage onNavigate={go} onIncorrectTest={startIncorrectTest}/>
+            ? <LearningProgressPage onNavigate={go} onIncorrectTest={()=>startIncorrectTest()}/>
           : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>
 
   return <AppShell page={page} go={go}>{content}</AppShell>

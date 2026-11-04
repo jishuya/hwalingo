@@ -1,0 +1,6 @@
+.learning-word-growth-card .learning-weak-counts>span{overflow-wrap:anywhere}
+.learning-progress-page .learning-word-growth-card .learning-weak-track>span{background:linear-gradient(90deg,#fed7aa,#fb923c)}
+.learning-progress-page .learning-word-growth-card .learning-weak-counts>strong{color:#c2410c}
+.learning-progress-page .learning-word-growth-card .learning-weak-rank{background:#ffedd5;color:#c2410c}
+html[data-theme='dark'] .learning-progress-page .learning-word-growth-card .learning-weak-counts>strong{color:#fdba74}
+html[data-theme='dark'] .learning-progress-page .learning-word-growth-card .learning-weak-rank{background:#431f12;color:#fdba74}

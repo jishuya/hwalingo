@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
-import { AnalyticsContext } from './analyticsContext'
+import { AnalyticsContext, useAnalyticsPeriod } from './analyticsContext'
 import type { AnalyticsSelection } from '../../services/analytics'
 
 export default function AnalyticsPeriod({ children }: { children: ReactNode }) {
@@ -18,8 +18,10 @@ export default function AnalyticsPeriod({ children }: { children: ReactNode }) {
   const to = [end.toISOString().slice(0,10),today].sort()[0]
   const selection: AnalyticsSelection = period === 'all' ? {period:'all'} : {from,to}
   const label = period === 'all' ? '전체 기간' : `${from} ~ ${to}`
-  return <AnalyticsContext.Provider value={{selection,label}}>
-    <section className="analytics-period card" aria-label="통계 조회 기간"><div role="group" aria-label="기간 선택">{(['week','month','year','all'] as const).map((value,index) => <button key={value} type="button" aria-pressed={period===value} onClick={() => {setPeriod(value);setOffset(0)}}>{['주','월','년','전체'][index]}</button>)}</div><div className="analytics-period-dates">{period !== 'all' && <button type="button" aria-label="이전 기간" disabled={from<'1971-01-01'} onClick={() => setOffset(offset-1)}><CaretLeftIcon/></button>}<span aria-live="polite">{label}</span>{period !== 'all' && <button type="button" aria-label="다음 기간" disabled={offset>=0} onClick={() => setOffset(offset+1)}><CaretRightIcon/></button>}</div><p>기간별 통계에 적용해요. 잔디·요일 패턴·현재 어휘 상태·복습 일정은 각 카드의 기준을 따라요.</p></section>
-    {children}
-  </AnalyticsContext.Provider>
+  const controls = <div className="analytics-period" aria-label="통계 조회 기간"><div role="group" aria-label="기간 선택">{(['week','month','year','all'] as const).map((value,index) => <button key={value} type="button" aria-pressed={period===value} onClick={() => {setPeriod(value);setOffset(0)}}>{['주','월','년','전체'][index]}</button>)}</div><div className="analytics-period-dates">{period !== 'all' && <button type="button" aria-label="이전 기간" disabled={from<'1971-01-01'} onClick={() => setOffset(offset-1)}><CaretLeftIcon/></button>}<span aria-live="polite">{label}</span>{period !== 'all' && <button type="button" aria-label="다음 기간" disabled={offset>=0} onClick={() => setOffset(offset+1)}><CaretRightIcon/></button>}</div></div>
+  return <AnalyticsContext.Provider value={{selection,label,controls}}>{children}</AnalyticsContext.Provider>
+}
+
+export function AnalyticsPeriodControls() {
+  return useAnalyticsPeriod().controls
 }

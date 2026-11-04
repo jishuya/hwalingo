@@ -23,6 +23,7 @@ interface VocabularyRow {
   mastery_score: string
   total_attempts: number
   correct_count: number
+  incorrect_practice_excluded_at: string | null
   incorrect_count: number
   correct_streak: number
   incorrect_streak: number
@@ -70,6 +71,7 @@ function serializeVocabulary(row: VocabularyRow) {
     vocabularyId: row.vocabulary_id,
     favoriteId: row.favorite_id,
     isFavorite: Boolean(row.favorite_id),
+    incorrectPracticeExcluded: Boolean(row.incorrect_practice_excluded_at),
     languageCode: row.language_code,
     word: row.word,
     meaning: row.meaning,
@@ -103,7 +105,7 @@ const vocabularySelect = `SELECT v.id AS vocabulary_id, f.id AS favorite_id, v.l
    WHERE s.user_id = v.user_id AND s.vocabulary_ids @> ARRAY[v.id]::bigint[]
      AND s.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days') AS last_story_used_at,
   v.created_at AS saved_at, p.mastery_level, p.mastery_score, p.total_attempts,
-  p.correct_count, p.incorrect_count, p.correct_streak, p.incorrect_streak,
+  p.correct_count, p.incorrect_count, p.incorrect_practice_excluded_at, p.correct_streak, p.incorrect_streak,
   p.last_reviewed_at, p.next_review_at,
   (p.total_attempts > 0 AND p.next_review_at <= CURRENT_TIMESTAMP) AS is_due,
   GREATEST(0, CEIL(EXTRACT(EPOCH FROM (p.next_review_at - CURRENT_TIMESTAMP)) / 86400))::integer AS next_review_in_days
@@ -159,11 +161,27 @@ vocabulariesRouter.post('/', requireAuth, async (request, response, next) => {
   } finally { client.release() }
 })
 
+vocabulariesRouter.delete('/:vocabularyId/incorrect-practice', requireAuth, async (request,response,next)=>{
+  const client=await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',[request.auth!.userId])
+    await client.query("SELECT id FROM quiz_sessions WHERE user_id=$1 AND status='active' ORDER BY id FOR UPDATE",[request.auth!.userId])
+    const result=await client.query(`UPDATE vocabulary_progress p SET incorrect_practice_excluded_at=CURRENT_TIMESTAMP
+      FROM vocabularies v WHERE v.id=p.vocabulary_id AND v.user_id=p.user_id
+        AND v.id=$1 AND v.user_id=$2 AND v.archived_at IS NULL AND p.incorrect_count>0 RETURNING p.vocabulary_id`,
+      [request.params.vocabularyId,request.auth!.userId])
+    if(!result.rowCount){await client.query('ROLLBACK');response.status(404).json({message:'오답 연습 단어를 찾을 수 없습니다.'});return}
+    await reconcileArchivedQuizItems(client,request.auth!.userId)
+    await client.query('COMMIT');response.status(204).send()
+  } catch(error){await client.query('ROLLBACK');next(error)} finally{client.release()}
+})
+
 vocabulariesRouter.delete('/:vocabularyId', requireAuth, async (request, response, next) => {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.auth!.userId])
+    await client.query('SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE', [request.auth!.userId])
     await client.query(
       `SELECT id FROM quiz_sessions WHERE user_id = $1 AND status = 'active' ORDER BY id FOR UPDATE`,
       [request.auth!.userId],

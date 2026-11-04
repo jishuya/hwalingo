@@ -290,7 +290,7 @@ progressRouter.get('/insights', requireAuth, async (request, response, next) => 
         )
         SELECT b.day::text AS date, COALESCE(e.xp,0)::float8 AS xp,o.value::float8 AS opening
         FROM buckets b LEFT JOIN earned e ON e.day=b.day CROSS JOIN opening o ORDER BY b.day`, params),
-      pool.query<{ weekday: number; answers: number; active_days: number; seconds: number; measured_days: number }>(`
+      pool.query<{ weekday: number; answers: number; active_days: number; seconds: number; measured_days: number; max_answers: number; max_seconds: number | null }>(`
         WITH dates AS (
           SELECT generate_series($2::date-55,$2::date,interval '1 day')::date AS day
         ), daily AS (
@@ -306,7 +306,8 @@ progressRouter.get('/insights', requireAuth, async (request, response, next) => 
           LEFT JOIN learning_time_settings s ON s.user_id=$1
         ) SELECT extract(isodow FROM day)::integer AS weekday,sum(answers)::integer AS answers,
           count(*) FILTER(WHERE activities>0)::integer AS active_days,
-          sum(seconds)::float8 AS seconds,count(*) FILTER(WHERE measured)::integer AS measured_days
+          sum(seconds)::float8 AS seconds,count(*) FILTER(WHERE measured)::integer AS measured_days,
+          max(answers)::integer AS max_answers,max(seconds) FILTER(WHERE measured)::float8 AS max_seconds
         FROM daily GROUP BY 1 ORDER BY 1`, [userId,range.today]),
     ])
     let cumulative = Math.max(0,growth.rows[0]?.opening ?? 0)
@@ -321,6 +322,45 @@ progressRouter.get('/insights', requireAuth, async (request, response, next) => 
       growth: { openingXp: Math.max(0,growth.rows[0]?.opening ?? 0),days: growthDays },
       weekdays: weekdays.rows.map(day => ({ weekday: day.weekday,averageAnswers: day.answers/8,
         averageSeconds: day.measured_days ? day.seconds/day.measured_days : null,
-        activeDays: day.active_days,observedDays: 8,measuredDays: day.measured_days })) })
+        activeDays: day.active_days,observedDays: 8,measuredDays: day.measured_days,
+        maxAnswers: day.max_answers,maxSeconds: day.max_seconds })) })
+  } catch (error) { next(error) }
+})
+
+// Compare the first retained pre-answer snapshot in the window with current mastery.
+progressRouter.get('/word-growth', requireAuth, async (request, response, next) => {
+  try {
+    const result = await pool.query<{
+      vocabulary_id: string; word: string; meaning: string; language_code: string;
+      before_level: number; current_level: number; gained: number
+    }>(`
+      WITH bounds AS (
+        SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date AS today
+      ), first_answers AS (
+        SELECT DISTINCT ON (q.vocabulary_id) q.vocabulary_id, q.mastery_level_before
+        FROM quizzes q
+        LEFT JOIN quiz_session_items i ON i.id = q.quiz_session_item_id
+        CROSS JOIN bounds b
+        WHERE q.user_id = $1 AND q.result IN ('correct', 'incorrect')
+          AND i.retry_of_item_id IS NULL
+          AND q.answered_at >= (b.today - 29)::timestamp AT TIME ZONE 'Asia/Seoul'
+          AND q.answered_at <= CURRENT_TIMESTAMP
+        ORDER BY q.vocabulary_id, q.answered_at, q.id
+      )
+      SELECT v.id AS vocabulary_id, v.word, v.meaning, v.language_code,
+        f.mastery_level_before AS before_level, p.mastery_level AS current_level,
+        p.mastery_level - f.mastery_level_before AS gained
+      FROM first_answers f
+      JOIN vocabularies v ON v.id = f.vocabulary_id AND v.user_id = $1 AND v.archived_at IS NULL
+      JOIN vocabulary_progress p ON p.vocabulary_id = v.id AND p.user_id = $1
+      CROSS JOIN bounds b
+      WHERE f.mastery_level_before IS NOT NULL AND p.mastery_level > f.mastery_level_before
+      ORDER BY gained DESC, current_level DESC, v.word, v.id
+      LIMIT 5`, [request.auth!.userId])
+    response.json({ words: result.rows.map(row => ({
+      vocabularyId: row.vocabulary_id, word: row.word, meaning: row.meaning,
+      languageCode: row.language_code, beforeLevel: row.before_level,
+      currentLevel: row.current_level, gained: row.gained,
+    })) })
   } catch (error) { next(error) }
 })

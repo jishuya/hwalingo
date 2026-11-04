@@ -3,6 +3,7 @@ import type { LanguageCode } from './analysis'
 export interface Vocabulary {
   vocabularyId: string
   favoriteId: string | null
+  incorrectPracticeExcluded?: boolean
   isFavorite: boolean
   languageCode: LanguageCode
   word: string
@@ -72,4 +73,8 @@ export function deleteVocabulary(vocabularyId: string): Promise<void> {
 
 export function setVocabularyFavorite(vocabularyId: string, favorite: boolean): Promise<void> {
   return request(`/api/vocabularies/${vocabularyId}/favorite`, { method: favorite ? 'POST' : 'DELETE' })
+}
+
+export function excludeIncorrectPractice(vocabularyId:string): Promise<void> {
+  return request(`/api/vocabularies/${vocabularyId}/incorrect-practice`,{method:'DELETE'})
 }

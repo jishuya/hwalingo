@@ -94,6 +94,34 @@ test('learning volume ranks full history, excludes retries, splits Seoul dates, 
     assert.equal(calendar.days[0].activityCount, 1)
     assert.equal(calendar.days.reduce((sum: number, day: { activityCount: number }) => sum + day.activityCount, 0), 21)
     assert.equal(new Set(calendar.days.map((day: { date: string }) => day.date)).size, 365)
+    assert.equal((await fetch(base + '/word-growth')).status, 401)
+    const growthUser = emptyUser.rows[0].id
+    const seedGrowth = async (name: string, before: number | null, current: number, days: number, archived = false) => {
+      const word = await pool.query<{ id: string }>(`INSERT INTO vocabularies(user_id,word,meaning,archived_at) VALUES ($1,$2,'뜻',$3) RETURNING id`, [growthUser,name,archived ? new Date() : null])
+      const id = word.rows[0].id
+      await pool.query(`INSERT INTO vocabulary_progress(user_id,vocabulary_id,mastery_level) VALUES ($1,$2,$3)`, [growthUser,id,current])
+      await pool.query(`INSERT INTO quizzes(user_id,vocabulary_id,result,mastery_level_before,mastery_level_after,answered_at)
+        VALUES ($1,$2,'correct',$3,$4,($5::date - $6::integer)::timestamp AT TIME ZONE 'Asia/Seoul')`, [growthUser,id,before,current,todayDate,days])
+      return id
+    }
+    const growingId = await seedGrowth('growing', 1, 4, 29)
+    // A later rise must not replace the opening snapshot or be added to net growth.
+    await pool.query(`INSERT INTO quizzes(user_id,vocabulary_id,result,mastery_level_before,mastery_level_after,answered_at)
+      VALUES ($1,$2,'correct',3,4,($3::date - 1)::timestamp AT TIME ZONE 'Asia/Seoul')`, [growthUser,growingId,todayDate])
+    await seedGrowth('declined', 4, 3, 1)
+    await seedGrowth('unchanged', 3, 3, 1)
+    await seedGrowth('outside', 0, 7, 30)
+    await seedGrowth('future', 0, 7, -1)
+    await seedGrowth('archived', 0, 7, 1, true)
+    await seedGrowth('unknown', null, 7, 1)
+    const growing = await (await send('/word-growth', undefined, growthUser)).json()
+    assert.deepEqual(growing.words.map((word: { word: string; beforeLevel: number; currentLevel: number; gained: number }) =>
+      [word.word,word.beforeLevel,word.currentLevel,word.gained]), [['growing',1,4,3]])
+    for (let i = 0; i < 6; i++) await seedGrowth(`rank-${i}`, 0, i+1, 1)
+    const rankedGrowth = await (await send('/word-growth', undefined, growthUser)).json()
+    assert.equal(rankedGrowth.words.length, 5)
+    assert.deepEqual(rankedGrowth.words.map((word: { gained: number }) => word.gained), [6,5,4,3,3])
+    assert.deepEqual((await (await send('/word-growth', undefined, users.rows[1].id)).json()).words, [])
     assert.equal((await fetch(base + '/relearning')).status, 401)
     const relearningUser = emptyUser.rows[0].id
     const seedMistake = async (mode: string, state: string, archived = false, offsetDays = 0) => {
@@ -151,6 +179,9 @@ test('learning volume ranks full history, excludes retries, splits Seoul dates, 
     assert.equal(insights.growth.openingXp,0)
     assert.equal(insights.growth.days.reduce((sum:number,day:{earnedXp:number})=>sum+day.earnedXp,0),290)
     assert.equal(insights.weekdays.length,7)
+    assert.equal(Math.max(...insights.weekdays.map((day:{maxAnswers:number})=>day.maxAnswers)),10)
+    assert.ok(insights.weekdays.every((day:{maxAnswers:number;averageAnswers:number})=>day.maxAnswers>=day.averageAnswers))
+    assert.ok(insights.weekdays.some((day:{maxSeconds:number|null})=>day.maxSeconds!==null&&day.maxSeconds>0))
     assert.equal(insights.weekdays.reduce((sum:number,day:{averageAnswers:number})=>sum+day.averageAnswers,0),42/8)
     const allVolume = await (await send('/activity?period=all',undefined,demoId)).json()
     assert.equal(allVolume.range.grain,'month')
@@ -279,6 +310,21 @@ test('learning volume ranks full history, excludes retries, splits Seoul dates, 
     const protectedRelearn = await (await send('/relearning',undefined,protectedId)).json()
     assert.equal(protectedRelearn.days.reduce((sum:number,day:{standardRemaining:number})=>sum+day.standardRemaining,0),0)
     assert.equal(protectedRelearn.days.reduce((sum:number,day:{incorrectRemaining:number})=>sum+day.incorrectRemaining,0),1)
+    const wordGrowthSeed = await readFile(new URL('../../../docs/sql/seed_word_growth_jishu.sql', import.meta.url), 'utf8')
+    const existingWordsBefore = (await pool.query(`SELECT * FROM vocabularies WHERE user_id=$1 ORDER BY id`,[targetId])).rows
+    const xpBeforeGrowth = (await pool.query(`SELECT total_xp FROM user_progress WHERE user_id=$1`,[targetId])).rows
+    const daysBeforeGrowth = (await pool.query(`SELECT COALESCE(sum(reviewed_word_count),0)::integer AS count FROM user_learning_days WHERE user_id=$1`,[targetId])).rows[0].count
+    await pool.query(wordGrowthSeed)
+    const seededGrowth = await (await send('/word-growth',undefined,targetId)).json()
+    assert.equal(seededGrowth.words.length,5)
+    assert.deepEqual(seededGrowth.words.map((word:{gained:number})=>word.gained),[4,3,3,2,1])
+    assert.equal(seededGrowth.words.every((word:{beforeLevel:number})=>word.beforeLevel===0),true)
+    assert.deepEqual((await pool.query(`SELECT * FROM vocabularies WHERE user_id=$1 AND id=ANY($2::bigint[]) ORDER BY id`,[targetId,existingWordsBefore.map(row=>row.id)])).rows,existingWordsBefore)
+    assert.deepEqual((await pool.query(`SELECT total_xp FROM user_progress WHERE user_id=$1`,[targetId])).rows,xpBeforeGrowth)
+    assert.equal((await pool.query(`SELECT sum(reviewed_word_count)::integer AS count FROM user_learning_days WHERE user_id=$1`,[targetId])).rows[0].count,daysBeforeGrowth+13)
+    await assert.rejects(pool.query(wordGrowthSeed),/이미 추가되어 있습니다/)
+    await pool.query('ROLLBACK')
+    assert.equal((await (await send('/word-growth',undefined,targetId)).json()).words.length,5)
   } finally {
     await closeApp?.()
     await closePool?.()

@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import { CalendarDotsIcon, ArrowClockwiseIcon, FireIcon } from '@phosphor-icons/react'
+import { CalendarDotsIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
 import { getLearningCalendar, getUserProgress } from '../../services/progress'
 import './LearningCalendarChart.css'
@@ -23,16 +23,15 @@ export default function LearningCalendarChart() {
   const columns = Math.ceil((leading + days.length) / 7)
   const cells = Array.from({ length: columns * 7 }, (_, index) => days[index - leading])
   const activeDays = days.filter(day => day.activityCount > 0).length
-  const total = days.reduce((sum, day) => sum + day.activityCount, 0)
 
   return <section className="card learning-calendar-card" aria-labelledby="learning-calendar-title">
-    <div className="learning-calendar-heading"><div><span className="learning-calendar-eyebrow"><CalendarDotsIcon weight="duotone"/> 꾸준함이 만드는 변화</span><h2 id="learning-calendar-title">학습 잔디</h2><p>하루하루 쌓아 온 학습 활동이에요.</p></div><button className="learning-calendar-refresh" type="button" aria-label="학습 잔디 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowClockwiseIcon/>새로고침</button></div>
+    <div className="learning-calendar-heading report-chart-heading"><div><h2 id="learning-calendar-title"><CalendarDotsIcon weight="duotone" aria-hidden="true"/> 학습 잔디</h2></div><button className="learning-calendar-refresh report-chart-refresh" type="button" aria-label="학습 잔디 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>
     <div className="learning-calendar-period" role="group" aria-label="학습 잔디 기간"><button type="button" aria-pressed={period === 'recent'} onClick={() => setPeriod('recent')}>최근 12주</button><button type="button" aria-pressed={period === 'year'} onClick={() => setPeriod('year')}>최근 1년</button></div>
     {query.isPending ? <p role="status">학습 잔디를 불러오는 중이에요.</p>
       : query.isError && !query.data ? <div role="alert"><p>학습 잔디를 불러오지 못했어요.</p><button className="primary" type="button" onClick={() => void query.refetch()}>다시 시도</button></div>
         : query.data && <>
-          <div className="learning-calendar-summary"><div><span>기간 내 학습</span><strong>{activeDays.toLocaleString('ko-KR')}<small>일</small></strong></div><div><span><FireIcon weight="fill"/> 현재 연속</span><strong>{progress.data ? `${progress.data.currentStreak}일` : '–'}</strong></div><div><span>최장 연속 · 전체</span><strong>{progress.data ? `${progress.data.longestStreak}일` : '–'}</strong></div></div>
-          <p className="learning-calendar-range">{days[0] && dateLabel(days[0].date)} ~ {today && dateLabel(today.date)}</p>
+          {days[0] && today && <p className="learning-calendar-range" aria-live="polite">{dateLabel(days[0].date)} ~ {dateLabel(today.date)}</p>}
+          <div className="learning-calendar-summary"><div><span>기간 내 학습</span><strong>{activeDays.toLocaleString('ko-KR')}<small>일</small></strong></div><div><span>현재 연속</span><strong>{progress.data ? progress.data.currentStreak.toLocaleString('ko-KR') : '–'}<small>일</small></strong></div><div><span title="전체 기간 최장 연속 학습">최장 연속</span><strong>{progress.data ? progress.data.longestStreak.toLocaleString('ko-KR') : '–'}<small>일</small></strong></div></div>
           <div className={`learning-calendar-scroll ${period === 'year' ? 'year' : ''}`} tabIndex={period === 'year' ? 0 : undefined} role="region" aria-label={period === 'year' ? '최근 1년 학습 잔디, 가로로 스크롤해 확인하세요' : '최근 12주 학습 잔디'}>
             <div className="learning-calendar-layout" style={{ '--calendar-columns': columns } as CSSProperties}>
               <div className="learning-calendar-months" aria-hidden="true">{Array.from({ length: columns }, (_, column) => {
@@ -48,11 +47,15 @@ export default function LearningCalendarChart() {
             </div>
           </div>
           <div className="learning-calendar-legend" aria-label="활동 수에 따른 색상: 없음, 1~4회, 5~14회, 15~29회, 30회 이상"><span>적게</span>{[0, 1, 2, 3, 4].map(level => <i key={level} className={`level-${level}`} aria-hidden="true"/>)}<span>많이</span></div>
-          {selected && <div className="learning-calendar-detail" aria-live="polite"><h3>{dateLabel(selected.date)}{selected.date === today?.date ? ' · 오늘' : ''}</h3><dl><div><dt>학습 활동</dt><dd>{selected.activityCount}회</dd></div><div><dt>첫 답안 풀이</dt><dd>{selected.answerCount}문제</dd></div><div><dt>획득 경험치</dt><dd>{selected.earnedXp} XP</dd></div></dl>{!selected.activityCount && <p>이 날짜에는 기록된 학습 활동이 없어요.</p>}</div>}
-          {!total && <p className="learning-calendar-note">문장을 분석하거나 단어를 저장하고 테스트를 풀면 잔디가 채워져요.</p>}
-          <p className="learning-calendar-note">색 농도는 기록된 학습 활동 수 기준이에요. 학습 시간과는 별개이며 오답 재도전은 활동 수에 중복 반영하지 않아요. 한국 시간 자정 기준으로 집계해요.</p>
-          {period === 'year' && <p className="learning-calendar-note">연간 잔디는 가로로 스크롤해 확인할 수 있어요.</p>}
-          {query.isError && <p className="learning-calendar-note" role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+          {selected && <div className="learning-calendar-detail learning-time-details" aria-live="polite">
+            <div className="learning-time-record">
+              <div className="learning-time-record-header"><span className="learning-time-record-date">{dateLabel(selected.date)}</span>{selected.date===today?.date&&<span className="learning-time-record-status"><i aria-hidden="true"/>오늘</span>}</div>
+              <div className="learning-time-record-copy"><p><span>학습 활동</span><strong>{selected.activityCount.toLocaleString('ko-KR')}회</strong></p></div>
+            </div>
+            <dl className="learning-time-averages"><div><dt>첫 답안 풀이</dt><dd>{selected.answerCount.toLocaleString('ko-KR')}문제</dd></div><div><dt>획득 경험치</dt><dd>{selected.earnedXp.toLocaleString('ko-KR')} XP</dd></div></dl>
+            {!selected.activityCount&&<p className="calendar-detail-empty">이 날짜에는 기록된 학습 활동이 없어요.</p>}
+          </div>}
+          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
         </>}
   </section>
 }

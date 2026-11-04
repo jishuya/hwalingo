@@ -1,7 +1,8 @@
+import AnalyticsPeriod, { AnalyticsPeriodControls } from './AnalyticsPeriod'
 import { useAnalyticsPeriod } from './analyticsContext'
 import { formatAnalyticsDate } from '../../services/analytics'
 import { useState } from 'react'
-import { ClockIcon, ArrowClockwiseIcon } from '@phosphor-icons/react'
+import { ClockIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
 import { getCurrentUser } from '../../services/auth'
 import { flushLearningTime, getLearningTime, type LearningActivity } from '../../services/learningTime'
@@ -15,10 +16,9 @@ function formatTime(seconds: number) {
   const rest = whole % 60
   return [hours ? `${hours}시간` : '', minutes ? `${minutes}분` : '', rest ? `${rest}초` : ''].filter(Boolean).join(' ') || '0분'
 }
-const seoulDate = (date: string) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(date))
 
-export default function LearningTimeChart() {
-  const { selection, label: periodLabel } = useAnalyticsPeriod()
+function LearningTimeChartContent() {
+  const { selection } = useAnalyticsPeriod()
   const auth = useQuery({ queryKey: ['auth', 'me'], queryFn: getCurrentUser })
   const userId = auth.data?.user.id
   const query = useQuery({
@@ -33,7 +33,6 @@ export default function LearningTimeChart() {
   const dateLabel = (date: string) => formatAnalyticsDate(date,query.data?.range?.grain)
   const [selectedDate, setSelectedDate] = useState<string>()
   const data = query.data
-  const start = data ? seoulDate(data.measurementStartedAt) : ''
   const days = data?.days ?? []
   const today = days.at(-1)
   const activities: Array<{key:LearningActivity;label:string}> = [{key:'analysis',label:'문장 분석'},{key:'vocabulary',label:'단어 학습'},{key:'quiz',label:'테스트'},{key:'story',label:'스토리'}]
@@ -44,12 +43,18 @@ export default function LearningTimeChart() {
   const maximum = Math.max(60, ...days.map(day => day.seconds))
   const ceiling = Math.ceil(maximum / 60) * 60
   const selected = days.find(day => day.date === selectedDate) ?? today
+  const recordDateLabel = selected ? data?.range?.grain === 'month'
+    ? `${Number(selected.date.slice(0,4))}년 ${Number(selected.date.slice(5,7))}월`
+    : data?.range?.grain === 'year'
+      ? `${Number(selected.date.slice(0,4))}년`
+      : `${Number(selected.date.slice(5,7))}월 ${Number(selected.date.slice(8,10))}일` : ''
 
   return <section className="card learning-time-card" aria-labelledby="learning-time-title">
-    <div className="learning-time-heading">
-      <div><span className="learning-time-eyebrow"><ClockIcon weight="duotone"/> 나의 학습 습관</span><h2 id="learning-time-title">학습 시간</h2><p>{periodLabel} · 한국 시간 기준</p></div>
-      <button type="button" className="learning-time-refresh" onClick={() => void query.refetch()} disabled={query.isFetching || !userId} aria-label="학습 시간 새로고침"><ArrowClockwiseIcon/>새로고침</button>
+    <div className="learning-time-heading report-chart-heading">
+      <div><h2 id="learning-time-title"><ClockIcon weight="duotone" aria-hidden="true"/> 학습 시간</h2></div>
+      <button type="button" className="learning-time-refresh report-chart-refresh" onClick={() => void query.refetch()} disabled={query.isFetching || !userId} aria-label="학습 시간 새로고침" title="새로고침"><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button>
     </div>
+    <AnalyticsPeriodControls/>
     {query.isPending ? <p role="status">학습 시간을 불러오는 중이에요.</p>
       : query.isError && !data ? <div role="alert"><p>학습 시간을 불러오지 못했어요.</p><button type="button" className="primary" onClick={() => void query.refetch()}>다시 시도</button></div>
         : data && <>
@@ -57,7 +62,6 @@ export default function LearningTimeChart() {
             <div><span>{data.range?.grain==='day'&&today?.date===data.range?.today?'오늘 학습':'마지막 구간 학습'}</span><strong>{formatTime(today?.seconds ?? 0)}</strong></div>
             <div><span>선택 기간 합계</span><strong>{formatTime(total)}</strong></div>
           </div>
-          <div className="analytics-time-legend">{activities.map(activity=><span key={activity.key}><i className={`time-${activity.key}`}/>{activity.label}</span>)}</div>
           <div className="analytics-chart-scroll"><div className="learning-time-plot" style={{minWidth: days.length > 14 ? days.length*44+46 : undefined}}>
             <div className="learning-time-axis" aria-hidden="true"><span>{Math.round(ceiling / 60)}분</span><span>{Number((ceiling / 120).toFixed(1))}분</span><span>0분</span></div>
             <div className="learning-time-bars" style={{gridTemplateColumns: `repeat(${days.length},minmax(0,1fr))`}} role="group" aria-label="선택 기간 구간별 학습 시간">
@@ -67,17 +71,32 @@ export default function LearningTimeChart() {
                 return <button key={day.date} type="button" className={`${before ? 'before-measurement' : ''} ${selected?.date === day.date ? 'selected' : ''}`} onClick={() => setSelectedDate(day.date)} aria-pressed={selected?.date === day.date} aria-label={`${dateLabel(day.date)}, ${before ? '측정 전' : formatTime(day.seconds)}`}>
                   <span className="learning-time-bar-track"><span className="learning-time-bar analytics-time-stack" style={{ height: `${before ? 0 : day.seconds / ceiling * 100}%` }}>{activities.map(activity=><i key={activity.key} className={`time-${activity.key}`} style={{flex:day.byActivity[activity.key]}}/>)}</span>{(before || day.seconds === 0) && <span className="learning-time-zero">{before ? '–' : '0'}</span>}</span>
                   <span className="learning-time-day">{label}</span>
+                  {selected?.date===day.date && day.seconds>0 && <span className="learning-time-bar-value" style={{bottom:`calc(34px + (100% - 34px) * ${day.seconds/ceiling} + 6px)`}}>{formatTime(day.seconds)}</span>}
                 </button>
               })}
             </div>
           </div>
           </div>
-          {selected && <p className="learning-time-selection" aria-live="polite">{dateLabel(selected.date)} <strong>{selected.measuredDays === 0 ? '시간 측정 전' : formatTime(selected.seconds)}</strong></p>}
-          {selected && selected.measuredDays>0 && <p className="learning-time-note">{activities.map(activity=>`${activity.label} ${formatTime(selected.byActivity[activity.key])}`).join(' · ')}</p>}
+          <div className="analytics-time-legend">{activities.map(activity=><span key={activity.key}><i className={`time-${activity.key}`}/>{activity.label}</span>)}</div>
+          <div className="learning-time-details">
+          {selected && <div className="learning-time-record" aria-live="polite">
+            <div className="learning-time-record-header"><span className="learning-time-record-date">{recordDateLabel}</span><span className="learning-time-record-status"><i aria-hidden="true"/>진행중</span></div>
+            <div className="learning-time-record-copy"><p><span>총 학습시간</span><strong>{selected.measuredDays === 0 ? '시간 측정 전' : formatTime(selected.seconds)}</strong></p>
+              {selected.measuredDays>0 && <small className="learning-time-record-activities">{activities.map(activity=>{
+                const shortLabel = {analysis:'문장분석',vocabulary:'단어',quiz:'테스트',story:'스토리텔링'}[activity.key]
+                const description = `${activity.label} ${formatTime(selected.byActivity[activity.key])}`
+                return <span key={activity.key} title={description} aria-label={description}>{shortLabel} {formatTime(selected.byActivity[activity.key])}</span>
+              })}</small>}
+            </div>
+          </div>}
           {total === 0 && <p className="learning-time-empty">문장을 읽거나 단어를 복습하면 학습 시간이 쌓여요.</p>}
           <dl className="learning-time-averages"><div><dt>하루 평균</dt><dd>{formatTime(measuredCount ? total / measuredCount : 0)}</dd></div><div><dt>학습한 날 평균</dt><dd>{activeDays ? formatTime(total / activeDays) : '기록 없음'}</dd></div></dl>
-          <p className="learning-time-note">{formatAnalyticsDate(start)}부터 측정한 기록이에요. 하루 평균은 측정 시작 이후, 선택 기간 안의 날짜로 계산해요. 화면 이탈과 장시간 무활동은 제외하고, 겹친 시간은 한 활동에만 배정해요.</p>
-          {query.isError && <p role="status" className="learning-time-note">최신 기록을 불러오지 못해 마지막으로 확인한 시간을 표시하고 있어요.</p>}
+          </div>
+          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 시간을 표시하고 있어요.</p>}
         </>}
   </section>
+}
+
+export default function LearningTimeChart() {
+  return <AnalyticsPeriod><LearningTimeChartContent/></AnalyticsPeriod>
 }

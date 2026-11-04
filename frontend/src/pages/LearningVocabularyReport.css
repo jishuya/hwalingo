@@ -1,123 +1,118 @@
-/* Vocabulary report follows docs/report02.html. */
-#analytics-panel-vocabulary {
-  --vocab-soft:var(--report-soft);
-  --vocab-mint:var(--report-mint);
-  --vocab-amber:#fffbeb;
-  --vocab-amber-line:#fde68a;
-  --vocab-amber-ink:#92400e;
+/* Shared report treatment for vocabulary, review and growth. */
+.learning-progress-page .report-summary {
+  display:grid;align-items:stretch;gap:12px;margin:18px 0 0;padding:0;border:0;border-radius:0;background:transparent;
 }
-#analytics-panel-vocabulary>.card {
-  background:radial-gradient(ellipse at top right,#10b98108,transparent 180px),var(--report-surface);
-  box-shadow:0 10px 30px -4px #10b98112,0 4px 12px -2px #00000008;
+.learning-progress-page .learning-mastery-summary {margin:6px 0}
+.learning-progress-page .report-summary>.report-summary-item {
+  display:block;min-width:0;padding:14px;border:1px solid #d1fae5;border-radius:16px;
+  background:linear-gradient(135deg,#ecfdf5b3,#ecfdf533);color:var(--report-ink);text-align:left;
 }
-#analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) {gap:8px}
-#analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) h2 {
-  margin:7px 0 4px;font-size:var(--font-xl);font-weight:800;letter-spacing:-.5px;
-}
-#analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) p {
-  margin:0;color:var(--report-muted);font-size:var(--font-sm);line-height:1.6;
-}
-#analytics-panel-vocabulary :is(.learning-mastery-eyebrow,.learning-review-eyebrow,.learning-weak-eyebrow,.learning-relearning-eyebrow) {
-  display:inline-flex;gap:5px;padding:5px 9px;border:1px solid #a7f3d080;border-radius:99px;background:var(--vocab-mint);color:var(--green);font-size:var(--font-sm);
-}
-#analytics-panel-vocabulary :is(.learning-mastery-eyebrow,.learning-review-eyebrow,.learning-weak-eyebrow,.learning-relearning-eyebrow) svg {width:16px;height:16px;flex-shrink:0}
-#analytics-panel-vocabulary .learning-weak-eyebrow {background:var(--vocab-amber);border-color:var(--vocab-amber-line);color:var(--vocab-amber-ink)}
-#analytics-panel-vocabulary :is(.learning-mastery-refresh,.learning-review-refresh,.learning-weak-refresh,.learning-relearning-refresh,.analytics-card-head>button) {
-  padding:7px 10px;border:1px solid var(--report-border);border-radius:99px;background:var(--vocab-soft);color:var(--report-muted);font-size:var(--font-xs);box-shadow:0 1px 2px #10182805;
-}
-#analytics-panel-vocabulary :is(.learning-mastery-refresh,.learning-review-refresh,.learning-weak-refresh,.learning-relearning-refresh,.analytics-card-head>button) svg {width:14px;height:14px;color:var(--green);flex-shrink:0}
-#analytics-panel-vocabulary :is(.learning-mastery-summary,.learning-review-summary) {gap:12px;margin:18px 0}
-#analytics-panel-vocabulary :is(.learning-mastery-summary>div,.learning-review-summary>div,.learning-review-summary>button) {
-  padding:15px;border:1px solid var(--report-border);border-radius:16px;background:var(--vocab-soft);
-}
-#analytics-panel-vocabulary .learning-mastery-summary>div+div,
-#analytics-panel-vocabulary .learning-review-summary>.learning-review-overdue {
-  background:linear-gradient(135deg,#f59e0b12,var(--vocab-amber));border-color:var(--vocab-amber-line);color:var(--vocab-amber-ink);
-}
-#analytics-panel-vocabulary .learning-review-summary>div {background:linear-gradient(135deg,#10b98112,var(--vocab-mint));border-color:#a7f3d0}
-#analytics-panel-vocabulary :is(.learning-mastery-summary,.learning-review-summary) strong {font-size:var(--font-2xl);font-weight:900;letter-spacing:-.7px}
-#analytics-panel-vocabulary :is(.learning-mastery-summary,.learning-review-summary) strong small {font-size:var(--font-sm);color:var(--report-muted);letter-spacing:0}
-#analytics-panel-vocabulary .learning-mastery-summary>div>span {gap:5px;font-size:var(--font-xs);font-weight:700;flex-wrap:wrap}
-#analytics-panel-vocabulary .learning-mastery-summary>div>span>svg {width:14px;height:14px;color:var(--green);flex-shrink:0}
-#analytics-panel-vocabulary .learning-mastery-summary>div+div>span>svg {color:#f59e0b}
-.learning-mastery-percent {margin-left:auto;padding:2px 5px;background:var(--report-surface);border:1px solid var(--vocab-amber-line);border-radius:99px;font-size:var(--font-xs);font-style:normal;color:var(--vocab-amber-ink)}
-#analytics-panel-vocabulary .learning-mastery-rows {gap:7px}
-#analytics-panel-vocabulary .learning-mastery-rows>button {padding:8px;border-radius:12px}
-#analytics-panel-vocabulary .learning-mastery-rows>button:hover {background:var(--vocab-soft)}
-#analytics-panel-vocabulary .learning-mastery-rows>button.mastered {background:var(--vocab-amber);border-color:var(--vocab-amber-line);color:var(--vocab-amber-ink)}
-#analytics-panel-vocabulary .learning-mastery-row-title {gap:6px}
-#analytics-panel-vocabulary .learning-mastery-row-title>span {gap:7px}
-#analytics-panel-vocabulary .learning-mastery-row-title :is(b,strong) {font-size:var(--font-sm);font-weight:800}
-#analytics-panel-vocabulary .learning-mastery-row-title .learning-mastery-stage {display:grid;place-items:center;min-width:22px;height:22px;border-radius:6px;background:#e2e8f080;font-size:var(--font-xs);font-weight:800}
-#analytics-panel-vocabulary .mastered .learning-mastery-stage {background:#fbbf24;color:#78350f}
-#analytics-panel-vocabulary .learning-mastery-track {height:11px;padding:2px;margin-top:7px;background:var(--vocab-soft)}
-#analytics-panel-vocabulary .learning-mastery-track>span {background:linear-gradient(90deg,#059669,#34d399)}
-#analytics-panel-vocabulary .mastered .learning-mastery-track {background:#fef3c7}
-#analytics-panel-vocabulary .mastered .learning-mastery-track>span {background:linear-gradient(90deg,#fbbf24,#f59e0b)}
-#analytics-panel-vocabulary :is(.learning-mastery-note,.analytics-note) {padding:12px;border:1px solid var(--report-border);border-radius:16px;background:var(--vocab-soft)}
-#analytics-panel-vocabulary .learning-review-summary>*>span {font-weight:800;color:inherit}
-#analytics-panel-vocabulary .learning-review-plot {height:185px;margin-top:22px}
-#analytics-panel-vocabulary .learning-review-track>span {max-width:24px;border-radius:10px 10px 2px 2px;background:#a7f3d0cc}
-#analytics-panel-vocabulary .today .learning-review-track>span {background:linear-gradient(0deg,#059669,#34d399);box-shadow:0 4px 10px #10b98133;outline:2px solid #6ee7b766;outline-offset:1px}
-#analytics-panel-vocabulary .today {color:var(--green);font-weight:800}
-#analytics-panel-vocabulary .learning-review-action,
-#analytics-panel-vocabulary .learning-weak-action {flex-direction:column;align-items:stretch;gap:14px}
-#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action) button,
-#analytics-panel-vocabulary .learning-relearning-actions button {
-  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:0;border-radius:16px;background:linear-gradient(90deg,#059669,#10b981);color:white;font-size:var(--font-sm);font-weight:800;box-shadow:0 8px 20px -4px #05966961;transition:filter .2s,transform .2s;
-}
-#analytics-panel-vocabulary :is(.learning-review-action,.learning-relearning-actions) button svg {width:20px;height:20px}
-#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action,.learning-relearning-actions) button:hover {filter:brightness(1.05)}
-#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action,.learning-relearning-actions) button:active {transform:scale(.99)}
-#analytics-panel-vocabulary :is(.learning-review-action,.learning-weak-action) button:disabled {box-shadow:none}
-#analytics-panel-vocabulary .learning-weak-ranking {gap:12px;margin:18px 0}
-#analytics-panel-vocabulary .learning-weak-ranking li>button {padding:14px;border-radius:16px;background:var(--report-surface);gap:10px}
-#analytics-panel-vocabulary .learning-weak-ranking li:first-child>button {background:var(--vocab-amber);border-color:var(--vocab-amber-line)}
-#analytics-panel-vocabulary .learning-weak-ranking li>button:hover {border-color:#6ee7b7}
-#analytics-panel-vocabulary .learning-weak-rank {width:25px;height:25px;border-radius:8px;background:var(--vocab-soft);color:var(--report-ink)}
-#analytics-panel-vocabulary .learning-weak-ranking li:first-child .learning-weak-rank {background:#fbbf24;color:#78350f}
-#analytics-panel-vocabulary .learning-weak-ranking li:nth-child(2) .learning-weak-rank {background:#fef3c7;color:#92400e}
-#analytics-panel-vocabulary .learning-weak-ranking li:nth-child(3) .learning-weak-rank {background:var(--vocab-amber);color:var(--vocab-amber-ink);border:1px solid var(--vocab-amber-line)}
-#analytics-panel-vocabulary .learning-weak-word {flex-wrap:wrap;gap:6px}
-#analytics-panel-vocabulary .learning-weak-word b {font-size:var(--font-md);font-weight:800}
-#analytics-panel-vocabulary .learning-weak-word small {padding:3px 6px;border-radius:6px;background:var(--vocab-soft)}
-#analytics-panel-vocabulary .learning-weak-track {background:var(--vocab-soft)}
-#analytics-panel-vocabulary .learning-weak-track>span {background:linear-gradient(90deg,#f59e0b,#f97316)}
-#analytics-panel-vocabulary .learning-weak-counts {font-size:var(--font-xs)}
-#analytics-panel-vocabulary .learning-weak-counts>span:last-child,
-#analytics-panel-vocabulary .learning-weak-counts>span:last-child strong {color:var(--vocab-amber-ink);font-weight:800}
-#analytics-panel-vocabulary .learning-relearning-summary {padding:16px;margin:18px 0 16px;border:1px solid #a7f3d0;border-radius:16px;background:linear-gradient(110deg,#10b98112,var(--vocab-mint))}
-#analytics-panel-vocabulary .learning-relearning-summary span {color:var(--green);font-weight:700}
-#analytics-panel-vocabulary .learning-relearning-summary>b {font-size:var(--font-2xl);font-weight:900}
-#analytics-panel-vocabulary .learning-relearning-total-bar {height:13px;padding:2px;background:var(--vocab-soft)}
-#analytics-panel-vocabulary .learning-relearning-card .completed {background:#059669}
-#analytics-panel-vocabulary .learning-relearning-card .remaining {background:#fbbf24}
-#analytics-panel-vocabulary .learning-relearning-card .unavailable {background:#cbd5e1}
-#analytics-panel-vocabulary .learning-relearning-legend {gap:8px 12px}
-#analytics-panel-vocabulary .learning-relearning-legend i {border-radius:50%}
-#analytics-panel-vocabulary .learning-relearning-days {gap:12px;padding-top:16px;border-top:1px solid var(--report-border)}
-#analytics-panel-vocabulary .learning-relearning-days>div>span {font-size:var(--font-xs);font-weight:700}
-#analytics-panel-vocabulary .learning-relearning-days>div>div {height:8px;background:var(--vocab-soft)}
-#analytics-panel-vocabulary .analytics-switch {gap:8px;background:transparent;padding:0;flex-wrap:wrap}
-#analytics-panel-vocabulary .analytics-switch button {padding:8px 14px;border-radius:12px;border:1px solid var(--report-border);background:var(--vocab-soft);box-shadow:none}
-#analytics-panel-vocabulary .analytics-switch button[aria-pressed='true'] {background:var(--vocab-mint);border-color:#a7f3d0;color:var(--green)}
-#analytics-panel-vocabulary .analytics-horizontal.languages {gap:14px}
-#analytics-panel-vocabulary .analytics-horizontal.languages>button {grid-template-columns:1fr auto;gap:8px;padding:6px}
-#analytics-panel-vocabulary .analytics-horizontal.languages>button>span:first-child {display:flex;align-items:center;gap:8px;font-weight:800}
+.learning-progress-page .report-summary>.tone-amber {background:linear-gradient(135deg,#fffbebcc,#fffbeb33);border-color:#fef3c7}
+.learning-progress-page .report-summary>.tone-neutral {background:var(--report-soft);border-color:var(--report-border)}
+.learning-progress-page .report-summary-item>span {display:block;margin:0;color:#065f46;font-size:var(--font-sm);font-weight:600;line-height:1.5}
+.learning-progress-page .report-summary>.tone-amber>span {color:#92400e}
+.learning-progress-page .report-summary>.tone-neutral>span {color:var(--report-muted)}
+.learning-progress-page .report-summary-item>strong {display:flex;align-items:baseline;gap:4px;margin:7px 0 0;font-size:var(--font-xl);font-weight:800;line-height:1.4;letter-spacing:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.learning-progress-page .report-summary-item>strong>small {margin:0;color:inherit;font-size:var(--font-sm);font-weight:500;line-height:1}
+.learning-progress-page button.report-summary-item:hover {filter:brightness(.98)}
+.learning-progress-page button.report-summary-item:focus-visible {outline:2px solid var(--green);outline-offset:3px}
+.learning-progress-page .report-chart-heading {margin-bottom:0}
+.report-chart-actions {display:flex;align-items:center;flex-shrink:0;gap:6px}
+.learning-progress-page .report-fixed-range {margin:6px 0 8px;text-align:center;font-size:12px;font-weight:700;color:var(--report-ink);line-height:1.6}
+.learning-progress-page .report-metric-switch {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;width:100%;margin:6px 0 8px;padding:2px;background:#f1f5f9;border-radius:12px}
+.learning-progress-page .report-metric-switch button {width:100%;padding:5px 8px;border:0;border-radius:8px;background:transparent;font-size:var(--font-sm);font-weight:600}
+.learning-progress-page .report-detail.learning-time-details {margin:12px 0 0;padding:14px;border-radius:16px;line-height:1.5}
+.learning-progress-page .report-detail .learning-time-averages {display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.learning-progress-page .report-detail .learning-time-record-copy p {margin:0}
+.learning-progress-page .report-detail .learning-time-averages dt {font-size:var(--font-sm)}
+
+/* Vocabulary distributions keep their meaning, using the same quiet surfaces. */
+.learning-progress-page .learning-mastery-rows {gap:8px;margin-top:20px}
+.learning-progress-page .learning-mastery-rows>button {padding:10px;border:1px solid var(--report-border);border-radius:12px;background:var(--report-surface)}
+.learning-progress-page .learning-mastery-rows>button.mastered {background:var(--report-amber);border-color:#fef3c7}
+.learning-progress-page .learning-mastery-row-title {gap:8px}
+.learning-progress-page .learning-mastery-row-title>span {gap:6px}
+.learning-progress-page .learning-mastery-row-title :is(b,strong) {font-size:var(--font-sm);font-weight:700}
+.learning-progress-page .learning-mastery-stage {display:grid;place-items:center;min-width:36px;height:24px;padding:0 4px;border-radius:7px;background:var(--report-mint);color:var(--green)}
+.learning-progress-page .learning-mastery-track {height:10px;margin-top:8px;background:var(--report-soft)}
+.learning-progress-page .learning-mastery-track>span {background:linear-gradient(90deg,#6ee7b7,#10b981)}
+.learning-progress-page .mastered .learning-mastery-track>span {background:linear-gradient(90deg,#fcd58a,#f5a742)}
+
+.learning-progress-page .learning-review-plot {height:210px;margin-top:16px}
+.learning-progress-page .learning-review-bars {gap:8px;background:repeating-linear-gradient(to right,var(--report-border) 0 3px,transparent 3px 7px) left 20px / 100% 1px no-repeat,repeating-linear-gradient(to right,var(--report-border) 0 3px,transparent 3px 7px) left calc(50% - 7px) / 100% 1px no-repeat,linear-gradient(var(--report-border),var(--report-border)) left calc(100% - 34px) / 100% 1px no-repeat}
+.learning-progress-page .learning-review-track {border-bottom:0}
+.learning-progress-page .learning-review-track>span {width:65%;max-width:26px;border-radius:7px 7px 3px 3px;background:linear-gradient(0deg,#10b981,#6ee7b7)}
+.learning-progress-page .learning-review-bars .today .learning-review-track>span {background:linear-gradient(0deg,#10b981,#6ee7b7)}
+.learning-progress-page .learning-review-bars>.selected {background:transparent}
+.learning-progress-page .learning-review-bars>.selected .learning-review-day {color:var(--green);font-weight:700}
+.learning-progress-page .learning-review-bars>button>strong {color:var(--report-muted);font-weight:500}
+
+.learning-progress-page :is(.learning-review-action,.learning-weak-action) {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:14px;border:1px solid var(--report-border);border-radius:16px;background:var(--report-soft)}
+.learning-progress-page :is(.learning-review-action,.learning-weak-action) strong {font-size:var(--font-sm);line-height:1.5}
+.learning-progress-page :is(.learning-review-action,.learning-weak-action) button,
+.learning-progress-page .learning-relearning-actions button {display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:0;border-radius:10px;background:var(--green);color:#fff;font-size:var(--font-sm);font-weight:600;box-shadow:none}
+.learning-progress-page :is(.learning-review-action,.learning-relearning-actions) button svg {width:16px;height:16px}
+.learning-progress-page :is(.learning-review-action,.learning-weak-action) button:disabled {opacity:.5}
+.learning-progress-page .learning-weak-action button {position:relative;overflow:hidden;isolation:isolate;background:#b95048;color:#fff}
+.learning-progress-page .learning-weak-action button:not(:disabled)::after {content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 25%,#ffffff55 50%,transparent 75%);transform:translateX(-120%);animation:weak-practice-shimmer 4s ease-in-out infinite}
+@keyframes weak-practice-shimmer {0%,60%{transform:translateX(-120%)}90%,100%{transform:translateX(120%)}}
+@media(prefers-reduced-motion:reduce) {.learning-progress-page .learning-weak-action button::after {animation:none;display:none}}
+.learning-progress-page .learning-weak-ranking {gap:8px;margin:6px 0 0}
+.learning-progress-page .learning-weak-ranking li>button {padding:12px;border:1px solid var(--report-border);border-radius:14px;background:var(--report-surface)}
+.learning-progress-page .learning-weak-ranking li:first-child>button {background:var(--report-amber);border-color:#fef3c7}
+.learning-progress-page .learning-weak-rank {width:26px;height:26px;border-radius:8px;background:#fde8e5;color:#b95048}
+.learning-progress-page .learning-weak-word {flex-wrap:wrap;gap:6px}
+.learning-progress-page .learning-weak-word b {font-size:var(--font-md)}
+.learning-progress-page .learning-weak-track {background:var(--report-soft)}
+.learning-progress-page .learning-weak-track>span {background:linear-gradient(90deg,#f3b8ad,#de8074)}
+.learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-counts strong {color:#b95048}
+html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-rank {background:#442b28;color:#f3b8ad}
+html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-counts strong {color:#f3b8ad}
+
+.learning-progress-page .learning-relearning-summary {grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.learning-progress-page .learning-relearning-summary>.report-summary-item {padding:14px 8px}
+.learning-progress-page .learning-relearning-total-bar {height:12px;padding:0;margin-top:18px;background:var(--report-soft)}
+.learning-progress-page .learning-relearning-days {gap:8px;margin:16px 0 12px;padding:0;border:0}
+.learning-progress-page .learning-relearning-days>button {display:grid;grid-template-columns:48px minmax(0,1fr) 78px;align-items:center;gap:8px;padding:7px 0;border:0;border-radius:8px;background:transparent;color:var(--report-muted);text-align:left;font-size:var(--font-xs)}
+.learning-progress-page .learning-relearning-days>button>div {display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--report-soft)}
+.learning-progress-page .learning-relearning-days>button>strong {font-size:var(--font-xs);text-align:right;font-variant-numeric:tabular-nums}
+.learning-progress-page .learning-relearning-days>button[aria-pressed='true']>span {color:var(--green);font-weight:700}
+.learning-progress-page .learning-relearning-days>button:focus-visible {outline:2px solid var(--green);outline-offset:3px}
+.learning-progress-page .learning-relearning-legend {justify-content:center;margin:0;padding:0;gap:8px 12px}
+.learning-progress-page .learning-relearning-message {margin-top:12px;padding:10px 12px;font-size:var(--font-sm)}
+
+.learning-progress-page .analytics-horizontal.languages {gap:8px;margin-top:20px}
+.learning-progress-page .analytics-horizontal.languages>button {grid-template-columns:1fr auto;gap:8px;padding:10px;border:1px solid var(--report-border);border-radius:12px;background:var(--report-surface)}
+.learning-progress-page .languages>button>span:first-child {display:flex;align-items:center;gap:8px;font-weight:700}
 .analytics-language-flag {font-size:var(--font-lg)}
-#analytics-panel-vocabulary .analytics-horizontal.languages .analytics-track {grid-column:1/-1;grid-row:2;height:11px;padding:2px;background:var(--vocab-soft)}
-#analytics-panel-vocabulary .analytics-horizontal.languages .analytics-track>i {background:linear-gradient(90deg,#059669,#34d399)}
-#analytics-panel-vocabulary .analytics-horizontal.languages strong {grid-column:2;grid-row:1}
-html[data-theme='dark'] #analytics-panel-vocabulary {--vocab-amber:#393316;--vocab-amber-line:#67572b;--vocab-amber-ink:#fcd78b}
-html[data-theme='dark'] #analytics-panel-vocabulary :is(.learning-mastery-summary>div+div,.learning-review-summary>.learning-review-overdue) {background:var(--vocab-amber)}
-html[data-theme='dark'] #analytics-panel-vocabulary :is(.learning-review-summary>div,.learning-relearning-summary) {background:var(--vocab-mint);border-color:#355842}
-html[data-theme='dark'] #analytics-panel-vocabulary .mastered .learning-mastery-track {background:#59451e}
-html[data-theme='dark'] #analytics-panel-vocabulary .learning-mastery-summary>div>span {color:var(--report-muted)}
+.learning-progress-page .languages .analytics-track {grid-column:1/-1;grid-row:2;height:10px;background:var(--report-soft)}
+.learning-progress-page .languages .analytics-track>i {background:linear-gradient(90deg,#6ee7b7,#10b981)}
+.learning-progress-page .languages strong {grid-column:2;grid-row:1}
+.learning-progress-page .analytics-growth-chart {margin-top:20px}
+.learning-progress-page .analytics-growth-columns>button[aria-pressed='true'],
+.learning-progress-page .analytics-growth-columns>button:hover {background:transparent}
+.learning-progress-page .analytics-growth-columns>button[aria-pressed='true'] .growth-date {color:var(--green);font-weight:700}
+.learning-progress-page .analytics-growth-hero {padding:20px;border:1px solid var(--report-border);border-radius:24px;background:var(--report-surface);gap:16px}
+.learning-progress-page .analytics-growth-hero h2 {font-size:var(--font-xl)}
+
+html[data-theme='dark'] .learning-progress-page .report-summary>.report-summary-item {background:#203d2d;border-color:#355842}
+html[data-theme='dark'] .learning-progress-page .report-summary>.tone-amber {background:#393316;border-color:#67572b}
+html[data-theme='dark'] .learning-progress-page .report-summary>.tone-neutral {background:var(--report-soft);border-color:var(--report-border)}
+html[data-theme='dark'] .learning-progress-page .report-summary-item>span {color:#a4d8b9}
+html[data-theme='dark'] .learning-progress-page .report-summary>.tone-amber>span {color:#fcd78b}
+html[data-theme='dark'] .learning-progress-page .report-summary>.tone-neutral>span {color:var(--report-muted)}
+html[data-theme='dark'] .learning-progress-page .report-metric-switch {background:#263c30}
+html[data-theme='dark'] .learning-progress-page .learning-mastery-rows>button.mastered,
+html[data-theme='dark'] .learning-progress-page .learning-weak-ranking li:first-child>button {background:#393316;border-color:#67572b}
 @media(max-width:520px) {
-  #analytics-panel-vocabulary :is(.learning-mastery-heading,.learning-review-heading,.learning-weak-heading,.learning-relearning-heading) h2 {font-size:var(--font-lg)}
-  #analytics-panel-vocabulary :is(.learning-mastery-eyebrow,.learning-review-eyebrow,.learning-weak-eyebrow,.learning-relearning-eyebrow) {font-size:var(--font-xs);padding:5px 7px}
-  #analytics-panel-vocabulary :is(.learning-mastery-refresh,.learning-review-refresh,.learning-weak-refresh,.learning-relearning-refresh) {padding:7px 8px}
-  #analytics-panel-vocabulary :is(.learning-mastery-summary>div,.learning-review-summary>div,.learning-review-summary>button) {padding:12px}
-  #analytics-panel-vocabulary .learning-mastery-row-title>span {gap:5px}
-  #analytics-panel-vocabulary .learning-mastery-row-title>span:last-child small {min-width:36px;text-align:right}
+  .learning-progress-page .report-summary-item>strong {font-size:var(--font-lg)}
+  .learning-progress-page :is(.learning-review-action,.learning-weak-action) {align-items:stretch;flex-direction:column}
+  .learning-progress-page :is(.learning-review-action,.learning-weak-action) button {width:100%}
+  .learning-progress-page .learning-review-bars {gap:4px}
+  .learning-progress-page .analytics-growth-hero {padding:16px;gap:12px}
 }
+.learning-progress-page .learning-weak-word .report-word-language {padding:2px 7px;border:1px solid #d1d5db;border-radius:999px;background:#f3f4f6;color:#4b5563;font-size:var(--font-xs);font-weight:600;line-height:1.2}
+.learning-progress-page .learning-weak-word .report-word-cefr {padding:2px 7px;border-width:1px;border-style:solid;border-radius:999px;font-size:var(--font-xs);font-weight:600;line-height:1.2}
+html[data-theme='dark'] .learning-progress-page .learning-weak-word .report-word-language {border-color:#4b5563;background:#374151;color:#e5e7eb}
+
+.learning-progress-page .report-ranking-description {margin:6px 0 8px;color:var(--report-muted);font-size:var(--font-sm);font-weight:400;line-height:1.6}

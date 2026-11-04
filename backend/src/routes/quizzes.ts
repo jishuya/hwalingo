@@ -22,6 +22,7 @@ interface CandidateRow {
   word: string
   meaning: string
   example_sentence: string | null
+  incorrect_practice_excluded_at: string | null
   mastery_level: MasteryLevel
   mastery_score: string
   total_attempts: number
@@ -39,6 +40,7 @@ interface SessionItemRow {
   session_id: string
   vocabulary_id: string
   position: number
+  practice_excluded: boolean
   retry_of_item_id: string | null
   selection_group: SelectionGroup
   question_type: QuestionType
@@ -73,7 +75,7 @@ async function getVocabularyInsightRow(userId: string, sessionId: string, itemId
      FROM quiz_session_items i
      JOIN quiz_sessions s ON s.id = i.session_id
      JOIN vocabularies v ON v.id = i.vocabulary_id
-     WHERE i.id = $1 AND i.session_id = $2 AND s.user_id = $3 AND v.user_id = $3`,
+     WHERE i.id = $1 AND i.session_id = $2 AND s.user_id = $3 AND NOT i.practice_excluded AND v.user_id = $3`,
     [itemId, sessionId, userId],
   )
   return result.rows[0]
@@ -133,9 +135,9 @@ async function getSession(userId: string, sessionId: string) {
   } finally { client.release() }
 
   const sessionResult = await pool.query<{
-    id: string; status: string; total_count: number; correct_count: number; earned_xp: number; started_at: string; completed_at: string | null
+    id: string; mode: string; practice_version: number; practice_vocabulary_ids: string[] | null; status: string; total_count: number; correct_count: number; earned_xp: number; started_at: string; completed_at: string | null
   }>(
-    `SELECT id, status, total_count, correct_count, earned_xp, started_at, completed_at
+    `SELECT id, mode, practice_version, practice_vocabulary_ids, status, total_count, correct_count, earned_xp, started_at, completed_at
      FROM quiz_sessions WHERE id = $1 AND user_id = $2`,
     [sessionId, userId],
   )
@@ -153,15 +155,18 @@ async function getSession(userId: string, sessionId: string) {
      FROM quiz_session_items i
      JOIN vocabularies v ON v.id = i.vocabulary_id
      LEFT JOIN vocabulary_progress p ON p.vocabulary_id = v.id AND p.user_id = v.user_id
-     WHERE i.session_id = $1 ORDER BY i.position`,
+     WHERE i.session_id = $1 AND NOT i.practice_excluded ORDER BY i.position`,
     [sessionId],
   )
   return {
     id: session.id,
     status: session.status,
+    mode: session.mode,
+    practiceVocabularyIds: session.practice_vocabulary_ids,
+    practiceVersion: session.practice_version,
     totalCount: session.total_count,
     correctCount: session.correct_count,
-    earnedXp: session.earned_xp,
+    earnedXp: session.mode==='incorrect'?0:session.earned_xp,
     startedAt: session.started_at,
     completedAt: session.completed_at,
     items: itemResult.rows.map(item => ({
@@ -194,8 +199,14 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
   const client = await pool.connect()
   try {
     const mode = request.body.mode === 'incorrect' ? 'incorrect' : 'standard'
+    const rawIds = request.body.vocabularyIds
+    if(mode==='incorrect' && rawIds!==undefined && (!Array.isArray(rawIds)||!rawIds.length||rawIds.some(id=>typeof id!=='string'||!/^[1-9]\d{0,18}$/.test(id)||BigInt(id)>9223372036854775807n))) {
+      response.status(400).json({message:'연습할 단어를 선택해주세요.'});return
+    }
+    const practiceIds: string[] | null = mode==='incorrect'&&Array.isArray(rawIds)?[...new Set(rawIds as string[])].sort():null
+
     await client.query('BEGIN')
-    await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.auth!.userId])
+    await client.query('SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE', [request.auth!.userId])
     await reconcileArchivedQuizItems(client, request.auth!.userId)
     const configuredCountResult = await client.query<{ quiz_question_count: number }>(
       `SELECT quiz_question_count FROM user_settings WHERE user_id = $1`,
@@ -207,7 +218,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
     const candidatesResult = await client.query<CandidateRow>(
       `SELECT v.id AS vocabulary_id, v.word, v.meaning, v.example_sentence,
               p.mastery_level, p.mastery_score, p.total_attempts, p.correct_count,
-              p.incorrect_count, p.correct_streak, p.incorrect_streak,
+              p.incorrect_count, p.incorrect_practice_excluded_at, p.correct_streak, p.incorrect_streak,
               p.last_reviewed_at, p.next_review_at, p.mastered_at
        FROM vocabularies v
        JOIN vocabulary_progress p ON p.user_id = v.user_id AND p.vocabulary_id = v.id
@@ -235,6 +246,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       totalAttempts: item.total_attempts,
       correctCount: item.correct_count,
       incorrectCount: item.incorrect_count,
+      incorrectPracticeExcluded: Boolean(item.incorrect_practice_excluded_at),
       nextReviewAt: new Date(item.next_review_at),
       lastReviewedAt: item.last_reviewed_at ? new Date(item.last_reviewed_at) : null,
     }))
@@ -248,17 +260,47 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
        ) AS completed_today,
        ARRAY(SELECT DISTINCT i.vocabulary_id::text FROM quiz_session_items i
          JOIN quiz_sessions s ON s.id = i.session_id CROSS JOIN day d
-         WHERE s.user_id = $1 AND i.result IS NOT NULL
+         WHERE s.user_id = $1 AND s.mode='standard' AND i.result IS NOT NULL
            AND (i.answered_at AT TIME ZONE 'Asia/Seoul')::date = d.today) AS answered_ids`,
       [request.auth!.userId],
     )
     const today = todayResult.rows[0]
-    const active = await client.query<{ id: string; requested_count: number; total_count: number }>(
-      `SELECT id, requested_count, total_count FROM quiz_sessions
+    const practiceCandidates=mode==='incorrect'?selectIncorrectTestCandidates(candidates).filter(item=>!practiceIds||practiceIds.includes(item.vocabularyId)):[]
+    if(mode==='incorrect'&&practiceIds&&practiceCandidates.length!==practiceIds.length){
+      await client.query('ROLLBACK');response.status(409).json({message:'선택한 오답 목록이 변경됐어요. 단어장에서 다시 선택해주세요.'});return
+    }
+    if(mode==='incorrect') await client.query(`UPDATE quiz_sessions s SET status='abandoned',completed_at=CURRENT_TIMESTAMP
+      WHERE s.user_id=$1 AND s.mode='incorrect' AND s.status='active' AND EXISTS(
+        SELECT 1 FROM xp_events x WHERE x.user_id=s.user_id AND x.metadata->>'purpose'='fixture-manifest'
+          AND x.metadata->'session_ids' @> jsonb_build_array(s.id))`,[request.auth!.userId])
+    const active = await client.query<{ id: string; requested_count: number; total_count: number; practice_version: number; practice_vocabulary_ids: string[] | null }>(
+      `SELECT id, requested_count, total_count,practice_version,practice_vocabulary_ids FROM quiz_sessions
        WHERE user_id = $1 AND status = 'active' AND mode = $2 ORDER BY started_at DESC LIMIT 1 FOR UPDATE`,
       [request.auth!.userId, mode],
     )
-    const existing = active.rows[0]
+    let existing: typeof active.rows[number] | undefined = active.rows[0]
+    if(existing&&mode==='incorrect') {
+      const oldScope=existing.practice_vocabulary_ids?.map(String).sort()??null
+      if(request.body.restart===true||JSON.stringify(oldScope)!==JSON.stringify(practiceIds)){
+        await client.query("UPDATE quiz_sessions SET status='abandoned',completed_at=CURRENT_TIMESTAMP WHERE id=$1",[existing.id])
+        existing=undefined
+      } else if(existing.practice_version===0) {
+        const items=await client.query<{vocabulary_id:string;position:number}>('SELECT vocabulary_id,position FROM quiz_session_items WHERE session_id=$1',[existing.id])
+        const used=new Set(items.rows.map(item=>String(item.vocabulary_id)))
+        const lastPosition=Math.max(0,...items.rows.map(item=>item.position))
+        for(const [index,entry] of practiceCandidates.filter(item=>!used.has(item.vocabularyId)).entries()){
+          const candidate=rowsById.get(entry.vocabularyId)!
+          const question=buildQuestion(candidate,candidatesResult.rows)
+          await client.query(`INSERT INTO quiz_session_items
+            (session_id,vocabulary_id,position,selection_group,question_type,prompt,correct_answer,acceptable_answers,choices,explanation,generation_source)
+            VALUES($1,$2,$3,'weak',$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10)`,
+            [existing.id,candidate.vocabulary_id,lastPosition+index+1,question.questionType,question.prompt,question.correctAnswer,JSON.stringify(question.acceptableAnswers),JSON.stringify(question.choices),question.explanation,question.generationSource])
+        }
+        await client.query(`UPDATE quiz_sessions SET practice_version=1,
+          total_count=(SELECT count(*) FROM quiz_session_items WHERE session_id=$1 AND retry_of_item_id IS NULL AND NOT practice_excluded),
+          requested_count=GREATEST(1,(SELECT count(*) FROM quiz_session_items WHERE session_id=$1 AND retry_of_item_id IS NULL AND NOT practice_excluded)) WHERE id=$1`,[existing.id])
+      }
+    }
     if (existing) {
       // Older or shortened sessions can be filled without losing answers or retry history.
       if (mode === 'standard' && existing.total_count < existing.requested_count) {
@@ -293,7 +335,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       return
     }
     const selected = mode === 'incorrect'
-      ? selectIncorrectTestCandidates(candidates, requestedCount)
+      ? practiceCandidates
       : today.completed_today
       ? selectAdditionalTestCandidates(candidates, requestedCount, new Set(today.answered_ids))
       : selectTestCandidates(candidates, requestedCount)
@@ -303,9 +345,9 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
       return
     }
     const sessionResult = await client.query<{ id: string }>(
-      `INSERT INTO quiz_sessions (user_id, requested_count, total_count, status, completed_at, mode)
-       VALUES ($1, $2, $3, $4, CASE WHEN $3::smallint = 0 THEN CURRENT_TIMESTAMP END, $5) RETURNING id`,
-      [request.auth!.userId, requestedCount, selected.length, selected.length ? 'active' : 'completed', mode],
+      `INSERT INTO quiz_sessions (user_id, requested_count, total_count, status, completed_at, mode,practice_version,practice_vocabulary_ids)
+       VALUES ($1, $2, $3, $4, CASE WHEN $3::integer = 0 THEN CURRENT_TIMESTAMP END, $5,$6,$7::bigint[]) RETURNING id`,
+      [request.auth!.userId, mode==='incorrect'?selected.length:requestedCount, selected.length, selected.length ? 'active' : 'completed', mode,mode==='incorrect'?1:0,practiceIds],
     )
     const sessionId = sessionResult.rows[0].id
     for (const [index, selectedItem] of selected.entries()) {
@@ -329,6 +371,16 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
   } finally {
     client.release()
   }
+})
+
+quizzesRouter.get('/sessions/active',requireAuth,async(request,response,next)=>{
+  try {
+    const found=await pool.query<{id:string}>(`SELECT s.id FROM quiz_sessions s WHERE s.user_id=$1 AND s.mode='incorrect' AND s.status='active'
+      AND NOT EXISTS(SELECT 1 FROM xp_events x WHERE x.user_id=s.user_id AND x.metadata->>'purpose'='fixture-manifest' AND x.metadata->'session_ids' @> jsonb_build_array(s.id))
+      ORDER BY s.started_at DESC LIMIT 1`,[request.auth!.userId])
+    const session=found.rows[0]?await getSession(request.auth!.userId,found.rows[0].id):null
+    response.json({session:session?.status==='active'?session:null})
+  }catch(error){next(error)}
 })
 
 quizzesRouter.get('/sessions/:sessionId', requireAuth, async (request, response, next) => {
@@ -395,7 +447,7 @@ async function recordAttempt(client: PoolClient, item: SessionItemRow, correct: 
   }
   await client.query(
     `UPDATE quiz_sessions SET status = 'completed', completed_at = $1
-     WHERE id = $2 AND NOT EXISTS (SELECT 1 FROM quiz_session_items WHERE session_id = $2 AND result IS NULL)`,
+     WHERE id = $2 AND NOT EXISTS (SELECT 1 FROM quiz_session_items WHERE session_id = $2 AND result IS NULL AND NOT practice_excluded)`,
     [reviewedAt, item.session_id],
   )
 }
@@ -413,8 +465,8 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    const lockedSession = await client.query<{ status: string }>(
-      'SELECT status FROM quiz_sessions WHERE id = $1 AND user_id = $2 FOR UPDATE',
+    const lockedSession = await client.query<{ status: string; mode: string }>(
+      'SELECT status,mode FROM quiz_sessions WHERE id = $1 AND user_id = $2 FOR UPDATE',
       [request.params.sessionId, request.auth!.userId],
     )
     if (lockedSession.rows[0]?.status !== 'active') {
@@ -427,7 +479,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
        FROM quiz_session_items i
        JOIN quiz_sessions s ON s.id = i.session_id
        JOIN vocabularies v ON v.id = i.vocabulary_id
-       WHERE i.id = $1 AND i.session_id = $2 AND s.user_id = $3
+       WHERE i.id = $1 AND i.session_id = $2 AND s.user_id = $3 AND NOT i.practice_excluded
        FOR UPDATE OF i`,
       [request.params.itemId, request.params.sessionId, request.auth!.userId],
     )
@@ -443,7 +495,7 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
       return
     }
     const nextItem = await client.query<{ id: string }>(
-      'SELECT id FROM quiz_session_items WHERE session_id = $1 AND result IS NULL ORDER BY position LIMIT 1',
+      'SELECT id FROM quiz_session_items WHERE session_id = $1 AND result IS NULL AND NOT practice_excluded ORDER BY position LIMIT 1',
       [item.session_id],
     )
     if (nextItem.rows[0]?.id !== item.id) {
@@ -472,6 +524,21 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
       correctStreak: progress.correct_streak,
       incorrectStreak: progress.incorrect_streak,
       masteredAt: progress.mastered_at ? new Date(progress.mastered_at) : null,
+    }
+    if(lockedSession.rows[0].mode==='incorrect') {
+      await recordAttempt(client,item,correct,reviewedAt,responseTimeMs)
+      if(!item.retry_of_item_id) {
+        await client.query('UPDATE quiz_sessions SET correct_count=correct_count+$2 WHERE id=$1',[item.session_id,correct?1:0])
+        await recordLearningActivity(client,request.auth!.userId,'quiz',{occurredAt:reviewedAt})
+      }
+      const result=await client.query<{total_xp:string}>('SELECT total_xp FROM user_progress WHERE user_id=$1',[request.auth!.userId])
+      const totalXp=Number(result.rows[0]?.total_xp??0)
+      const growth=calculateLevelProgress(totalXp)
+      await client.query('COMMIT')
+      response.json({correct,isRetry:Boolean(item.retry_of_item_id),isPractice:true,correctAnswer:item.correct_answer,questionExplanation:item.explanation,
+        mastery:{before:state.masteryLevel,after:state.masteryLevel},nextReviewAt:new Date(progress.next_review_at).toISOString(),xpEarned:0,
+        growth:{...growth,totalXp,hwarangGrade:hwarangGradeForLevel(growth.level),leveledUp:false,gradeChanged:false}})
+      return
     }
     if (item.retry_of_item_id) {
       await recordAttempt(client, item, correct, reviewedAt, responseTimeMs)
@@ -514,11 +581,12 @@ quizzesRouter.post('/sessions/:sessionId/items/:itemId/answer', requireAuth, asy
       `UPDATE vocabulary_progress SET mastery_level = $1, mastery_score = $2, total_attempts = $3,
          correct_count = $4, incorrect_count = $5, correct_streak = $6, incorrect_streak = $7,
          last_reviewed_at = $8, next_review_at = $9, mastered_at = $10,
-         algorithm_version = $11, updated_at = CURRENT_TIMESTAMP
+         algorithm_version = $11, updated_at = CURRENT_TIMESTAMP,
+         incorrect_practice_excluded_at=CASE WHEN $14::boolean THEN NULL ELSE incorrect_practice_excluded_at END
        WHERE user_id = $12 AND vocabulary_id = $13`,
       [outcome.masteryLevel, outcome.masteryScore, outcome.totalAttempts, outcome.correctCount,
         outcome.incorrectCount, outcome.correctStreak, outcome.incorrectStreak, outcome.lastReviewedAt,
-        outcome.nextReviewAt, outcome.masteredAt, outcome.algorithmVersion, request.auth!.userId, item.vocabulary_id],
+        outcome.nextReviewAt, outcome.masteredAt, outcome.algorithmVersion, request.auth!.userId, item.vocabulary_id, !correct],
     )
     await recordAttempt(client, item, correct, reviewedAt, responseTimeMs)
     const quizResult = await client.query<{ id: string }>(
