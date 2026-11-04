@@ -77,7 +77,7 @@ Assign a grammatical role to every word in every clause of learningSentence, usi
 - verb: the verbal core only: main verbs, auxiliaries, modals, verbal copulas, and verbal infinitives/participles, with attached inflections and negation. A noun or adjective is not verb merely because it resembles one.
 - other: objects, noun/adjective complements, conjunctions, prepositions, and independent adverbs/modifiers.
 Split whenever the role changes, even inside a phrase that translates naturally as a unit. Apply these roles inside subordinate and relative clauses too. Keep adjacent auxiliaries and verbs together; an intervening subject, object, or independent adverb gets its own role.
-After fixing role boundaries, divide same-role spans into short natural reading units and give each chunk only its own concise Korean meaning. Keep articles with nouns, attached particles with their phrase, and compact fixed expressions together within the same role.
+After fixing role boundaries, divide same-role spans into small reading units, usually 1-3 words in space-delimited languages or one short phrase/bunsetsu in Chinese/Japanese. Split long noun phrases at postmodifiers, and separate successive prepositional phrases, independent modifiers, and coordinated items even when their roles match. Prefer the smallest naturally interpretable unit; grammatical boundaries take priority over word counts. Keep articles with their noun, prepositions with a short complement, attached particles with their phrase, adjacent auxiliaries with their verb, and compact fixed expressions together; these may exceed the usual length. Give each chunk only its own concise Korean meaning.
 Use these same chunks for highlighting and reading practice. Cover learningSentence exactly once in its original order, preserving punctuation on the preceding chunk. Check for missing subjects/verbs and mixed roles before returning JSON.
 
 LANGUAGE AND CONTENT
@@ -91,7 +91,7 @@ LANGUAGE AND CONTENT
 `
 
 const grammarInstructions: Record<LanguageCode, string> = {
-  en: `Keep lexical phrasal-verb particles with their verb; separate objects and prepositional complements. Distinguish subject relatives (subject) from object relatives/conjunctions (other). Keep a subject noun phrase's internal modifiers with it, except nested clauses. Verbal to-infinitives count as verb.
+  en: `Keep lexical phrasal-verb particles with their verb; separate objects and prepositional complements. Distinguish subject relatives (subject) from object relatives/conjunctions (other). Split long subject noun phrases into short same-role units, classifying nested clauses separately. Verbal to-infinitives count as verb. Reading-unit example: "the new policy" / "for remote workers" / "in small companies" (all other when used as an object).
 Example: "People mock him, but Norton I practices the values he believes in."
 "People" (subject) / "mock" (verb) / "him," (other) / "but" (other) / "Norton I" (subject) / "practices" (verb) / "the values" (other) / "he" (subject) / "believes" (verb) / "in." (other)`,
   fr: `Separate explicit subject pronouns even in elision/inversion: "J’" (subject) / "avais" (verb); "Devrais-" (verb) / "je" (subject). Object clitics are other. In "J’avais l’habitude de lire", l’habitude de is other and lire is verb. Keep adjacent auxiliary + participle together.`,

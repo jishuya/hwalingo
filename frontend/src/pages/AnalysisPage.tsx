@@ -25,7 +25,6 @@ import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type An
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
-const grammarRoleColors = { subject: '#2563D9', verb: '#008C44', other: '#18332A' } as const
 
 function highlightExampleWord(text: string, word: string, memoryTip = false) {
   const escaped = word.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -221,11 +220,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         return <article className="sentence-analysis-card" key={`${sentence.inputText}-${sentenceIndex}`}>
           <header className="sentence-analysis-header">
             <div className="sentence-analysis-title-row"><h2><FileTextIcon className="analysis-heading-icon analysis-icon-sentence" weight="duotone" aria-hidden="true"/>문장 분석</h2><SpeechControls rate={speechRate} onRateChange={setSpeechRate} onPlay={() => speak(sentence.learningSentence, analysis.learningLanguage)}/></div>
-            <p className="sentence-analysis-text">{sentence.chunks.map((chunk, chunkIndex) => {
-              const nextChunk = sentence.chunks[chunkIndex + 1]
-              const joinsNext = /[-'’]$/u.test(chunk.targetText) || (nextChunk ? /^[,.;:!?)}\]»]/u.test(nextChunk.targetText) : false)
-              return <span className={`sentence-role-${chunk.role}`} style={{ color: grammarRoleColors[chunk.role] }} key={`${chunk.targetText}-${chunkIndex}`}>{chunk.targetText}{nextChunk && !joinsNext ? ' ' : ''}</span>
-            })}</p>
+            <p className="sentence-analysis-text">{sentence.learningSentence}</p>
           </header>
 
           <div className={`sentence-analysis-grid${showVocabulary ? '' : ' without-vocabulary'}`}>
@@ -235,7 +230,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                 <div className="clickable-chunks">{sentence.chunks.map((chunk, chunkIndex) => {
                   const chunkKey = `${sentenceIndex}-${chunkIndex}`
                   const revealed = revealedChunks.has(chunkKey)
-                  return <div key={chunkKey}><b className={`role-${chunk.role}`} style={{ color: grammarRoleColors[chunk.role] }}>{chunk.targetText}</b><button className={revealed ? 'revealed' : ''} aria-label={`${chunk.targetText} 해석 ${revealed ? '숨기기' : '보기'}`} aria-expanded={revealed} onClick={() => toggleInSet(setRevealedChunks, chunkKey)}>{revealed ? chunk.sourceMeaning : ''}</button></div>
+                  return <div key={chunkKey}><b>{chunk.targetText}</b><button className={revealed ? 'revealed' : ''} aria-label={`${chunk.targetText} 해석 ${revealed ? '숨기기' : '보기'}`} aria-expanded={revealed} onClick={() => toggleInSet(setRevealedChunks, chunkKey)}>{revealed ? chunk.sourceMeaning : ''}</button></div>
                 })}</div>
               </section>
 
