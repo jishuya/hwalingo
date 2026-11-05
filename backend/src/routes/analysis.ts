@@ -103,7 +103,7 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
     }))
   })
   try {
-    const text = typeof request.body.text === 'string' ? request.body.text.trim() : ''
+    const text = typeof request.body.text === 'string' ? request.body.text.replace(/\s+/gu, ' ').trim() : ''
     const inputLanguage = request.body.inputLanguage as LanguageCode
     const learningLanguage = request.body.learningLanguage as LanguageCode
     if (!text) {
@@ -121,7 +121,7 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
     const generationStartedAt = Date.now()
     const analysis = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_analysis_core_v22',
+      operation: 'sentence_analysis_core_v23',
       keyParts: { text, inputLanguage, learningLanguage },
       ttlMs: AI_RULES.cache.sentenceAnalysisTtlMs,
       generate: () => analyzeSentence({ text, inputLanguage, learningLanguage }, abortController.signal),

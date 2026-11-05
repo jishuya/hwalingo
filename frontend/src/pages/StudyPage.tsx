@@ -42,11 +42,12 @@ export default function StudyPage() {
   const selectedLanguageLabel = languageOptions.find(language => language.code === inputLanguage)?.label
   const inputLanguageOptions = [{ code: 'auto', label: '자동 감지' }, ...languageOptions] as const
   const runAnalysis = (sentence: string, language: LanguageCode) => {
+    setText(sentence)
     setActiveRequest({ text: sentence, inputLanguage: language, learningLanguage })
     setRequestId(current => current + 1)
   }
   const submit = () => {
-    const sentence = text.trim()
+    const sentence = text.replace(/\s+/gu, ' ').trim()
     if (!sentence || isAnalyzing) return
     if (inputLanguage === 'auto' && !resolvedInputLanguage) {
       setDetectionNoticeOpen(true)
