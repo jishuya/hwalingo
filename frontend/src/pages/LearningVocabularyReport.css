@@ -92,7 +92,7 @@ html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learnin
 .learning-progress-page .analytics-growth-columns>button[aria-pressed='true'],
 .learning-progress-page .analytics-growth-columns>button:hover {background:transparent}
 .learning-progress-page .analytics-growth-columns>button[aria-pressed='true'] .growth-date {color:var(--green);font-weight:700}
-.learning-progress-page [role='tabpanel']>.analytics-growth-hero {display:flex;align-items:center;gap:14px;padding:16px;border:1px solid color-mix(in srgb,#008c44 20%,var(--report-surface));border-radius:18px;background:color-mix(in srgb,#008c44 10%,var(--report-surface));box-shadow:0 3px 12px #008c441a}
+.learning-progress-page [role='tabpanel']>.analytics-growth-hero {display:flex;align-items:center;gap:14px;padding:16px;border:1px solid color-mix(in srgb,#008c44 20%,var(--report-surface));border-radius:18px;background:color-mix(in srgb,#008c44 20%,var(--report-surface));box-shadow:0 3px 12px #008c441a}
 .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {position:relative;flex:0 0 80px;width:80px;height:96px;min-width:0;display:grid;place-items:center;border:1px solid #a7f3d0;border-radius:15px;background:linear-gradient(135deg,#e8fff4,#d1fae5)}
 .growth-hero-avatar>img {display:block;width:90%;height:90%;object-fit:contain}
 .learning-progress-page .growth-hero-avatar>span {position:absolute;right:-5px;bottom:-5px;padding:3px 6px;border:2px solid var(--report-surface);border-radius:8px;background:#059669;color:#fff;font-size:9px;font-weight:700;line-height:1.1}
@@ -141,6 +141,6 @@ html[data-theme='dark'] .learning-progress-page .learning-weak-word .report-word
 .learning-progress-page .analytics-growth-hero [role='progressbar'] {background:color-mix(in srgb,#008c44 12%,var(--report-surface))}
 .learning-progress-page .analytics-growth-hero [role='progressbar']>i {background:#008c44}
 .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {border-color:color-mix(in srgb,#008c44 22%,var(--report-surface));background:var(--report-surface)}
-html[data-theme='dark'] .learning-progress-page [role='tabpanel']>.analytics-growth-hero {background:color-mix(in srgb,#008c44 10%,var(--report-surface));border-color:color-mix(in srgb,#008c44 20%,var(--report-surface))}
+html[data-theme='dark'] .learning-progress-page [role='tabpanel']>.analytics-growth-hero {background:color-mix(in srgb,#008c44 20%,var(--report-surface));border-color:color-mix(in srgb,#008c44 20%,var(--report-surface))}
 html[data-theme='dark'] .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {background:var(--report-surface);border-color:color-mix(in srgb,#008c44 22%,var(--report-surface))}
 html[data-theme='dark'] .learning-progress-page .analytics-growth-hero [role='progressbar'] {background:color-mix(in srgb,#008c44 12%,var(--report-surface))}
