@@ -869,3 +869,43 @@ html[data-theme='dark'] .vocabulary-page .vocabulary-meaning-toggle{color:#cbd5e
 .profile-learning-xp-flame{position:absolute;top:50%;display:grid;place-items:center;width:32px;height:36px;transform:translate(-50%,-65%);color:var(--green);pointer-events:none}.profile-learning-xp-flame svg{width:30px;height:34px;transform-origin:50% 90%;filter:drop-shadow(0 0 4px #38bd7466);animation:profile-xp-flicker 1.6s ease-in-out infinite}
 @keyframes profile-xp-flicker{0%,100%{transform:rotate(-5deg) scale(.94,1);opacity:.85}35%{transform:rotate(4deg) scale(1.04,1.1);opacity:1}70%{transform:rotate(-2deg) scale(.97,1.04);opacity:.92}}
 @media(prefers-reduced-motion:reduce){.profile-learning-xp-flame svg{animation:none}}
+
+/* A gentle sheen and a chevron make the growth collection visibly actionable. */
+.profile-growth-collection{position:relative;isolation:isolate;overflow:hidden;border-color:#91c7a3;box-shadow:0 3px 10px #008c4414}
+.profile-growth-collection::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(110deg,transparent 25%,#ffffffc4 50%,transparent 75%);transform:translateX(-120%);animation:profile-collection-sheen 5s ease-in-out infinite}
+.profile-growth-collection .profile-growth-collection-arrow{width:13px;height:13px;flex-shrink:0;transition:transform .2s}
+.profile-growth-collection:hover .profile-growth-collection-arrow{transform:translateX(2px)}
+.profile-growth-collection:active{transform:translateY(0);box-shadow:0 1px 4px #008c4414}
+html[data-theme='dark'] .profile-growth-collection::after{background:linear-gradient(110deg,transparent 25%,#8ee2a92e 50%,transparent 75%)}
+@keyframes profile-collection-sheen{0%,65%{transform:translateX(-120%)}90%,100%{transform:translateX(120%)}}
+@media(prefers-reduced-motion:reduce){.profile-growth-collection::after{animation:none;display:none}.profile-growth-collection,.profile-growth-collection .profile-growth-collection-arrow{transition:none}.profile-growth-collection:hover,.profile-growth-collection:hover .profile-growth-collection-arrow{transform:none}}
+
+.profile-report-entry{display:block;width:100%;margin-top:16px;padding:16px;border:1px solid #efd790;border-radius:16px;background:linear-gradient(125deg,#fffdf4,#fff5c9);color:var(--dark);text-align:left;box-shadow:0 4px 14px #d9a9000a;transition:border-color .2s,box-shadow .2s}
+.profile-report-intro{display:flex;align-items:center;gap:10px}
+.profile-report-icon{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #f0d995;border-radius:12px;background:#fff8dc;color:#c57812}
+.profile-report-icon svg{width:23px;height:23px}
+.profile-report-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.profile-report-copy>strong{font-size:var(--font-md);font-weight:700;line-height:1.4;word-break:keep-all}
+.profile-report-copy>span{color:var(--muted);font-size:var(--font-xs);line-height:1.5;word-break:keep-all}
+.profile-report-topics{display:flex;flex-wrap:wrap;gap:6px;margin:13px 0}
+.profile-report-topics>span{padding:3px 8px;border:1px solid #efdfad;border-radius:999px;background:#ffffffa6;color:#806300;font-size:var(--font-xs);line-height:1.4}
+.profile-report-action{display:flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:9px 12px;border-radius:10px;background:#ffd95a;color:#604600;font-size:var(--font-sm);font-weight:700;line-height:1.4}
+.profile-report-action svg{width:15px;height:15px;transition:transform .2s}
+.profile-report-entry:hover{border-color:#e5bd54;box-shadow:0 5px 16px #d9a90017}
+.profile-report-entry:hover .profile-report-action{background:#f6cd45}
+.profile-report-entry:hover .profile-report-action svg{transform:translateX(2px)}
+.profile-report-entry:focus-visible{outline:2px solid #b78300;outline-offset:3px}
+html[data-theme='dark'] .profile-report-entry{background:linear-gradient(125deg,#2d2a18,#393316);border-color:#665b2c}
+html[data-theme='dark'] .profile-report-icon{background:#393316;border-color:#665b2c;color:#ffd95a}
+html[data-theme='dark'] .profile-report-topics>span{background:#393316;border-color:#665b2c;color:#f0d76d}
+@media(max-width:380px){.profile-report-entry{padding:13px}.profile-report-intro{gap:8px}.profile-report-copy>strong{font-size:var(--font-sm)}}
+@media(prefers-reduced-motion:reduce){.profile-report-entry,.profile-report-action svg{transition:none}.profile-report-entry:hover .profile-report-action svg{transform:none}}
+
+/* Draw attention to the report entry without shifting the surrounding layout. */
+.profile-report-action{position:relative;isolation:isolate;overflow:hidden;animation:profile-report-glow 3s ease-in-out infinite}
+.profile-report-action::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(110deg,transparent 15%,#ffffff24 35%,#ffffffb3 50%,#ffffff24 65%,transparent 85%);transform:translateX(-140%);animation:profile-report-shine 3s ease-in-out infinite}
+.profile-report-action .profile-report-sparkle{width:18px;height:18px;flex-shrink:0;color:#b96a00;filter:drop-shadow(0 0 4px #fff4b380);animation:profile-report-sparkle 3s ease-in-out infinite}
+@keyframes profile-report-shine{0%,20%{transform:translateX(-140%)}65%,100%{transform:translateX(140%)}}
+@keyframes profile-report-glow{0%,100%{box-shadow:0 0 0 0 #e0ad0000,0 2px 6px #e0ad001a}50%{box-shadow:0 0 0 4px #e0ad0024,0 4px 16px #e0ad0045}}
+@keyframes profile-report-sparkle{0%,100%{transform:scale(.85) rotate(-12deg);opacity:.65}50%{transform:scale(1.15) rotate(12deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.profile-report-action,.profile-report-action::after,.profile-report-action .profile-report-sparkle{animation:none}.profile-report-action::after{display:none}.profile-report-action .profile-report-sparkle{transform:none;opacity:1}}
