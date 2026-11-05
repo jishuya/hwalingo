@@ -55,11 +55,20 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
          GROUP BY COALESCE(vp.mastery_level, 0) ORDER BY mastery_level`,
         [request.auth!.userId],
       ),
-      pool.query<{ total_answers: string; correct_answers: string }>(
+      pool.query<{ total_answers: string; correct_answers: string; weekly_learned_words: string }>(
         `SELECT count(*) FILTER (WHERE result IN ('correct', 'incorrect')) AS total_answers,
-                count(*) FILTER (WHERE result = 'correct') AS correct_answers
+                count(*) FILTER (WHERE result = 'correct') AS correct_answers,
+                count(DISTINCT vocabulary_id) FILTER (
+                  WHERE result IN ('correct', 'incorrect')
+                    AND answered_at >= date_trunc('week', $2::date)::timestamp AT TIME ZONE 'Asia/Seoul'
+                    AND answered_at < ($2::date + 1)::timestamp AT TIME ZONE 'Asia/Seoul'
+                    AND NOT EXISTS (
+                      SELECT 1 FROM quiz_session_items item
+                      WHERE item.id = quizzes.quiz_session_item_id AND item.retry_of_item_id IS NOT NULL
+                    )
+                ) AS weekly_learned_words
          FROM quizzes WHERE user_id = $1`,
-        [request.auth!.userId],
+        [request.auth!.userId, settings.today],
       ),
       pool.query<{ learning_date: string; activity_count: number; earned_xp: number; reviewed_word_count: number }>(
         `SELECT to_char(days.day, 'YYYY-MM-DD') AS learning_date,
@@ -112,6 +121,7 @@ progressRouter.get('/me', requireAuth, async (request, response, next) => {
         currentStreak: streak.currentStreak,
         longestStreak: streak.longestStreak,
         weeklyCompletedDays: streak.weeklyCompletedDays,
+        weeklyLearnedWords: Number(quizResult.rows[0]?.weekly_learned_words ?? 0),
         weeklyGoalDays: settings.weekly_goal_days,
         masteryDistribution,
         totalAnswers,

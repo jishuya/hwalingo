@@ -12,6 +12,7 @@ export interface UserProgress {
   dueWords: number
   currentStreak: number
   longestStreak: number
+  weeklyLearnedWords: number
   weeklyCompletedDays: number
   weeklyGoalDays: number
   masteryDistribution: Array<{ masteryLevel: number; wordCount: number }>
