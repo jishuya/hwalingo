@@ -464,3 +464,15 @@ sudo -u postgres psql -d hwalingo -p 5434 -v ON_ERROR_STOP=1 < docs/sql/seed_wor
 ```
 
 마지막 `COMMIT`을 확인한 후 학습 리포트의 새로고침 버튼을 누르세요.
+
+## 핵심 어휘 한국어 설명 검증
+
+문맥·기본 의미·품사·예문 해석에 한자나 가나가 섞이면 한국어 교정을 요청합니다.
+빈 암기 팁도 교정 단계에서 생성하며, 필수 설명 교정에 실패하면 부분 결과를 캐시하지 않고 오류를 반환합니다.
+확실한 어원이 없는 경우에는 기존 정책대로 어원을 생략합니다.
+어휘 캐시 버전을 변경하여 기존 누락·혼합 언어 캐시를 재사용하지 않습니다.
+반영하려면 `npm run pm2:restart`를 실행하고 문장을 다시 분석합니다.
+
+```bash
+node --import tsx --test backend/src/services/vocabularyCorrection.test.ts backend/src/services/vocabularyPresentation.test.ts
+```

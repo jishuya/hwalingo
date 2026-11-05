@@ -752,10 +752,10 @@ html[data-theme='dark'] .vocabulary-load-error{background:#18251d;border-color:#
 .ui-dialog .ui-dialog-header>button.ui-dialog-close{align-self:flex-start;margin-top:0}
 
 .vocabulary-practice-checkbox{flex:0 0 auto;width:18px;height:18px;margin:5px 0 0;accent-color:var(--green);cursor:pointer}
-.vocabulary-incorrect-test>div{display:flex;flex-direction:column;gap:4px}
 .vocabulary-incorrect-test small{color:var(--muted);font-size:var(--font-xs)}
 .vocabulary-practice-selection{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;font-size:var(--font-sm);color:var(--muted)}
 .vocabulary-practice-selection label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.vocabulary-practice-selection:not(.vocabulary-edit-toolbar)>label{margin-left:8px}
 .vocabulary-practice-selection input{width:18px;height:18px;margin:0;accent-color:var(--green)}
 .vocabulary-practice-selection button{padding:4px 8px;border:0;background:transparent;color:var(--green);font-size:var(--font-sm)}
 .vocabulary-practice-excluded{font-size:var(--font-sm);color:var(--green);line-height:1.5}
@@ -765,10 +765,24 @@ html[data-theme='dark'] .vocabulary-load-error{background:#18251d;border-color:#
 .vocabulary-page .vocabulary-word-heading .word-language-badge+.word-cefr-badge{margin-left:0}
 .vocabulary-page .compact-word-top:has(>.vocabulary-practice-checkbox){justify-content:flex-start;gap:8px}
 
-.vocabulary-page .vocabulary-incorrect-test>.primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;padding:10px 14px;border-radius:14px;background:linear-gradient(110deg,var(--green),#0ca76b);box-shadow:0 4px 12px #008c4420;font-size:var(--font-sm);font-weight:700;transition:filter .15s,box-shadow .15s}
-.vocabulary-page .vocabulary-incorrect-test>.primary:hover:not(:disabled){filter:brightness(1.04);box-shadow:0 6px 16px #008c442b}
-.vocabulary-incorrect-test .practice-start-icon{width:22px;height:22px;flex-shrink:0}
-.vocabulary-incorrect-test .practice-start-arrow{width:24px;height:24px;padding:5px;border-radius:50%;background:#ffffff20;flex-shrink:0}
+.vocabulary-incorrect-test>.vocabulary-practice-start{display:flex;align-items:center;gap:10px;width:100%;min-height:60px;padding:12px 14px;border:1px solid #a7efd1;border-radius:14px;background:var(--surface,#fff);color:var(--dark);text-align:left;box-shadow:none;transition:border-color .15s,background .15s}
+.vocabulary-incorrect-test>.vocabulary-practice-start:hover:not(:disabled){border-color:var(--green);background:#f7fdf9}
+.vocabulary-practice-start:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.vocabulary-practice-start:disabled{opacity:.5;cursor:not-allowed}
+.vocabulary-incorrect-test>.vocabulary-practice-start{position:relative;isolation:isolate;overflow:hidden}
+.vocabulary-practice-start:not(:disabled)::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,#a7efd140 44%,#ffffffb3 50%,#a7efd140 56%,transparent 70%);transform:translateX(-150%);pointer-events:none;animation:vocabulary-practice-shimmer 3.6s ease-in-out infinite}
+@keyframes vocabulary-practice-shimmer{0%,35%{transform:translateX(-150%)}80%,100%{transform:translateX(150%)}}
+html[data-theme='dark'] .vocabulary-practice-start:not(:disabled)::before{background:linear-gradient(110deg,transparent 30%,#6ee7b71a 44%,#b0ffda40 50%,#6ee7b71a 56%,transparent 70%)}
+@media(prefers-reduced-motion:reduce){.vocabulary-practice-start::before{display:none;animation:none}}
+.vocabulary-incorrect-test .practice-start-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#ecfcf5;color:#00a56a;flex-shrink:0}
+.practice-start-icon svg{width:15px;height:15px}
+.practice-start-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.practice-start-copy strong{font-size:var(--font-sm);font-weight:700;line-height:1.4}
+.vocabulary-incorrect-test .practice-start-copy small{font-size:var(--font-xs);font-weight:400;line-height:1.4}
+.practice-start-badge{flex-shrink:0;padding:4px 11px;border-radius:999px;background:#ecfcf5;color:#00a56a;font-size:var(--font-xs);font-weight:700}
+html[data-theme='dark'] .vocabulary-incorrect-test>.vocabulary-practice-start{border-color:#346d54;background:#18231d}
+html[data-theme='dark'] .vocabulary-incorrect-test>.vocabulary-practice-start:hover:not(:disabled){background:#203d2d;border-color:#57b98a}
+html[data-theme='dark'] .vocabulary-incorrect-test :is(.practice-start-icon,.practice-start-badge){background:#203d2d;color:#6ee7b7}
 :is(.vocabulary-practice-checkbox,.vocabulary-practice-selection input){appearance:none;display:grid;place-items:center;border:1px solid #bacbc0;border-radius:5px;background:var(--cream);cursor:pointer}
 :is(.vocabulary-practice-checkbox,.vocabulary-practice-selection input):checked,
 .vocabulary-practice-selection input:indeterminate{border-color:var(--green);background:var(--green)}
@@ -776,14 +790,9 @@ html[data-theme='dark'] .vocabulary-load-error{background:#18251d;border-color:#
 .vocabulary-practice-selection input:indeterminate::after{content:'';width:8px;height:2px;margin:0;border:0;transform:none;background:#fff}
 :is(.vocabulary-practice-checkbox,.vocabulary-practice-selection input):focus-visible{outline:2px solid var(--green);outline-offset:3px}
 @media(forced-colors:active){:is(.vocabulary-practice-checkbox,.vocabulary-practice-selection input){appearance:auto}}
-@media(prefers-reduced-motion:reduce){.vocabulary-page .vocabulary-incorrect-test>.primary{transition:none}}
 
-.vocabulary-page .vocabulary-incorrect-test>.primary{position:relative;isolation:isolate;overflow:hidden}
-.vocabulary-page .vocabulary-incorrect-test>.primary:not(:disabled)::before{content:'';position:absolute;inset:-60% auto -60% -55%;width:35%;background:linear-gradient(100deg,transparent,#ffffff38,transparent);transform:skewX(-20deg);pointer-events:none;animation:practice-button-shimmer 4s ease-in-out infinite;z-index:-1}
-@keyframes practice-button-shimmer{0%,55%{left:-55%}90%,100%{left:130%}}
 .vocabulary-page .compact-word-actions:not(:has(.compact-delete)){grid-template-columns:26px}
 .vocabulary-page .compact-word-top:has(>.vocabulary-practice-checkbox){padding-right:30px}
-@media(prefers-reduced-motion:reduce){.vocabulary-page .vocabulary-incorrect-test>.primary::before{animation:none;display:none}}
 
 /* Give vocabulary terms the full card width below their controls. */
 .compact-word-card .compact-word-top{align-items:center;padding-right:0;gap:8px;min-height:26px}
@@ -827,10 +836,8 @@ html[data-theme='dark'] .vocabulary-load-error{background:#18251d;border-color:#
 .vocabulary-page .compact-word-card .vocabulary-meaning-row{flex-wrap:wrap;align-items:baseline;gap:3px 10px;margin-top:3px}
 .vocabulary-page .vocabulary-meaning-row>.vocabulary-full-width-meaning{flex:1 1 150px;font-size:12px;line-height:1.45;color:#475569}
 .vocabulary-page .vocabulary-meaning-toggle{color:#475569;font-size:12px;line-height:1.45}
-.vocabulary-review-label{flex:0 0 auto;margin-left:auto;color:#71829b;font-size:var(--font-xs);line-height:1.5;white-space:nowrap}
 html[data-theme='dark'] .vocabulary-page .compact-word-title h2{color:#f1f5f9}
 html[data-theme='dark'] .vocabulary-page .vocabulary-meaning-toggle{color:#cbd5e1}
-html[data-theme='dark'] .vocabulary-review-label{color:#94a3b8}
 html:not([data-theme='dark']) .vocabulary-page .compact-word-name .word-cefr-badge.level-b2{border-color:#d5eeff;background:#f0f9ff;color:#1689dc}
 html:not([data-theme='dark']) .vocabulary-page .compact-word-name .word-cefr-badge.level-c1{border-color:#ffebc3;background:#fff9ed;color:#d68b14}
 
@@ -847,14 +854,13 @@ html:not([data-theme='dark']) .vocabulary-page .compact-word-name .word-cefr-bad
 .vocabulary-page .compact-word-card>.vocabulary-meaning-row{grid-column:1;grid-row:2;margin-top:3px}
 .vocabulary-page .compact-word-card:has(.compact-word-title>.favorite-star)>.vocabulary-meaning-row{padding-left:24px}
 .vocabulary-page .compact-word-card>.vocabulary-meaning-group,.vocabulary-page .compact-word-card>.word-details{grid-column:1 / -1}
-.vocabulary-page .compact-word-top>.vocabulary-practice-checkbox{align-self:flex-end;margin:0}
+.vocabulary-page .compact-word-title>.vocabulary-practice-checkbox{margin:2px 4px 0 0}
+.vocabulary-page .compact-word-card:has(.compact-word-title>.vocabulary-practice-checkbox)>.vocabulary-meaning-row{padding-left:28px}
 
-.vocabulary-edit-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;color:var(--muted);font-size:var(--font-xs)}
-.vocabulary-edit-toolbar>button{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid #f3b8c1;border-radius:8px;background:#fff3f5;color:#b72b43;font-size:var(--font-sm)}
-.vocabulary-edit-toolbar>button svg{width:14px;height:14px}
-.vocabulary-edit-toolbar>button:hover{background:#ffe4e8}
-html[data-theme='dark'] .vocabulary-edit-toolbar>button{border-color:#854350;background:#40252d;color:#fda4af}
-.vocabulary-edit-toolbar>button[aria-pressed='true']{border-color:#b72b43;background:#b72b43;color:#fff;font-weight:700}
+.vocabulary-edit-toolbar{margin:6px 0 12px}
+.vocabulary-edit-toolbar>button{display:inline-flex;align-items:center;gap:4px;margin-left:auto;margin-right:8px;padding:0;color:inherit;line-height:1;white-space:nowrap;order:1}
+.vocabulary-edit-toolbar>button svg{display:block;width:14px;height:14px;flex-shrink:0}
+.vocabulary-edit-toolbar>span{font-size:var(--font-xs)}
 .vocabulary-remove-control{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:#de5861}
 .vocabulary-remove-control svg{width:20px;height:20px}
 .vocabulary-remove-control:hover{background:#fff0f0;color:#b72b43}
