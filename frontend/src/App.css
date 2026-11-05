@@ -351,7 +351,8 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 
 .sentence-vocab-name{display:flex;flex:1;min-width:0;flex-wrap:wrap;align-items:center;gap:6px}
 .sentence-vocab-name h4{flex:0 1 auto;max-width:100%}
-.sentence-vocab-level{display:inline-flex;align-items:center;flex:0 0 auto;padding:2px 6px;border:1px solid #fcd34d;border-radius:999px;background:#fffbeb;color:#b45309;font-size:var(--font-xs);font-weight:600;line-height:normal;white-space:nowrap}
+.sentence-vocab-level{border-color:#fcd34d;background:#fffbeb;color:#b45309}
+.sentence-vocab-level{display:inline-flex;align-items:center;flex:0 0 auto;padding:2px 6px;border:1px solid #fcd34d;border-radius:999px;font-size:var(--font-xs);font-weight:600;line-height:normal;white-space:nowrap}
 .sentence-vocab-title>button{margin-left:auto}
 
 .sentence-vocab-card>button.saved{color:#eab308}
@@ -838,8 +839,6 @@ html[data-theme='dark'] .vocabulary-incorrect-test :is(.practice-start-icon,.pra
 .vocabulary-page .vocabulary-meaning-toggle{color:#475569;font-size:12px;line-height:1.45}
 html[data-theme='dark'] .vocabulary-page .compact-word-title h2{color:#f1f5f9}
 html[data-theme='dark'] .vocabulary-page .vocabulary-meaning-toggle{color:#cbd5e1}
-html:not([data-theme='dark']) .vocabulary-page .compact-word-name .word-cefr-badge.level-b2{border-color:#d5eeff;background:#f0f9ff;color:#1689dc}
-html:not([data-theme='dark']) .vocabulary-page .compact-word-name .word-cefr-badge.level-c1{border-color:#ffebc3;background:#fff9ed;color:#d68b14}
 
 /* Keep the favorite beside the term, with metadata above actions on the right. */
 .vocabulary-page .compact-word-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-content:start}
