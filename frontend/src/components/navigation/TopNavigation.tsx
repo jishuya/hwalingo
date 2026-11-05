@@ -9,14 +9,15 @@ import { navigationItems } from './navigationItems'
 interface TopNavigationProps {
   currentPage: Page
   onNavigate: (page: Page) => void
+  onHome: () => void
 }
 
-export default function TopNavigation({ currentPage, onNavigate }: TopNavigationProps) {
+export default function TopNavigation({ currentPage, onNavigate, onHome }: TopNavigationProps) {
   const progressQuery = useQuery({ queryKey: ['progress', 'me'], queryFn: getUserProgress })
   const streak = progressQuery.data?.currentStreak
 
   return <header className="topbar">
-    <button className="brand" onClick={() => onNavigate('study')} aria-label="HwaLingo 홈으로 이동">
+    <button type="button" className="brand" onClick={onHome} aria-label="HwaLingo 홈으로 이동">
       <img src={logo} alt=""/>
       <img className="brand-wordmark" src={wordmark} alt="Hwalingo"/>
     </button>

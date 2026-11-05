@@ -264,7 +264,7 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 
 /* Vocabulary cards: mint accents, separate meanings, and a warm memory tip. */
 .vocabulary-page .compact-word-grid{align-items:start}
-.vocabulary-page .compact-word-card{position:relative;padding:19px 18px;border:1px solid #e0e7e2;border-radius:20px;background:#fff;box-shadow:0 4px 15px rgba(24,51,42,.035)}
+.vocabulary-page .compact-word-card{position:relative;padding:12px 14px;border:1px solid #e0e7e2;border-radius:16px;background:#fff;box-shadow:0 4px 15px rgba(24,51,42,.035)}
 .vocabulary-page .compact-word-card.expanded{border-color:#b8d2c0}
 .vocabulary-page .compact-word-name{gap:7px}
 .vocabulary-page .compact-word-name h2{color:#102033;font-size:20px;font-weight:800;letter-spacing:-.5px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3}
@@ -292,7 +292,7 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 .vocabulary-page .word-memory-tip>b{display:flex;align-items:center;gap:6px;margin-bottom:7px;color:#92400e;font-size:var(--font-sm);font-weight:700;line-height:1.6}
 .vocabulary-page .word-memory-tip svg{width:19px;height:19px;color:#eab308}
 .vocabulary-page .word-memory-tip p{color:#78512a;font-size:var(--font-sm);font-weight:400;line-height:1.6}
-@media(max-width:480px){.vocabulary-page .compact-word-card{padding:16px 14px}.vocabulary-page .compact-word-top{gap:6px}.vocabulary-page .compact-word-actions button{width:28px;height:28px}}
+@media(max-width:480px){.vocabulary-page .compact-word-card{padding:11px 12px}.vocabulary-page .compact-word-top{gap:6px}.vocabulary-page .compact-word-actions button{width:28px;height:28px}}
 
 .vocabulary-page .vocabulary-context>b,.vocabulary-page .word-detail-heading>b{display:inline-flex;align-items:center;gap:4px}.vocabulary-page .vocabulary-context>b svg,.vocabulary-page .word-detail-heading>b svg{width:13px;height:13px;flex-shrink:0}
 
@@ -784,3 +784,79 @@ html[data-theme='dark'] .vocabulary-load-error{background:#18251d;border-color:#
 .vocabulary-page .compact-word-actions:not(:has(.compact-delete)){grid-template-columns:26px}
 .vocabulary-page .compact-word-top:has(>.vocabulary-practice-checkbox){padding-right:30px}
 @media(prefers-reduced-motion:reduce){.vocabulary-page .vocabulary-incorrect-test>.primary::before{animation:none;display:none}}
+
+/* Give vocabulary terms the full card width below their controls. */
+.compact-word-card .compact-word-top{align-items:center;padding-right:0;gap:8px;min-height:26px}
+.compact-word-card .compact-word-actions{position:static;display:flex;flex:0 0 auto;gap:0;margin-left:auto}
+.compact-word-card .vocabulary-word-heading{gap:6px}
+.compact-word-card .vocabulary-word-heading .word-language-badge{margin-left:0}
+.compact-word-card .compact-word-title{min-width:0;margin-top:4px}
+.compact-word-card .compact-word-title h2{margin:0;overflow:visible;font-size:16px;line-height:1.3;letter-spacing:normal;white-space:normal}
+.compact-word-card .compact-word-title .vocabulary-pronounce{width:100%;word-break:normal;overflow-wrap:anywhere}
+.compact-word-card .compact-word-title.meaning-primary h2{color:#41564d;font-size:var(--font-md);font-weight:700;line-height:1.6}
+.compact-word-card .vocabulary-meaning-row{padding-left:0;margin-top:2px}
+.compact-word-card .vocabulary-meaning-row:empty{display:none}
+
+/* Compact card density while keeping learning text readable. */
+.vocabulary-page .compact-word-grid{gap:8px}
+.compact-word-card .vocabulary-meaning-toggle{font-size:14px;line-height:1.45}
+.compact-word-card .compact-word-title.meaning-primary h2{font-size:14px;line-height:1.45}
+.vocabulary-page .word-details{gap:10px;margin-top:10px}
+.vocabulary-page .word-details blockquote{padding:10px;font-size:14px;line-height:1.5}
+.vocabulary-page .word-details .word-memory-tip{padding:10px;border-radius:12px}
+.vocabulary-page .vocabulary-meaning-group{margin-top:10px;padding-top:10px}
+.vocabulary-page .vocabulary-meaning-group+.word-details{margin-top:10px}
+
+/* Reference card: quiet controls above a full-width vocabulary term. */
+.vocabulary-page .compact-word-grid{gap:12px}
+.vocabulary-page .compact-word-card{padding:12px 13px;border-color:transparent;border-radius:14px;box-shadow:none}
+.vocabulary-page .compact-word-card:hover{border-color:#dce5ec;box-shadow:none}
+.vocabulary-page .compact-word-card.expanded{border-color:#b8d2c0}
+.vocabulary-page .compact-word-top,.vocabulary-page .compact-word-top:has(>.vocabulary-practice-checkbox){padding-right:0;min-height:26px}
+.vocabulary-page .compact-word-card .compact-word-title{margin-top:6px}
+.vocabulary-page .compact-word-title h2{color:#102033;font-size:16px;font-weight:800;line-height:1.35}
+.vocabulary-page .compact-word-card .vocabulary-word-heading{gap:5px}
+.vocabulary-page .vocabulary-word-heading .favorite-star{width:18px;flex-basis:18px;color:#c0cedd}
+.vocabulary-page .vocabulary-word-heading .favorite-star svg{width:16px;height:16px}
+.vocabulary-page .vocabulary-word-heading .favorite-star.active{color:#ffbf24}
+.vocabulary-page .compact-word-name .word-language-badge{padding:1px 4px;border-radius:3px;font-size:10px;font-weight:600;line-height:1}
+.vocabulary-page .compact-word-actions{gap:4px}
+.vocabulary-page .compact-word-actions button{color:#94a6bd}
+.vocabulary-page .compact-word-actions svg{width:14px;height:14px}
+.vocabulary-page .compact-word-actions .compact-pronunciation{color:#94a6bd}
+.vocabulary-page .compact-word-card .vocabulary-meaning-row{flex-wrap:wrap;align-items:baseline;gap:3px 10px;margin-top:3px}
+.vocabulary-page .vocabulary-meaning-row>.vocabulary-full-width-meaning{flex:1 1 150px;font-size:12px;line-height:1.45;color:#475569}
+.vocabulary-page .vocabulary-meaning-toggle{color:#475569;font-size:12px;line-height:1.45}
+.vocabulary-review-label{flex:0 0 auto;margin-left:auto;color:#71829b;font-size:var(--font-xs);line-height:1.5;white-space:nowrap}
+html[data-theme='dark'] .vocabulary-page .compact-word-title h2{color:#f1f5f9}
+html[data-theme='dark'] .vocabulary-page .vocabulary-meaning-toggle{color:#cbd5e1}
+html[data-theme='dark'] .vocabulary-review-label{color:#94a3b8}
+html:not([data-theme='dark']) .vocabulary-page .compact-word-name .word-cefr-badge.level-b2{border-color:#d5eeff;background:#f0f9ff;color:#1689dc}
+html:not([data-theme='dark']) .vocabulary-page .compact-word-name .word-cefr-badge.level-c1{border-color:#ffebc3;background:#fff9ed;color:#d68b14}
+
+/* Keep the favorite beside the term, with metadata above actions on the right. */
+.vocabulary-page .compact-word-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-content:start}
+.vocabulary-page .compact-word-card>.compact-word-top{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:4px;padding:0}
+.vocabulary-page .compact-word-card .compact-word-actions{margin-left:0}
+.vocabulary-page .compact-word-card>.compact-word-title{grid-column:1;grid-row:1;display:flex;align-items:flex-start;gap:6px;margin-top:1px;min-width:0}
+.vocabulary-page .compact-word-title h2{flex:1;min-width:0}
+.vocabulary-page .compact-word-title>.favorite-star{display:grid;place-items:center;flex:0 0 18px;width:18px;height:22px;padding:0;border:0;border-radius:4px;background:transparent;color:#c0cedd}
+.vocabulary-page .compact-word-title>.favorite-star svg{width:16px;height:16px}
+.vocabulary-page .compact-word-title>.favorite-star.active{color:#ffbf24}
+.vocabulary-page .compact-word-title>.favorite-star:hover{background:#fff8df;color:#eab308}
+.vocabulary-page .compact-word-card>.vocabulary-meaning-row{grid-column:1;grid-row:2;margin-top:3px}
+.vocabulary-page .compact-word-card:has(.compact-word-title>.favorite-star)>.vocabulary-meaning-row{padding-left:24px}
+.vocabulary-page .compact-word-card>.vocabulary-meaning-group,.vocabulary-page .compact-word-card>.word-details{grid-column:1 / -1}
+.vocabulary-page .compact-word-top>.vocabulary-practice-checkbox{align-self:flex-end;margin:0}
+
+.vocabulary-edit-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;color:var(--muted);font-size:var(--font-xs)}
+.vocabulary-edit-toolbar>button{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid #f3b8c1;border-radius:8px;background:#fff3f5;color:#b72b43;font-size:var(--font-sm)}
+.vocabulary-edit-toolbar>button svg{width:14px;height:14px}
+.vocabulary-edit-toolbar>button:hover{background:#ffe4e8}
+html[data-theme='dark'] .vocabulary-edit-toolbar>button{border-color:#854350;background:#40252d;color:#fda4af}
+.vocabulary-edit-toolbar>button[aria-pressed='true']{border-color:#b72b43;background:#b72b43;color:#fff;font-weight:700}
+.vocabulary-remove-control{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:#de5861}
+.vocabulary-remove-control svg{width:20px;height:20px}
+.vocabulary-remove-control:hover{background:#fff0f0;color:#b72b43}
+.vocabulary-remove-control:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.vocabulary-page .compact-word-card:has(.vocabulary-remove-control)>.vocabulary-meaning-row{padding-left:52px}

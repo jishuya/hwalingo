@@ -1,8 +1,9 @@
+import { ConfirmDialog } from '../components/ui/Dialog'
 import { getActiveIncorrectPractice } from '../services/quiz'
 import VocabularyWordCard, { type VocabularyView } from '../components/vocabulary/VocabularyWordCard'
 import LearningTimer from '../components/learning/LearningTimer'
 import { useEffect, useRef, useState } from 'react'
-import { SignInIcon, ArrowClockwiseIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, StarIcon, PlayCircleIcon, ArrowRightIcon } from '@phosphor-icons/react'
+import { SignInIcon, ArrowClockwiseIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, StarIcon, PlayCircleIcon, ArrowRightIcon, PencilSimpleIcon, CheckIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { languageOptions, type LanguageCode } from '../services/analysis'
 import { VocabularyRequestError, deleteVocabulary, getVocabularies, setVocabularyFavorite } from '../services/vocabulary'
@@ -20,6 +21,8 @@ const languageFlags: Record<LanguageCode, string> = {
 export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (vocabularyIds?:string[]) => void }) {
   const activePracticeQuery=useQuery({queryKey:['quiz','active-practice'],queryFn:getActiveIncorrectPractice})
   const [selectedPracticeIds,setSelectedPracticeIds] = useState<Set<string>>(()=>new Set())
+  const [editing, setEditing] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ vocabularyId: string; word: string }>()
   const [filter, setFilter] = useState<VocabularyFilter>('all')
   const [selectedLanguage, setLanguageFilter] = useState<'all' | LanguageCode>('all')
   const [view, setView] = useState<VocabularyView>('both')
@@ -32,6 +35,7 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
   const removeVocabulary = useMutation({
     mutationFn: deleteVocabulary,
     onSuccess: async () => {
+      setDeleteTarget(undefined)
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
         queryClient.invalidateQueries({ queryKey: ['quiz'] }),
@@ -94,7 +98,9 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
         <button type="button" role="tab" aria-selected={languageFilter === 'all'} className={languageFilter === 'all' ? 'active' : ''} onClick={() => setLanguageFilter('all')}><GlobeIcon weight="bold" aria-hidden="true"/>전체 언어</button>
         {availableLanguages.map(language => <button type="button" role="tab" aria-selected={languageFilter === language.code} className={languageFilter === language.code ? 'active' : ''} onFocus={event => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })} onClick={() => setLanguageFilter(language.code)} key={language.code}><span className="vocabulary-language-flag" aria-hidden="true">{languageFlags[language.code]}</span>{language.label}</button>)}
       </div>
-    </div><div className="vocab-filters" role="tablist" aria-label="단어장 필터">{filters.map(item => <button role="tab" aria-selected={filter === item.id} className={`vocabulary-filter-${item.id}${filter === item.id ? ' active' : ''}`} onClick={() => setFilter(item.id)} key={item.id}>{item.id === 'all' ? <ListBulletsIcon weight="bold"/> : item.id === 'favorite' ? <StarIcon weight="bold"/> : <XCircleIcon weight="bold"/>}<span className="vocabulary-filter-label">{item.label} <b>{matchingWords.filter(word => matchesFilter(word, item.id)).length}</b></span></button>)}</div></header>
+    </div><div className="vocab-filters" role="tablist" aria-label="단어장 필터">{filters.map(item => <button role="tab" aria-selected={filter === item.id} className={`vocabulary-filter-${item.id}${filter === item.id ? ' active' : ''}`} onClick={() => { setFilter(item.id); setEditing(false) }} key={item.id}>{item.id === 'all' ? <ListBulletsIcon weight="bold"/> : item.id === 'favorite' ? <StarIcon weight="bold"/> : <XCircleIcon weight="bold"/>}<span className="vocabulary-filter-label">{item.label} <b>{matchingWords.filter(word => matchesFilter(word, item.id)).length}</b></span></button>)}</div></header>
+
+    {filter === 'all' && saved.length > 0 && <div className="vocabulary-edit-toolbar"><span>{editing ? '마이너스 버튼을 눌러 단어를 삭제하세요' : ''}</span><button type="button" aria-pressed={editing} onClick={() => setEditing(value => !value)}>{editing ? <CheckIcon aria-hidden="true"/> : <PencilSimpleIcon aria-hidden="true"/>}{editing ? '완료' : '편집'}</button></div>}
 
     {filter === 'incorrect' && <><div className="vocabulary-incorrect-test"><button type="button" className="primary" disabled={vocabulariesQuery.isPending||vocabulariesQuery.isError||activePracticeQuery.isPending||activePracticeQuery.isError||!incorrectWords.length} onClick={()=>onIncorrectTest(selectedPracticeWords.length?selectedPracticeWords.map(word=>word.vocabularyId):activePractice?.practiceVocabularyIds??undefined)}><PlayCircleIcon className="practice-start-icon" weight="duotone" aria-hidden="true"/><span>틀린단어 집중연습{selectedPracticeWords.length>0&&` · ${selectedPracticeWords.length}개`}</span><ArrowRightIcon className="practice-start-arrow" weight="bold" aria-hidden="true"/></button></div>
       {visibleWords.length>0&&<div className="vocabulary-practice-selection"><label><input type="checkbox" aria-label="전체 선택" checked={visibleWords.every(word=>selectedPracticeIds.has(word.vocabularyId))} onChange={()=>setSelectedPracticeIds(previous=>{
@@ -114,9 +120,10 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
                 onToggleFavorite={filter==='incorrect'?undefined:()=>toggleFavorite.mutate({vocabularyId:word.vocabularyId,favorite:!word.isFavorite})}
                 favoritePending={toggleFavorite.isPending&&toggleFavorite.variables?.vocabularyId===word.vocabularyId}
                 selection={filter==='incorrect'?{checked:selectedPracticeIds.has(word.vocabularyId),onChange:()=>togglePracticeWord(word.vocabularyId)}:undefined}
-                onDelete={filter==='incorrect'?undefined:()=>removeVocabulary.mutate(word.vocabularyId)}
+                onDelete={filter==='all'&&editing?()=>setDeleteTarget({vocabularyId:word.vocabularyId,word:word.word}):undefined}
                 deletePending={removeVocabulary.isPending&&removeVocabulary.variables===word.vocabularyId}/>
             })}</div>}
+    <ConfirmDialog open={Boolean(deleteTarget)} title="단어장에서 삭제할까요?" message={<><strong>{deleteTarget?.word}</strong> 단어를 단어장에서 삭제해요.{removeVocabulary.isError && <span role="alert"> {removeVocabulary.error.message}</span>}</>} confirmLabel="삭제" tone="danger" loading={removeVocabulary.isPending} onCancel={() => { if (!removeVocabulary.isPending) setDeleteTarget(undefined) }} onConfirm={() => { if (deleteTarget) removeVocabulary.mutate(deleteTarget.vocabularyId) }}/>
     {(removeVocabulary.isError || toggleFavorite.isError) && <p className="vocabulary-error" role="alert">{removeVocabulary.error?.message ?? toggleFavorite.error?.message}</p>}
   </div>
 }

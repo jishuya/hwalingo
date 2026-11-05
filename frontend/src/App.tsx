@@ -15,6 +15,7 @@ import './App.css'
 
 export default function App() {
   const [page, setPage] = useState<Page>(readRoute)
+  const [studyPageKey, setStudyPageKey] = useState(0)
   const [quizMode, setQuizMode] = useState<'standard' | 'incorrect'>(() => new URLSearchParams(location.search).get('mode') === 'incorrect' ? 'incorrect' : 'standard')
   const [practiceIds,setPracticeIds] = useState<string[]|undefined>(()=>new URLSearchParams(location.search).get('words')?.split(',').filter(Boolean))
   const queryClient = useQueryClient()
@@ -58,6 +59,11 @@ export default function App() {
     window.scrollTo(0, 0)
   }
 
+  const goHome = () => {
+    setStudyPageKey(current => current + 1)
+    go('study')
+  }
+
   const finishAuth = (user: AuthUser) => {
     queryClient.setQueryData(['auth', 'me'], { user })
     go('study')
@@ -73,7 +79,7 @@ export default function App() {
   if (!authQuery.data || page === 'login') return <LoginPage done={finishAuth}/>
 
   const content = page === 'study'
-    ? <StudyPage/>
+    ? <StudyPage key={studyPageKey}/>
       : page === 'vocabulary'
         ? <VocabularyPage onIncorrectTest={startIncorrectTest}/>
         : page === 'quiz'
@@ -84,5 +90,5 @@ export default function App() {
             ? <LearningProgressPage onNavigate={go} onIncorrectTest={()=>startIncorrectTest()}/>
           : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>
 
-  return <AppShell page={page} go={go}>{content}</AppShell>
+  return <AppShell page={page} go={go} onHome={goHome}>{content}</AppShell>
 }
