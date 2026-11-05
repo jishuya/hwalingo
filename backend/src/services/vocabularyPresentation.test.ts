@@ -22,3 +22,22 @@ test('etymology accepts polite explanations across languages and unknown origins
     assert.equal(isPoliteEtymology(explanation), false, explanation)
   }
 })
+
+test('Korean explanations reject foreign prose even when a Korean fragment is present', async () => {
+  const { isKoreanExplanation } = await import('./vocabularyPresentation.js')
+  for (const value of ['임기 말의 권력 약화 상태', '의석 3개를 되찾았어요.', '그는 퍼즐에 도전해요.']) {
+    assert.equal(isKoreanExplanation(value), true, value)
+  }
+  for (const value of ['', '뜻: power declines at the end of a term', '뜻: le pouvoir diminue',
+    '임기 말に公職者の権限が減る', '뜻: 任期结束时权力减弱']) {
+    assert.equal(isKoreanExplanation(value), false, value)
+    assert.equal(isKoreanExplanation(value, true), false, value)
+  }
+  for (const value of ["'salt'에서 유래했어요.", "'奪'와 '還'이 합쳐진 말이에요.",
+    "'reluctant'를 보며 '릴랙스 좀!' 하고 소파에 붙은 모습을 떠올려요.", '“résilience”는 다시 일어서는 모습으로 기억해요.']) {
+    assert.equal(isKoreanExplanation(value, true), true, value)
+    assert.equal(isKoreanExplanation(value), false, value)
+  }
+  assert.equal(isKoreanExplanation("'한국어 mixed prose'라고 써요.", true), false)
+  assert.equal(isKoreanExplanation("'foreign text only'", true), false)
+})

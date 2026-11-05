@@ -1,8 +1,13 @@
+import { VocabularyExplanationError } from '../services/vocabularyPresentation.js'
 import type { ErrorRequestHandler } from 'express'
 
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   if (error instanceof Error && error.message === 'INVALID_ANALYTICS_RANGE') {
     response.status(400).json({ message: '조회 기간이 올바르지 않습니다.' })
+    return
+  }
+  if (error instanceof VocabularyExplanationError) {
+    response.status(502).json({ status: 'error', message: error.message })
     return
   }
   console.error(error)

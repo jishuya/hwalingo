@@ -8,6 +8,7 @@ interface CachedAIRequest<T> {
   ttlMs: number
   generate: () => Promise<T>
   coalesce?: boolean
+  shouldCache?: (value: T) => boolean
 }
 
 interface CacheRow<T> {
@@ -67,12 +68,12 @@ export async function writeAIResponseCache<T>({ userId, operation, keyParts, val
   }
 }
 
-export async function withAIResponseCache<T>({ userId, operation, keyParts, ttlMs, generate, coalesce = true }: CachedAIRequest<T>): Promise<T> {
+export async function withAIResponseCache<T>({ userId, operation, keyParts, ttlMs, generate, coalesce = true, shouldCache = () => true }: CachedAIRequest<T>): Promise<T> {
   const cached = await readAIResponseCache<T>({ userId, operation, keyParts })
   if (cached !== undefined) return cached
   if (!coalesce) {
     const result = await generate()
-    await writeAIResponseCache({ userId, operation, keyParts, value: result, ttlMs })
+    if (shouldCache(result)) await writeAIResponseCache({ userId, operation, keyParts, value: result, ttlMs })
     return result
   }
   const requestKey = `${userId}:${operation}:${createAICacheKey(keyParts)}`
@@ -83,7 +84,7 @@ export async function withAIResponseCache<T>({ userId, operation, keyParts, ttlM
   }
   const generation = (async () => {
     const result = await generate()
-    await writeAIResponseCache({ userId, operation, keyParts, value: result, ttlMs })
+    if (shouldCache(result)) await writeAIResponseCache({ userId, operation, keyParts, value: result, ttlMs })
     return result
   })()
   inFlightRequests.set(requestKey, generation)

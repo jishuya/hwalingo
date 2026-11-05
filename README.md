@@ -467,12 +467,22 @@ sudo -u postgres psql -d hwalingo -p 5434 -v ON_ERROR_STOP=1 < docs/sql/seed_wor
 
 ## 핵심 어휘 한국어 설명 검증
 
-문맥·기본 의미·품사·예문 해석에 한자나 가나가 섞이면 한국어 교정을 요청합니다.
-빈 암기 팁도 교정 단계에서 생성하며, 필수 설명 교정에 실패하면 부분 결과를 캐시하지 않고 오류를 반환합니다.
+지원하는 한국어·영어·일본어·중국어·프랑스어 모두 같은 검증을 적용합니다.
+문맥·기본 의미·품사·예문 해석에 외국 문자(라틴 문자·한자·가나 등)가 섞이면 한국어 교정을 요청합니다.
+어원·암기 팁은 짧게 인용한 외국어 단어만 허용하며, 주변 설명은 한국어로 검증합니다.
+생성·교정 프롬프트는 공통 규칙을 공유하고, 선택한 언어의 발음 규칙만 전달합니다.
+교정 과정에서 이미 검증된 어원·팁 등은 보존합니다.
+빈 암기 팁도 교정 단계에서 생성하며, 실패 시 한 번 더 교정을 시도합니다.
+최종적으로 암기 팁만 실패하면 정상 어휘는 표시하고 결과를 캐시하지 않습니다.
+품사·기본 뜻·문맥·예문 해석 교정이 끝내 실패하면 한국어 안내와 HTTP 502를 반환합니다.
+진단 로그 `sentence_vocabulary_incomplete_explanations`에는 실패한 필드명과 인덱스만 남깁니다.
 확실한 어원이 없는 경우에는 기존 정책대로 어원을 생략합니다.
 어휘 캐시 버전을 변경하여 기존 누락·혼합 언어 캐시를 재사용하지 않습니다.
 반영하려면 `npm run pm2:restart`를 실행하고 문장을 다시 분석합니다.
 
 ```bash
-node --import tsx --test backend/src/services/vocabularyCorrection.test.ts backend/src/services/vocabularyPresentation.test.ts
+node --import tsx --test backend/src/services/vocabularyCorrection.test.ts backend/src/services/vocabularyPresentation.test.ts backend/src/services/sentenceVocabularyLanguages.test.ts backend/src/services/vocabularyFailure.test.ts
 ```
+
+모의 AI 응답으로 5개 학습언어의 혼합 설명 교정·필수 설명 실패·정상 정보 보존과
+입력언어/학습언어 25개 조합, 실제 문장 분석 요청의 문법 역할 지시·스키마 부재를 검증합니다.

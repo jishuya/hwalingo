@@ -29,7 +29,7 @@ export interface AnalyzedSentence {
   koreanTranslation: string
   englishTranslation: string
   keyExpressions: Array<{ text: string; meaning: string }>
-  chunks: Array<{ targetText: string; sourceMeaning: string; role?: 'subject' | 'verb' | 'other' }>
+  chunks: Array<{ targetText: string; sourceMeaning: string }>
   paraphrases: Array<{ level: 'B1' | 'B2' | 'C1' | 'C2'; targetText: string; sourceMeaning: string }>
   vocabulary: Array<{ word: string; pronunciation?: string; partOfSpeech: string; level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'; basicMeaning: string; contextualMeaning: string; etymology: string; memoryTip: string; exampleSentence: string; exampleMeaning: string }>
 }

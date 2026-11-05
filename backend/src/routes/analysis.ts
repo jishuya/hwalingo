@@ -64,7 +64,7 @@ analysisRouter.post('/vocabulary', requireAuth, async (request, response, next) 
     }
     const vocabularies = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_vocabulary_v11',
+      operation: 'sentence_vocabulary_v13',
       keyParts: { inputLanguage, learningLanguage, sentences },
       ttlMs: AI_RULES.cache.sentenceVocabularyTtlMs,
       generate: () => generateSentenceVocabulary({
@@ -73,6 +73,7 @@ analysisRouter.post('/vocabulary', requireAuth, async (request, response, next) 
         learningLanguage,
         sentences,
       }, abortController.signal),
+      shouldCache: vocabularies => vocabularies.every(items => items.every(item => Boolean(item.memoryTip))),
       coalesce: false,
     })
     response.json({ vocabularies })
@@ -121,7 +122,7 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
     const generationStartedAt = Date.now()
     const analysis = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_analysis_core_v23',
+      operation: 'sentence_analysis_core_v24',
       keyParts: { text, inputLanguage, learningLanguage },
       ttlMs: AI_RULES.cache.sentenceAnalysisTtlMs,
       generate: () => analyzeSentence({ text, inputLanguage, learningLanguage }, abortController.signal),
