@@ -1,26 +1,27 @@
 /* Shared report treatment for vocabulary, review and growth. */
 .learning-progress-page .report-summary {
-  display:grid;align-items:stretch;gap:12px;margin:18px 0 0;padding:0;border:0;border-radius:0;background:transparent;
+  display:grid;align-items:stretch;gap:var(--report-summary-gap);margin:18px 0 0;padding:0;border:0;border-radius:0;background:transparent;
 }
 .learning-progress-page .learning-mastery-summary {margin:6px 0}
 .learning-progress-page .report-summary>.report-summary-item {
-  display:block;min-width:0;padding:14px;border:1px solid #d1fae5;border-radius:16px;
+  display:block;min-width:0;padding:var(--report-summary-padding);border:1px solid #d1fae5;border-radius:16px;
   background:linear-gradient(135deg,#ecfdf5b3,#ecfdf533);color:var(--report-ink);text-align:left;
 }
 .learning-progress-page .report-summary>.tone-amber {background:linear-gradient(135deg,#fffbebcc,#fffbeb33);border-color:#fef3c7}
 .learning-progress-page .report-summary>.tone-neutral {background:var(--report-soft);border-color:var(--report-border)}
-.learning-progress-page .report-summary-item>span {display:block;margin:0;color:#065f46;font-size:var(--font-sm);font-weight:600;line-height:1.5}
+.learning-progress-page .report-summary-item>span {display:block;margin:0;color:#065f46;font-size:var(--font-sm);font-weight:500;line-height:1.5}
 .learning-progress-page .report-summary>.tone-amber>span {color:#92400e}
 .learning-progress-page .report-summary>.tone-neutral>span {color:var(--report-muted)}
-.learning-progress-page .report-summary-item>strong {display:flex;align-items:baseline;gap:4px;margin:7px 0 0;font-size:var(--font-xl);font-weight:800;line-height:1.4;letter-spacing:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.learning-progress-page .report-summary-item>strong {display:flex;align-items:baseline;gap:4px;margin:7px 0 0;font-size:var(--font-lg);font-weight:700;line-height:1.25;letter-spacing:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .learning-progress-page .report-summary-item>strong>small {margin:0;color:inherit;font-size:var(--font-sm);font-weight:500;line-height:1}
+.learning-progress-page .report-metric-switch button[aria-pressed='true'] {font-weight:600}
 .learning-progress-page button.report-summary-item:hover {filter:brightness(.98)}
 .learning-progress-page button.report-summary-item:focus-visible {outline:2px solid var(--green);outline-offset:3px}
 .learning-progress-page .report-chart-heading {margin-bottom:0}
 .report-chart-actions {display:flex;align-items:center;flex-shrink:0;gap:6px}
-.learning-progress-page .report-fixed-range {margin:6px 0 8px;text-align:center;font-size:12px;font-weight:700;color:var(--report-ink);line-height:1.6}
+.learning-progress-page .report-fixed-range {margin:6px 0 8px;text-align:center;font-size:12px;font-weight:500;color:var(--report-ink);line-height:1.6}
 .learning-progress-page .report-metric-switch {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;width:100%;margin:6px 0 8px;padding:2px;background:#f1f5f9;border-radius:12px}
-.learning-progress-page .report-metric-switch button {width:100%;padding:5px 8px;border:0;border-radius:8px;background:transparent;font-size:var(--font-sm);font-weight:600}
+.learning-progress-page .report-metric-switch button {width:100%;padding:5px 8px;border:0;border-radius:8px;background:transparent;font-size:var(--font-sm);font-weight:500}
 .learning-progress-page .report-detail.learning-time-details {margin:12px 0 0;padding:14px;border-radius:16px;line-height:1.5}
 .learning-progress-page .report-detail .learning-time-averages {display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .learning-progress-page .report-detail .learning-time-record-copy p {margin:0}
@@ -62,15 +63,14 @@
 .learning-progress-page .learning-weak-ranking li:first-child>button {background:var(--report-amber);border-color:#fef3c7}
 .learning-progress-page .learning-weak-rank {width:26px;height:26px;border-radius:8px;background:#fde8e5;color:#b95048}
 .learning-progress-page .learning-weak-word {flex-wrap:wrap;gap:6px}
-.learning-progress-page .learning-weak-word b {font-size:var(--font-md)}
+.learning-progress-page .learning-weak-word b {font-size:var(--font-md);font-weight:600}
 .learning-progress-page .learning-weak-track {background:var(--report-soft)}
 .learning-progress-page .learning-weak-track>span {background:linear-gradient(90deg,#f3b8ad,#de8074)}
 .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-counts strong {color:#b95048}
 html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-rank {background:#442b28;color:#f3b8ad}
 html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-counts strong {color:#f3b8ad}
 
-.learning-progress-page .learning-relearning-summary {grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.learning-progress-page .learning-relearning-summary>.report-summary-item {padding:14px 8px}
+.learning-progress-page .learning-relearning-summary {grid-template-columns:repeat(3,minmax(0,1fr))}
 .learning-progress-page .learning-relearning-total-bar {height:12px;padding:0;margin-top:18px;background:var(--report-soft)}
 .learning-progress-page .learning-relearning-days {gap:8px;margin:16px 0 12px;padding:0;border:0}
 .learning-progress-page .learning-relearning-days>button {display:grid;grid-template-columns:48px minmax(0,1fr) 78px;align-items:center;gap:8px;padding:7px 0;border:0;border-radius:8px;background:transparent;color:var(--report-muted);text-align:left;font-size:var(--font-xs)}
@@ -92,8 +92,22 @@ html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learnin
 .learning-progress-page .analytics-growth-columns>button[aria-pressed='true'],
 .learning-progress-page .analytics-growth-columns>button:hover {background:transparent}
 .learning-progress-page .analytics-growth-columns>button[aria-pressed='true'] .growth-date {color:var(--green);font-weight:700}
-.learning-progress-page .analytics-growth-hero {padding:20px;border:1px solid var(--report-border);border-radius:24px;background:var(--report-surface);gap:16px}
-.learning-progress-page .analytics-growth-hero h2 {font-size:var(--font-xl)}
+.learning-progress-page [role='tabpanel']>.analytics-growth-hero {display:flex;align-items:center;gap:14px;padding:16px;border:1px solid color-mix(in srgb,#008c44 20%,var(--report-surface));border-radius:18px;background:color-mix(in srgb,#008c44 10%,var(--report-surface));box-shadow:0 3px 12px #008c441a}
+.learning-progress-page .analytics-growth-hero>.growth-hero-avatar {position:relative;flex:0 0 80px;width:80px;height:96px;min-width:0;display:grid;place-items:center;border:1px solid #a7f3d0;border-radius:15px;background:linear-gradient(135deg,#e8fff4,#d1fae5)}
+.growth-hero-avatar>img {display:block;width:90%;height:90%;object-fit:contain}
+.learning-progress-page .growth-hero-avatar>span {position:absolute;right:-5px;bottom:-5px;padding:3px 6px;border:2px solid var(--report-surface);border-radius:8px;background:#059669;color:#fff;font-size:9px;font-weight:700;line-height:1.1}
+.learning-progress-page .analytics-growth-hero>.growth-hero-copy {flex:1;min-width:0}
+.learning-progress-page .analytics-growth-hero .growth-hero-grade {display:block;color:var(--report-muted);font-size:var(--font-xs);font-weight:500;line-height:1.4;overflow-wrap:anywhere}
+.learning-progress-page .analytics-growth-hero h2 {display:flex;align-items:baseline;gap:4px;margin:3px 0 5px;color:var(--report-ink);font-size:var(--font-xl);font-weight:700;line-height:1.15;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.growth-hero-copy h2>small {color:#059669;font-size:var(--font-xs);font-weight:700}
+.learning-progress-page .growth-hero-copy p {margin:0 0 7px;color:var(--report-muted);font-size:var(--font-xs);line-height:1.45}
+.growth-hero-copy p>strong {color:var(--report-ink);font-weight:600}
+.learning-progress-page .analytics-growth-hero [role='progressbar'] {height:6px;background:#e2e8f0}
+.learning-progress-page .analytics-growth-hero [role='progressbar']>i {background:linear-gradient(90deg,#059669,#2dd4bf)}
+html[data-theme='dark'] .learning-progress-page [role='tabpanel']>.analytics-growth-hero {background:linear-gradient(105deg,#182b23,#1b3c2e);border-color:#355842}
+html[data-theme='dark'] .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {background:linear-gradient(135deg,#254b36,#1b3b2d);border-color:#3b7656}
+html[data-theme='dark'] .growth-hero-copy h2>small {color:#6ee7b7}
+html[data-theme='dark'] .learning-progress-page .analytics-growth-hero [role='progressbar'] {background:#30483b}
 
 html[data-theme='dark'] .learning-progress-page .report-summary>.report-summary-item {background:#203d2d;border-color:#355842}
 html[data-theme='dark'] .learning-progress-page .report-summary>.tone-amber {background:#393316;border-color:#67572b}
@@ -109,10 +123,24 @@ html[data-theme='dark'] .learning-progress-page .learning-weak-ranking li:first-
   .learning-progress-page :is(.learning-review-action,.learning-weak-action) {align-items:stretch;flex-direction:column}
   .learning-progress-page :is(.learning-review-action,.learning-weak-action) button {width:100%}
   .learning-progress-page .learning-review-bars {gap:4px}
-  .learning-progress-page .analytics-growth-hero {padding:16px;gap:12px}
+  .learning-progress-page [role='tabpanel']>.analytics-growth-hero {padding:14px 12px;gap:12px}
+  .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {flex-basis:64px;width:64px;height:80px;border-radius:13px}
 }
 .learning-progress-page .learning-weak-word .report-word-language {padding:2px 7px;border:1px solid #d1d5db;border-radius:999px;background:#f3f4f6;color:#4b5563;font-size:var(--font-xs);font-weight:600;line-height:1.2}
 .learning-progress-page .learning-weak-word .report-word-cefr {padding:2px 7px;border-width:1px;border-style:solid;border-radius:999px;font-size:var(--font-xs);font-weight:600;line-height:1.2}
 html[data-theme='dark'] .learning-progress-page .learning-weak-word .report-word-language {border-color:#4b5563;background:#374151;color:#e5e7eb}
 
 .learning-progress-page .report-ranking-description {margin:6px 0 8px;color:var(--report-muted);font-size:var(--font-sm);font-weight:400;line-height:1.6}
+
+/* A light tint of the app's brand green, without fading text or the avatar. */
+.learning-progress-page .analytics-growth-hero .growth-hero-grade,
+.learning-progress-page .analytics-growth-hero .growth-hero-copy p {color:var(--report-muted)}
+.learning-progress-page .analytics-growth-hero .growth-hero-copy h2,
+.learning-progress-page .analytics-growth-hero .growth-hero-copy p>strong {color:var(--report-ink)}
+.learning-progress-page .analytics-growth-hero .growth-hero-copy h2>small {color:var(--report-heading-accent)}
+.learning-progress-page .analytics-growth-hero [role='progressbar'] {background:color-mix(in srgb,#008c44 12%,var(--report-surface))}
+.learning-progress-page .analytics-growth-hero [role='progressbar']>i {background:#008c44}
+.learning-progress-page .analytics-growth-hero>.growth-hero-avatar {border-color:color-mix(in srgb,#008c44 22%,var(--report-surface));background:var(--report-surface)}
+html[data-theme='dark'] .learning-progress-page [role='tabpanel']>.analytics-growth-hero {background:color-mix(in srgb,#008c44 10%,var(--report-surface));border-color:color-mix(in srgb,#008c44 20%,var(--report-surface))}
+html[data-theme='dark'] .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {background:var(--report-surface);border-color:color-mix(in srgb,#008c44 22%,var(--report-surface))}
+html[data-theme='dark'] .learning-progress-page .analytics-growth-hero [role='progressbar'] {background:color-mix(in srgb,#008c44 12%,var(--report-surface))}

@@ -688,7 +688,7 @@ html[data-theme='dark'] .story-example-translation{background:#27332c;color:#b6c
 .story-used-word{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 7px;flex:1;min-width:0;overflow-wrap:anywhere}
 .story-used-word strong{font-size:var(--font-sm);font-weight:700;color:var(--dark)}
 .story-used-word small{font-size:var(--font-xs);color:#8b9fbf}
-.story-used-meaning{flex:0 1 36%;min-width:0;font-size:var(--font-xs);line-height:1.5;text-align:right;color:#536b91;overflow-wrap:anywhere}
+.story-used-meaning{flex:0 1 36%;min-width:0;font-size:var(--font-xs);line-height:1.5;text-align:right;color:#536b91;word-break:keep-all;overflow-wrap:break-word}
 .story-result-actions{flex-direction:column;gap:10px;margin-top:18px}
 .story-result-actions>button{justify-content:center;min-height:44px;border:1px solid #00b88b;border-radius:12px;color:#00876c;background:#fff}
 .story-result-actions>button:last-child{border-color:#00a77b;background:linear-gradient(110deg,#08b88c,#009d72);color:#fff;box-shadow:0 4px 10px #00a77b26}

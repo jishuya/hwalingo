@@ -1,0 +1,21 @@
+.learning-progress-page .growth-chart-view {min-width:0;margin-top:16px}
+.learning-progress-page .growth-fit-chart {position:relative;width:100%;min-width:0;grid-template-columns:30px minmax(0,1fr);margin-top:34px}
+.growth-fit-chart .analytics-growth-columns {min-width:0;padding-bottom:62px}
+.growth-fit-chart:has(.growth-tick):not(:has(.growth-tick strong)) .analytics-growth-columns {padding-bottom:26px}
+.learning-progress-page .growth-fit-chart .analytics-growth-columns>button {height:170px;padding:0;border-radius:0}
+.growth-fit-chart .growth-hit {flex-shrink:0}
+.growth-tick {position:absolute;top:170px;left:50%;transform:translateX(-50%);white-space:nowrap;text-align:center;pointer-events:auto}
+.growth-tick.first {left:0;transform:none;text-align:left}
+.growth-tick.last {left:auto;right:0;transform:none;text-align:right}
+.learning-progress-page .growth-fit-chart .growth-date {height:26px}
+.growth-tick strong {display:block;color:var(--green);font-size:var(--font-xs);font-weight:600}
+.growth-tick small {display:block}
+
+.learning-progress-page .growth-fit-chart .analytics-growth-axis {position:relative;padding-right:4px;font-variant-numeric:tabular-nums}
+.growth-axis-unit {position:absolute;right:0;top:-20px;margin:0;white-space:nowrap;color:var(--report-muted);font-size:var(--font-xs);line-height:1.4}
+
+.growth-tooltip {position:absolute;z-index:5;box-sizing:border-box;width:168px;max-width:100%;padding:9px 12px;border:1px solid var(--report-border);border-radius:10px;background:var(--report-surface);color:var(--report-ink);box-shadow:0 4px 16px #18332a20;transform:translate(-50%,-100%);pointer-events:none;text-align:left;overflow-wrap:anywhere}
+.growth-tooltip.below {transform:translateX(-50%)}
+.growth-tooltip>span {display:block;color:var(--report-muted);font-size:var(--font-xs)}
+.growth-tooltip>strong {display:block;margin-top:3px;color:var(--green);font-size:var(--font-sm);font-weight:700}
+.growth-tooltip>small {display:block;margin-top:3px;color:var(--report-muted);font-size:var(--font-xs)}

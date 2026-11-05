@@ -1,4 +1,5 @@
 import ReportSummary from './ReportSummary'
+import GrowthChart from './GrowthChart'
 import AnalyticsPeriod, { AnalyticsPeriodControls } from './AnalyticsPeriod'
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -53,13 +54,9 @@ function Growth() {
   const [selected,setSelected] = useState<string>()
   return <InsightCard periodControls title="누적 XP 성장 곡선" description="">{data=>{
     const points = [{date:'opening',earnedXp:0,totalXp:data.growth.openingXp,level:0,levelsGained:0,grade:''},...data.growth.days]
-    const max = Math.max(1,...points.map(point=>point.totalXp))
     const active = points.find(point=>point.date===selected)??points.at(-1)!
-    const x = (index:number)=>(index+.5)/points.length*700
-    const y = (xp:number)=>160-xp/max*150
-    const path = points.map((point,index)=>`${index?'L':'M'} ${x(index)} ${y(point.totalXp)}`).join(' ')
     const earned = data.growth.days.reduce((sum,day)=>sum+day.earnedXp,0)
-    return <><ReportSummary className="analytics-growth-summary" items={[{label:'기간 마지막 누적 XP',value:number(points.at(-1)!.totalXp),unit:'XP'},{label:'기간 획득 XP',value:`+${number(earned)}`,unit:'XP',tone:'amber'}]}/><div className="analytics-chart-scroll"><div className="analytics-growth-chart" style={{minWidth:points.length*64+62}}><div className="analytics-growth-axis" aria-hidden="true"><span>{number(max)}</span><span>{number(max/2)}</span><span>0 XP</span></div><div className="analytics-growth-columns" role="group" aria-label="선택 기간별 누적 XP" style={{gridTemplateColumns:`repeat(${points.length},minmax(0,1fr))`}}><svg viewBox="0 0 700 170" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="report-growth-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity=".22"/><stop offset="100%" stopColor="#10b981" stopOpacity="0"/></linearGradient></defs><path className="growth-area" d={`${path} L ${x(points.length-1)} 160 L ${x(0)} 160 Z`}/>{[10,85,160].map(row=><line key={row} x1="0" x2="700" y1={row} y2={row} className="growth-grid"/>)}<path d={path}/></svg>{points.map(point=><button type="button" key={point.date} aria-pressed={point.date===active.date} onClick={()=>setSelected(point.date)} aria-label={`${point.date==='opening'?'기간 시작 전':formatAnalyticsDate(point.date,data.range.grain)}, 누적 ${point.totalXp} XP${point.levelsGained?`, ${point.levelsGained}레벨 상승`:''}`}><span className={`growth-dot ${point.levelsGained?'milestone':''}`} style={{top:y(point.totalXp)}}/><span className="growth-hit"/><span className="growth-date">{point.date==='opening'?'시작 전':formatAnalyticsDate(point.date,data.range.grain)}</span><strong>{number(point.totalXp)} XP</strong>{point.levelsGained>0&&<small>Lv.{point.level}</small>}</button>)}</div></div></div><div className="analytics-detail learning-time-details" aria-live="polite">
+    return <><ReportSummary className="analytics-growth-summary" items={[{label:'기간 마지막 누적 XP',value:number(points.at(-1)!.totalXp),unit:'XP'},{label:'기간 획득 XP',value:`+${number(earned)}`,unit:'XP',tone:'amber'}]}/><GrowthChart key={`${data.range.start}-${data.range.end}-${data.range.grain}`} points={points} grain={data.range.grain} selected={active.date} onSelect={setSelected}/><div className="analytics-detail learning-time-details" aria-live="polite">
       <div className="learning-time-record"><div className="learning-time-record-header"><span className="learning-time-record-date">{active.date==='opening'?'기간 시작 전':formatAnalyticsDate(active.date,data.range.grain)}</span>{active.levelsGained>0&&<span className="learning-time-record-status">+{active.levelsGained}레벨</span>}</div>
         <div className="learning-time-record-copy"><p><span>누적 XP</span><strong>{number(active.totalXp)} XP</strong></p></div>
       </div>
