@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import { masteryStageNames } from '../../domain/masteryStages'
 import ReportSummary from './ReportSummary'
 import { useState } from 'react'
@@ -37,7 +38,7 @@ export default function LearningMasteryChart() {
   return <section className="card learning-mastery-card" aria-labelledby="learning-mastery-title">
     <div className="learning-mastery-heading report-chart-heading"><div><h2 id="learning-mastery-title"><PlantIcon weight="duotone" aria-hidden="true"/> 숙련도 분포</h2></div><div className="report-chart-actions"><button type="button" className="report-chart-refresh" aria-label="숙련도 단계 안내" title="숙련도 단계 안내" aria-haspopup="dialog" onClick={()=>setHelpOpen(true)}><InfoIcon weight="regular" aria-hidden="true"/></button><button type="button" className="learning-mastery-refresh report-chart-refresh" aria-label="숙련도 분포 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div></div>
     {query.isPending ? <p role="status">숙련도를 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>숙련도를 불러오지 못했어요.</p><button className="primary" type="button" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="숙련도를 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : query.data && <>
           <ReportSummary className="learning-mastery-summary" items={[
             {label:'보관 단어',value:number(total),unit:'개'},

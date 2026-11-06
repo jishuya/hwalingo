@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import AnalyticsPeriod, { AnalyticsPeriodControls } from './AnalyticsPeriod'
 import { useAnalyticsPeriod } from './analyticsContext'
 import { formatAnalyticsDate } from '../../services/analytics'
@@ -56,7 +57,7 @@ function LearningTimeChartContent() {
     </div>
     <AnalyticsPeriodControls/>
     {query.isPending ? <p role="status">학습 시간을 불러오는 중이에요.</p>
-      : query.isError && !data ? <div role="alert"><p>학습 시간을 불러오지 못했어요.</p><button type="button" className="primary" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !data ? <ChartErrorState message="학습 시간을 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : data && <>
           <div className="learning-time-totals">
             <div><span>{data.range?.grain==='day'&&today?.date===data.range?.today?'오늘 학습':'마지막 구간 학습'}</span><strong>{formatTime(today?.seconds ?? 0)}</strong></div>
@@ -89,7 +90,7 @@ function LearningTimeChartContent() {
               })}</small>}
             </div>
           </div>}
-          {total === 0 && <p className="learning-time-empty">문장을 읽거나 단어를 복습하면 학습 시간이 쌓여요.</p>}
+
           <dl className="learning-time-averages"><div><dt>하루 평균</dt><dd>{formatTime(measuredCount ? total / measuredCount : 0)}</dd></div><div><dt>학습한 날 평균</dt><dd>{activeDays ? formatTime(total / activeDays) : '기록 없음'}</dd></div></dl>
           </div>
           {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 시간을 표시하고 있어요.</p>}

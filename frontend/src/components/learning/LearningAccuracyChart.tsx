@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import { useAnalyticsPeriod } from './analyticsContext'
 import { formatAnalyticsDate } from '../../services/analytics'
 import { useState } from 'react'
@@ -36,7 +37,7 @@ export default function LearningAccuracyChart() {
   return <section className="card learning-accuracy-card" aria-labelledby="learning-accuracy-title">
     <div className="learning-accuracy-heading"><div><span className="learning-accuracy-eyebrow"><TargetIcon weight="duotone"/> 기억을 확인하는 시간</span><h2 id="learning-accuracy-title">첫 시도 정답률</h2><p>{periodLabel} · 한국 시간 기준</p></div><button type="button" className="learning-accuracy-refresh" aria-label="첫 시도 정답률 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowClockwiseIcon/>새로고침</button></div>
     {query.isPending ? <p role="status">정답률을 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>정답률을 불러오지 못했어요.</p><button className="primary" type="button" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="정답률을 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : query.data && <>
           <div className="learning-accuracy-summary"><div><span>선택 기간 정답률</span><strong>{total ? `${Math.round(correct / total * 100)}%` : '기록 없음'}</strong></div><p>첫 시도 {total.toLocaleString('ko-KR')}문제 중 <b>{correct.toLocaleString('ko-KR')}문제 정답</b></p></div>
           <div className="analytics-chart-scroll"><div className="learning-accuracy-chart" style={{minWidth: days.length > 14 ? days.length*48+44 : undefined}}><div className="learning-accuracy-axis" aria-hidden="true"><span>100%</span><span>50%</span><span>0%</span></div><div className="learning-accuracy-columns" style={{gridTemplateColumns: `repeat(${days.length},minmax(0,1fr))`}} role="group" aria-label="선택 기간 구간별 첫 시도 정답률">

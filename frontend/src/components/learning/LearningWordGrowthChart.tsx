@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowCounterClockwiseIcon, CaretRightIcon, TrendUpIcon } from '@phosphor-icons/react'
@@ -18,7 +19,7 @@ export default function LearningWordGrowthChart() {
     <div className="learning-weak-heading report-chart-heading"><div><h2 id="word-growth-title"><TrendUpIcon weight="duotone" aria-hidden="true"/> 최근 성장한 단어 TOP 5</h2></div><button type="button" className="learning-weak-refresh report-chart-refresh" aria-label="최근 성장한 단어 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>
     <p className="report-ranking-description">오늘 포함 최근 30일 · 숙련도 순상승 기준 (한국 시간)</p>
     {query.isPending ? <p role="status">단어 성장 기록을 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>단어 성장 기록을 불러오지 못했어요.</p><button type="button" className="primary" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="단어 성장 기록을 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
       : query.data && <>
         {query.data.words.length ? <ol className="learning-weak-ranking">{query.data.words.map((word, index) => <li key={word.vocabularyId}>
           <button type="button" onClick={() => setSelectedId(word.vocabularyId)} aria-label={`${index + 1}위 ${word.word}, ${word.beforeLevel}단계에서 ${word.currentLevel}단계로 ${word.gained}단계 상승, 단어 상세 보기`}>

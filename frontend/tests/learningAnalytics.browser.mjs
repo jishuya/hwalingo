@@ -266,8 +266,20 @@ try{
   mode=state
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/learning-progress?tab=records&test=${state}`});await ready(state==='empty'?'하루 평균':'다시 시도');await screenshot(state)
   await click('#analytics-tab-vocabulary');await ready('언어별 학습 현황');await screenshot(state+'-vocabulary')
+  if(state==='empty'){await ready('아직 언어별 학습 기록이 없어요');assert.ok(await evaluate(`document.querySelector('.learning-language-empty svg')!==null`));assert.equal(await evaluate(`document.querySelector('.analytics-horizontal.languages')`),null,'empty languages shows illustration instead of empty plot')}
   await click('#analytics-tab-growth');await ready('누적 XP 성장 곡선');await screenshot(state+'-growth')
   if(state==='empty') assert.equal(await evaluate(`document.querySelectorAll('.growth-date').length`),7,'zero XP days keep all dates')
+  if(state==='error'){
+    await ready('누적 XP 성장 기록을 불러오지 못했어요.')
+    assert.equal(await evaluate(`document.querySelector('.analytics-card .report-chart-error>button').textContent`),'다시 시도')
+    assert.equal(await evaluate(`document.querySelector('.analytics-card .report-chart-error').getAttribute('role')`),'alert')
+    assert.equal(await evaluate(`document.documentElement.scrollWidth>innerWidth`),false,'chart error has no overflow')
+    mode='normal'
+    await click('.analytics-card .report-chart-error>button')
+    await ready('기간 마지막 누적 XP')
+    assert.equal(await evaluate(`document.querySelector('.analytics-card .report-chart-error')`),null,'retry restores growth chart')
+  }
+
  }
  assert.equal(errors.length,0,JSON.stringify(errors))
  console.log(JSON.stringify({checked:'mobile and desktop; all tabs; week/month/year/all; detail modal; empty/error; no runtime errors or horizontal overflow',screenshots:artifacts,requests:calls.length}))

@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import { useState, type CSSProperties } from 'react'
 import { CalendarDotsIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
@@ -28,7 +29,7 @@ export default function LearningCalendarChart() {
     <div className="learning-calendar-heading report-chart-heading"><div><h2 id="learning-calendar-title"><CalendarDotsIcon weight="duotone" aria-hidden="true"/> 학습 잔디</h2></div><button className="learning-calendar-refresh report-chart-refresh" type="button" aria-label="학습 잔디 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>
     <div className="learning-calendar-period" role="group" aria-label="학습 잔디 기간"><button type="button" aria-pressed={period === 'recent'} onClick={() => setPeriod('recent')}>최근 12주</button><button type="button" aria-pressed={period === 'year'} onClick={() => setPeriod('year')}>최근 1년</button></div>
     {query.isPending ? <p role="status">학습 잔디를 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>학습 잔디를 불러오지 못했어요.</p><button className="primary" type="button" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="학습 잔디를 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : query.data && <>
           {days[0] && today && <p className="learning-calendar-range" aria-live="polite">{dateLabel(days[0].date)} ~ {dateLabel(today.date)}</p>}
           <div className="learning-calendar-summary"><div><span title="선택한 기간 내 학습한 날짜 수">학습일수</span><strong>{activeDays.toLocaleString('ko-KR')}<small>일</small></strong></div><div><span>현재 연속</span><strong>{progress.data ? progress.data.currentStreak.toLocaleString('ko-KR') : '–'}<small>일</small></strong></div><div><span title="전체 기간 최장 연속 학습">최장 연속</span><strong>{progress.data ? progress.data.longestStreak.toLocaleString('ko-KR') : '–'}<small>일</small></strong></div></div>

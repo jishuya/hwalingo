@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import AnalyticsPeriod, { AnalyticsPeriodControls } from './AnalyticsPeriod'
 import { useAnalyticsPeriod } from './analyticsContext'
 import { formatAnalyticsDate } from '../../services/analytics'
@@ -26,7 +27,7 @@ function LearningVolumeChartContent() {
     <div className="learning-volume-heading report-chart-heading"><div><h2 id="learning-volume-title"><BookOpenIcon weight="duotone" aria-hidden="true"/> 학습량</h2></div><button className="learning-volume-refresh report-chart-refresh" type="button" onClick={() => void query.refetch()} disabled={query.isFetching} aria-label="학습량 새로고침"><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>
     <AnalyticsPeriodControls/>
     {query.isPending ? <p role="status">학습량을 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>학습량을 불러오지 못했어요.</p><button className="primary" type="button" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="학습량을 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : query.data && <>
           <div className="learning-volume-summary"><div className="volume-total"><span>총 단어</span><strong>{number(newTotal + reviewTotal)}<small>문제</small></strong></div><div className="volume-new"><span>새단어</span><strong>{number(newTotal)}<small>문제</small></strong></div><div className="volume-review"><span>복습단어</span><strong>{number(reviewTotal)}<small>문제</small></strong></div></div>
           <div className="analytics-chart-scroll"><div className="learning-volume-plot" style={{minWidth: days.length > 14 ? days.length*44+38 : undefined}}><div className="learning-volume-axis" aria-hidden="true"><span>{number(ceiling)}</span><span>{number(ceiling / 2)}</span><span>0</span></div><div className="learning-volume-bars" style={{gridTemplateColumns: `repeat(${days.length},minmax(0,1fr))`}} role="group" aria-label="선택 기간 새 단어와 복습 문제 수, 단위 문제">

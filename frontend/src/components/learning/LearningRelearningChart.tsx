@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import ReportSummary from './ReportSummary'
 import { useState } from 'react'
 import AnalyticsPeriod, { AnalyticsPeriodControls } from './AnalyticsPeriod'
@@ -26,7 +27,7 @@ function LearningRelearningContent({ onStandard, onIncorrect }: { onStandard: ()
     <div className="learning-relearning-heading report-chart-heading"><div><h2 id="learning-relearning-title"><ChecksIcon weight="duotone" aria-hidden="true"/> 오답 재학습 완료</h2></div><button type="button" className="learning-relearning-refresh report-chart-refresh" aria-label="오답 재학습 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>
     <AnalyticsPeriodControls/>
     {query.isPending ? <p role="status">재학습 기록을 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>재학습 기록을 불러오지 못했어요.</p><button type="button" className="primary" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="재학습 기록을 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : query.data && <>
           <ReportSummary className="learning-relearning-summary" items={[
             {label:'전체 오답',value:total.toLocaleString('ko-KR'),unit:'문제',tone:'neutral'},

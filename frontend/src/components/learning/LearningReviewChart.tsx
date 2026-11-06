@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import ReportSummary from './ReportSummary'
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -30,7 +31,7 @@ export default function LearningReviewChart({ onStart }: { onStart: () => void }
     <div className="learning-review-heading report-chart-heading"><div><h2 id="learning-review-title"><CalendarCheckIcon weight="duotone" aria-hidden="true"/> 복습 예정</h2></div><button className="learning-review-refresh report-chart-refresh" type="button" aria-label="복습 예정 새로고침" disabled={query.isFetching} onClick={() => { setNow(new Date()); void query.refetch() }}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>
     {schedule.days[0]&&<p className="report-fixed-range">{label(schedule.days[0].date)} ~ {label(schedule.days.at(-1)!.date)}</p>}
     {query.isPending ? <p role="status">복습 일정을 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>복습 일정을 불러오지 못했어요.</p><button className="primary" type="button" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="복습 일정을 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : query.data && <>
           <ReportSummary className="learning-review-summary" items={[
             {label:'밀린 복습',value:number(schedule.overdue.length),unit:'개',tone:'amber',onClick:()=>setSelected('overdue')},

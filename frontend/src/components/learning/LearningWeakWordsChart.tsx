@@ -1,3 +1,4 @@
+import ChartErrorState from './ChartErrorState'
 import VocabularyWordCard from '../vocabulary/VocabularyWordCard'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -21,7 +22,7 @@ export default function LearningWeakWordsChart({ onStart }: { onStart: () => voi
     <div className="learning-weak-heading report-chart-heading"><div><h2 id="learning-weak-title"><TargetIcon weight="duotone" aria-hidden="true"/> 자주 틀리는 단어 TOP 5</h2></div><button type="button" className="learning-weak-refresh report-chart-refresh" aria-label="자주 틀리는 단어 새로고침" disabled={query.isFetching} onClick={() => void query.refetch()}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>
     <p className="report-ranking-description">전체 기간 누적 오답 기준 · 재도전 제외</p>
     {query.isPending ? <p role="status">오답 기록을 불러오는 중이에요.</p>
-      : query.isError && !query.data ? <div role="alert"><p>오답 기록을 불러오지 못했어요.</p><button type="button" className="primary" onClick={() => void query.refetch()}>다시 시도</button></div>
+      : query.isError && !query.data ? <ChartErrorState message="오답 기록을 불러오지 못했어요." retrying={query.isFetching} onRetry={() => void query.refetch()}/>
         : query.data && <>
           {ranked.length ? <ol className="learning-weak-ranking">{ranked.map((word, index) => {
             const { incorrectCount, totalAttempts } = word.progress

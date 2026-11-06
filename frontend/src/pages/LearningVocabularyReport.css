@@ -144,3 +144,6 @@ html[data-theme='dark'] .learning-progress-page .learning-weak-word .report-word
 html[data-theme='dark'] .learning-progress-page [role='tabpanel']>.analytics-growth-hero {background:color-mix(in srgb,#008c44 20%,var(--report-surface));border-color:color-mix(in srgb,#008c44 20%,var(--report-surface))}
 html[data-theme='dark'] .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {background:var(--report-surface);border-color:color-mix(in srgb,#008c44 22%,var(--report-surface))}
 html[data-theme='dark'] .learning-progress-page .analytics-growth-hero [role='progressbar'] {background:color-mix(in srgb,#008c44 12%,var(--report-surface))}
+
+.learning-progress-page .learning-language-empty h3 {color:var(--report-ink);font-weight:700;line-height:1.4;word-break:keep-all}
+.learning-progress-page .learning-language-empty p {color:var(--report-muted);line-height:1.6}
