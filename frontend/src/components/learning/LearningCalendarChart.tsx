@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import { useState, type CSSProperties } from 'react'
 import { CalendarDotsIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
@@ -56,7 +57,7 @@ export default function LearningCalendarChart() {
             <dl className="learning-time-averages"><div><dt>첫 답안 풀이</dt><dd>{selected.answerCount.toLocaleString('ko-KR')}문제</dd></div><div><dt>획득 경험치</dt><dd>{selected.earnedXp.toLocaleString('ko-KR')} XP</dd></div></dl>
             {!selected.activityCount&&<p className="calendar-detail-empty">이 날짜에는 기록된 학습 활동이 없어요.</p>}
           </div>}
-          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
   </section>
 }

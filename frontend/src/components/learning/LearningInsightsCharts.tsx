@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import './LearningWeakWordsChart.css'
 import ChartErrorState from './ChartErrorState'
 import ReportSummary from './ReportSummary'
@@ -17,7 +18,7 @@ function InsightCard({title,description,children,periodControls=false}: {title:s
   const query = useQuery({queryKey:['progress','insights',selection],queryFn:()=>getLearningInsights(selection),refetchInterval:20_000})
   const errorMessage = title==='요일별 학습 패턴'?'요일별 학습 기록을 불러오지 못했어요.':title==='언어별 학습 현황'?'언어별 학습 현황을 불러오지 못했어요.':'누적 XP 성장 기록을 불러오지 못했어요.'
   const TitleIcon = title==='요일별 학습 패턴'?CalendarDotsIcon:title==='언어별 학습 현황'?GlobeIcon:TrendUpIcon
-  return <section className="card analytics-card"><div className="analytics-card-head report-chart-heading"><div><h2><TitleIcon weight="duotone" aria-hidden="true"/>{title}</h2>{description&&<p>{description}</p>}</div><button type="button" className="report-chart-refresh" title="새로고침" disabled={query.isFetching} onClick={()=>void query.refetch()} aria-label={`${title} 새로고침`}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>{periodControls&&<AnalyticsPeriodControls/>}{query.isPending ? <p role="status">통계를 불러오는 중이에요.</p> : query.isError && !query.data ? <ChartErrorState message={errorMessage} retrying={query.isFetching} onRetry={()=>void query.refetch()}/> : query.data && children(query.data)}{query.isError && query.data && <p role="status">최신 기록을 불러오지 못해 마지막 기록을 표시하고 있어요.</p>}</section>
+  return <section className="card analytics-card"><div className="analytics-card-head report-chart-heading"><div><h2><TitleIcon weight="duotone" aria-hidden="true"/>{title}</h2>{description&&<p>{description}</p>}</div><button type="button" className="report-chart-refresh" title="새로고침" disabled={query.isFetching} onClick={()=>void query.refetch()} aria-label={`${title} 새로고침`}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>{periodControls&&<AnalyticsPeriodControls/>}{query.isPending ? <p role="status">통계를 불러오는 중이에요.</p> : query.isError && !query.data ? <ChartErrorState message={errorMessage} retrying={query.isFetching} onRetry={()=>void query.refetch()}/> : query.data && children(query.data)}{query.isError && query.data && <ChartStaleNotice/>}</section>
 }
 const weekdays = ['월','화','수','목','금','토','일']
 const number = (n:number) => n.toLocaleString('ko-KR',{maximumFractionDigits:1})

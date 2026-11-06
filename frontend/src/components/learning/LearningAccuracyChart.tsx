@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import { useAnalyticsPeriod } from './analyticsContext'
 import { formatAnalyticsDate } from '../../services/analytics'
@@ -53,7 +54,7 @@ export default function LearningAccuracyChart() {
           {selected && <div className="learning-accuracy-detail" aria-live="polite"><span>{dateLabel(selected.date)}</span><strong>{selected.accuracy === null ? '응시 기록 없음' : `${Math.round(selected.accuracy)}%`}</strong><span>{selected.total ? `${selected.total}문제 중 ${selected.correctAnswers}문제 정답 · ${selected.total - selected.correctAnswers}문제 오답` : '테스트를 풀면 정답률이 표시돼요.'}</span></div>}
           {!total && <p className="learning-accuracy-note">아직 선택 기간의 응시 기록이 없어요. 첫 테스트부터 차곡차곡 기록해드릴게요.</p>}
           <p className="learning-accuracy-note">오답 재도전은 제외해요. 기간 정답률은 전체 첫 시도 답안으로 계산하며, 응시하지 않은 날은 선을 연결하지 않아요. 스와이프 테스트는 직접 선택한 정오답 기준이에요.</p>
-          {query.isError && <p role="status" className="learning-accuracy-note">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
   </section>
 }

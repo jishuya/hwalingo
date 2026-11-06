@@ -84,3 +84,33 @@ test('keeps five unique words when there are no alternatives', () => {
   assert.equal(selected.length, 5)
   assert.equal(new Set(selected.map(word => word.vocabularyId)).size, 5)
 })
+
+test('three words in each language stay together and repeat when that language remains selected', () => {
+  const source = (['en','zh','ja'] as const).flatMap(language=>Array.from({length:3},(_,index)=>({...make(`${language}${index}`,'new'),languageCode:language})))
+  const first = recommendStoryWords(source,settings)
+  assert.equal(first.length,3)
+  assert.equal(new Set(first.map(word=>word.languageCode)).size,1)
+  const repeated = recommendStoryWords(source,{...settings,language:first[0].languageCode,previousIds:first.map(word=>word.vocabularyId)})
+  assert.deepEqual(repeated.map(word=>word.vocabularyId).sort(),first.map(word=>word.vocabularyId).sort())
+})
+
+test('automatic repeat changes languages when all words in the current language were used', () => {
+  for (const count of [3,4,5]) {
+    const source = (['en','zh','ja'] as const).flatMap(language=>Array.from({length:count},(_,index)=>({...make(`${language}${index}`,'new'),languageCode:language})))
+    let selected = recommendStoryWords(source,settings)
+    for (let index=0;index<4;index++) {
+      const next = recommendStoryWords(source,{...settings,language:selected[0].languageCode,previousIds:selected.map(word=>word.vocabularyId),allowLanguageChange:true})
+      assert.equal(next.length,count)
+      assert.notEqual(next[0].languageCode,selected[0].languageCode)
+      assert.ok(next.every(word=>word.languageCode===next[0].languageCode))
+      selected=next
+    }
+  }
+})
+
+test('automatic repeat ignores other languages with fewer than three words', () => {
+  const source = [...Array.from({length:3},(_,index)=>make(`en${index}`,'new')),make('ja1','due',{language:'ja'}),make('ja2','due',{language:'ja'})]
+  const selected = recommendStoryWords(source,{...settings,previousIds:['en0','en1','en2'],allowLanguageChange:true})
+  assert.equal(selected.length,3)
+  assert.ok(selected.every(word=>word.languageCode==='en'))
+})

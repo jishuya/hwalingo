@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import AnalyticsPeriod, { AnalyticsPeriodControls } from './AnalyticsPeriod'
 import { useAnalyticsPeriod } from './analyticsContext'
@@ -44,7 +45,7 @@ function LearningVolumeChartContent() {
             </div>
             <dl className="learning-time-averages"><div><dt>학습한 단어</dt><dd>{number(selected.uniqueWords)}개</dd></div><div><dt>첫 시도 정답률</dt><dd>{selectedTotal ? `${Math.round(selected.correctAnswers / selectedTotal * 100)}%` : '기록 없음'}</dd></div></dl>
           </div>}
-          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
   </section>
 }

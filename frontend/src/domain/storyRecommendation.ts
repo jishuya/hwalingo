@@ -1,11 +1,11 @@
 import type { LanguageCode } from '../services/analysis'
 import type { Vocabulary } from '../services/vocabulary'
 
-export const STORY_RECOMMENDATION_RULES = { count: 5, review: 3, new: 1, familiar: 1, recentDays: 7, familiarMinimumLevel: 3 } as const
+export const STORY_RECOMMENDATION_RULES = { minimum: 3, count: 5, review: 3, new: 1, familiar: 1, recentDays: 7, familiarMinimumLevel: 3 } as const
 
 type Candidate = Pick<Vocabulary, 'vocabularyId' | 'languageCode' | 'progress' | 'lastStoryUsedAt'>
 
-export function recommendStoryWords<T extends Candidate>(candidates: T[], options: { language?: LanguageCode; now?: number; random?: () => number; previousIds?: readonly string[] } = {}): T[] {
+export function recommendStoryWords<T extends Candidate>(candidates: T[], options: { language?: LanguageCode; now?: number; random?: () => number; previousIds?: readonly string[]; allowLanguageChange?: boolean } = {}): T[] {
   const now = options.now ?? Date.now()
   const random = options.random ?? Math.random
   const previous = new Set(options.previousIds ?? [])
@@ -24,9 +24,21 @@ export function recommendStoryWords<T extends Candidate>(candidates: T[], option
   const group = (language: LanguageCode) => shuffled.filter(word => word.languageCode === language)
   const coverage = (words: T[]) => Math.min(rules.review, words.filter(due).length)
     + Math.min(rules.new, words.filter(fresh).length) + Math.min(rules.familiar, words.filter(familiar).length)
-  const viable = languages.filter(language => group(language).length >= rules.count)
-  const language = options.language ?? (viable.length ? viable : languages).sort((a, b) =>
-    coverage(group(b)) - coverage(group(a)) || group(b).length - group(a).length)[0]
+  const chooseLanguage = (choices:LanguageCode[]) => {
+    const viable = choices.filter(language=>group(language).length>=rules.count)
+    const usable = choices.filter(language=>group(language).length>=rules.minimum)
+    return [...(viable.length?viable:usable.length?usable:choices)].sort((a,b)=>
+      coverage(group(b))-coverage(group(a)) || group(b).length-group(a).length)[0]
+  }
+  let language = options.language ?? chooseLanguage(languages)
+  const previousLanguage = unique.find(word=>previous.has(word.vocabularyId))?.languageCode
+  if (options.allowLanguageChange && previousLanguage) {
+    const previousGroup = group(previousLanguage)
+    if (previousGroup.length<=rules.count && previousGroup.every(word=>previous.has(word.vocabularyId))) {
+      const alternatives = languages.filter(candidate=>candidate!==previousLanguage && group(candidate).length>=rules.minimum)
+      if (alternatives.length) language = chooseLanguage(alternatives)
+    }
+  }
   const source = shuffled.filter(word => word.languageCode === language)
   const rank = (words: T[], review = false) => [...words].sort((a, b) => Number(previous.has(a.vocabularyId)) - Number(previous.has(b.vocabularyId))
     || recent(a) - recent(b)

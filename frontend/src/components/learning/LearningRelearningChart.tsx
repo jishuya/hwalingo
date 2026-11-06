@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import ReportSummary from './ReportSummary'
 import { useState } from 'react'
@@ -49,7 +50,7 @@ function LearningRelearningContent({ onStandard, onIncorrect }: { onStandard: ()
           {total > 0 && completed === total && <p className="learning-relearning-message">틀린 문제를 모두 다시 맞혔어요. 끝까지 학습했네요!</p>}
           {(standard > 0 || incorrect > 0) && <div className="learning-relearning-actions">{standard > 0 && <button type="button" className="primary" onClick={onStandard}><ChecksIcon weight="fill"/>일반 테스트 이어하기</button>}{incorrect > 0 && <button type="button" className="primary" onClick={onIncorrect}><ChecksIcon weight="fill"/>오답 테스트 이어하기</button>}</div>}
 
-          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
   </section>
 }

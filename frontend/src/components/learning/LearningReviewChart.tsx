@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import ReportSummary from './ReportSummary'
 import { useEffect, useState } from 'react'
@@ -41,7 +42,7 @@ export default function LearningReviewChart({ onStart }: { onStart: () => void }
           <div className="learning-review-plot"><div className="learning-review-axis" aria-hidden="true"><span>{ceiling}개</span><span>{ceiling / 2}개</span><span>0개</span></div><div className="learning-review-bars" role="group" aria-label="오늘부터 7일간 날짜별 복습 예정 단어 수">{schedule.days.map((day, index) => <button type="button" key={day.date} className={`${index===0?'today':''} ${selected===day.date?'selected':''}`} aria-pressed={selected===day.date} aria-label={`${label(day.date)}, 복습 예정 ${day.words.length}개, 단어 목록 보기`} onClick={() => setSelected(day.date)}><strong>{number(day.words.length)}</strong><span className="learning-review-track"><span style={{ height: `${day.words.length / ceiling * 100}%` }}/></span><span className="learning-review-day">{index === 0 ? '오늘' : index === 1 ? '내일' : label(day.date)}</span></button>)}</div></div>
           <div className="learning-review-action"><div><strong>지금 복습 가능한 단어 {number(schedule.dueNow.length)}개</strong></div><button type="button" className="primary" onClick={onStart} disabled={!schedule.dueNow.length}><PlayIcon weight="fill"/>오늘의 테스트 시작하기</button></div>
 
-          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 일정을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
     <Modal open={selected !== null} title={title} description={`현재 기준 ${selectedWords.length}개예요. 복습 예정 시각 순서로 표시해요.`} onClose={() => setSelected(null)} size="large">
       {selectedWords.length ? <ul className="learning-review-words">{selectedWords.map(word => <li key={word.vocabularyId}><strong>{word.word}</strong><p>{word.meaning}</p><small>복습 예정 · {timeLabel(word.progress.nextReviewAt)}{word.progress.masteryLevel >= 6 ? ' · 마스터' : ''}</small></li>)}</ul> : <p>해당 날짜에 복습할 단어가 없어요.</p>}

@@ -278,6 +278,12 @@ try{
     await click('.analytics-card .report-chart-error>button')
     await ready('기간 마지막 누적 XP')
     assert.equal(await evaluate(`document.querySelector('.analytics-card .report-chart-error')`),null,'retry restores growth chart')
+    mode='error'
+    await click('.analytics-card .report-chart-refresh')
+    await ready('마지막으로 확인한 기록을 표시하고 있어요.')
+    assert.ok(await evaluate(`document.querySelector('.analytics-card .report-chart-stale')!==null`),'cached data has styled notice')
+    assert.ok(await evaluate(`document.querySelector('.growth-area')!==null`),'refresh failure preserves chart')
+
   }
 
  }

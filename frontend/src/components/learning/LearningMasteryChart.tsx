@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import { masteryStageNames } from '../../domain/masteryStages'
 import ReportSummary from './ReportSummary'
@@ -50,7 +51,7 @@ export default function LearningMasteryChart() {
             return <button type="button" key={item.level} className={item.level >= 6 ? 'mastered' : ''} aria-label={`${item.level}단계 ${item.name}, ${item.count}개, 전체의 ${percent.toFixed(1)}%, 단어 목록 보기`} onClick={() => setSelectedLevel(item.level)}><span className="learning-mastery-row-title"><span><small className="learning-mastery-stage">lv.{item.level}</small><b>{item.name}</b></span><span><strong>{number(item.count)}개</strong><small>{percent.toFixed(1)}%</small><CaretRightIcon weight="bold"/></span></span><span className="learning-mastery-track" aria-hidden="true"><span style={{ width: `${percent}%` }}/></span></button>
           })}</div>
 
-          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
     <Modal open={helpOpen} title="숙련도 단계 안내" titleBadge={<span className="mastery-guide-title-badge">망각곡선 주기</span>} description="lv.0~lv.7로 단어의 기억 정도를 알려줘요." onClose={()=>setHelpOpen(false)} presentation="overlay">
       <ol className="mastery-stage-guide">{stages.map((stage,level)=>{

@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -31,7 +32,7 @@ export default function LearningWordGrowthChart() {
             </span>
           </button>
         </li>)}</ol> : <div className="learning-weak-empty"><TrendUpIcon aria-hidden="true"/><h3>앞으로의 성장을 기다리고 있어요</h3><p>복습하며 숙련도가 오르면 여기에 보여드려요.</p></div>}
-        {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+        {query.isError && <ChartStaleNotice/>}
       </>}
     <Modal open={selectedId !== null} title="단어 상세" onClose={() => setSelectedId(null)} size="large">
       {wordsQuery.isPending ? <p role="status">단어를 불러오는 중이에요.</p> : wordsQuery.isError ? <div role="alert"><p>단어를 불러오지 못했어요.</p><button type="button" onClick={() => void wordsQuery.refetch()}>다시 시도</button></div> : selected ? <div className="vocabulary-page"><VocabularyWordCard key={selected.vocabularyId} word={selected} expanded/></div> : <p>현재 보관 중인 단어를 찾지 못했어요.</p>}

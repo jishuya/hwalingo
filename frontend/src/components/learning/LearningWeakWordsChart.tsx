@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import VocabularyWordCard from '../vocabulary/VocabularyWordCard'
 import { useState } from 'react'
@@ -31,7 +32,7 @@ export default function LearningWeakWordsChart({ onStart }: { onStart: () => voi
           })}</ol> : <div className="learning-weak-empty"><TargetIcon weight="duotone" aria-hidden="true"/><h3>아직 오답 기록이 없어요</h3><p>테스트를 풀면 다시 공부할 단어를 모아드릴게요.</p></div>}
           <div className="learning-weak-action"><div><strong>오답 이력이 있는 단어 {weakCount.toLocaleString('ko-KR')}개</strong></div><button type="button" className="primary" disabled={!weakCount} onClick={onStart}>틀린단어 집중연습</button></div>
 
-          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 기록을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
     <Modal open={selectedId !== null} title="단어 상세" onClose={() => setSelectedId(null)} size="large">
       {selected ? <div className="vocabulary-page"><VocabularyWordCard key={selected.vocabularyId} word={selected} expanded

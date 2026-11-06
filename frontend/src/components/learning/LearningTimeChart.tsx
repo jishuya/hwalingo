@@ -1,3 +1,4 @@
+import ChartStaleNotice from './ChartStaleNotice'
 import ChartErrorState from './ChartErrorState'
 import AnalyticsPeriod, { AnalyticsPeriodControls } from './AnalyticsPeriod'
 import { useAnalyticsPeriod } from './analyticsContext'
@@ -93,7 +94,7 @@ function LearningTimeChartContent() {
 
           <dl className="learning-time-averages"><div><dt>하루 평균</dt><dd>{formatTime(measuredCount ? total / measuredCount : 0)}</dd></div><div><dt>학습한 날 평균</dt><dd>{activeDays ? formatTime(total / activeDays) : '기록 없음'}</dd></div></dl>
           </div>
-          {query.isError && <p role="status">최신 기록을 불러오지 못해 마지막으로 확인한 시간을 표시하고 있어요.</p>}
+          {query.isError && <ChartStaleNotice/>}
         </>}
   </section>
 }

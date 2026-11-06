@@ -85,7 +85,7 @@ export default function App() {
         : page === 'quiz'
           ? <QuizPage key={`${quizMode}:${practiceIds?.join(',')??'all'}`} mode={quizMode} vocabularyIds={practiceIds} onHome={() => go(quizMode === 'incorrect' ? 'vocabulary' : 'study')}/>
         : page === 'story'
-          ? <StoryPage/>
+          ? <StoryPage onVocabulary={() => go('vocabulary')}/>
           : page === 'learning-progress'
             ? <LearningProgressPage onNavigate={go} onIncorrectTest={()=>startIncorrectTest()}/>
           : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>

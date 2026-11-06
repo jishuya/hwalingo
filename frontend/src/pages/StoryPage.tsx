@@ -25,7 +25,7 @@ const difficulties: Array<{ value: StoryDifficulty; label: string }> = [
   { value: 'easy', label: '초급 (A2)' }, { value: 'normal', label: '보통 (B1–B2)' }, { value: 'hard', label: '고급 (C1)' },
 ]
 
-export default function StoryPage() {
+export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
   const queryClient = useQueryClient()
   const [selectionMode, setSelectionMode] = useState<'recommended' | 'manual' | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -59,6 +59,7 @@ export default function StoryPage() {
   const draftWords = words.filter(word => draftSelectedIds.includes(word.vocabularyId))
   const draftLanguage = draftWords[0]?.languageCode
   const minimum = 3
+  const availableWordCount = Math.max(0,...[...savedLanguages].map(language=>words.filter(word=>word.languageCode===language).length))
   const matchingWords = useMemo(() => {
     const term = search.trim().toLocaleLowerCase()
     return words.filter(word => {
@@ -101,25 +102,31 @@ export default function StoryPage() {
     }
     setDraftSelectedIds(current => [...current, id])
   }
-  const recommendedIds = (candidates = words, preferredLanguage?: LanguageCode, previousIds = selectedIds) => {
-    return recommendStoryWords(candidates, { language: preferredLanguage, previousIds }).map(word => word.vocabularyId)
+  const recommendedIds = (candidates = words, preferredLanguage?: LanguageCode, previousIds = selectedIds, allowLanguageChange=false) => {
+    return recommendStoryWords(candidates, { language: preferredLanguage, previousIds, allowLanguageChange }).map(word => word.vocabularyId)
   }
-  const selectRecommended = () => { setSelectionMode('recommended'); setSelectedIds(recommendedIds(words, selectedLanguage)); storyMutation.reset() }
+  const notifyPartialRecommendation = (ids:string[], candidates:Vocabulary[], filtered=false) => {
+    if (ids.length===0 || ids.length>=5) return
+    const language = candidates.find(word=>word.vocabularyId===ids[0])?.languageCode
+    const languageName = languageOptions.find(option=>option.code===language)?.label ?? '같은 언어'
+    setAlert({title:'있는 단어만큼 추천했어요',message:`${filtered?'선택한 조건에 맞는 ':''}${languageName} 단어가 5개 미만이라 ${ids.length}개를 모두 선택했어요.`})
+  }
+  const selectRecommended = () => {
+    const ids = recommendedIds(words,selectedLanguage,selectedIds,selectionMode==='recommended')
+    setSelectionMode('recommended')
+    setSelectedIds(ids)
+    storyMutation.reset()
+    notifyPartialRecommendation(ids,words)
+  }
   const selectDraftRecommended = () => {
-    const ids = recommendedIds(visibleWords, languageFilter === 'all' ? undefined : languageFilter, draftSelectedIds)
-    if (ids.length < 5) {
-      const recommendationLanguage = languageFilter === 'all'
-        ? visibleWords.find(word => word.vocabularyId === ids[0])?.languageCode
-        : languageFilter
-      const languageName = languageOptions.find(language => language.code === recommendationLanguage)?.label
-      setAlert({
-        title: '추천할 단어가 부족해요',
-        message: `추천 단어는 선택한 언어의 단어가 5개 이상일 때 가능합니다. ${languageName ? `현재 ${languageName} 단어는 ${ids.length}개뿐이에요.` : '현재 선택한 필터에 맞는 단어가 없어요.'}${search.trim() ? ' 검색 결과 기준이에요.' : ''}`,
-      })
+    const ids = recommendedIds(visibleWords, languageFilter === 'all' ? undefined : languageFilter, draftSelectedIds,languageFilter==='all')
+    if (!ids.length) {
+      setAlert({title:'추천할 단어가 없어요',message:'선택한 조건에 맞는 단어가 없어요.'})
       return
     }
     setDraftSelectedIds(ids)
     setRecommendSparkling(true)
+    notifyPartialRecommendation(ids,visibleWords,true)
   }
   const removeSelectedWord = (vocabularyId: string) => { setSelectedIds(current => current.filter(id => id !== vocabularyId)); storyMutation.reset() }
   const openSettings = () => { setDraftGenre(genre); setDraftLength(length); setDraftDifficulty(difficulty); setSettingsOpen(true) }
@@ -158,6 +165,10 @@ export default function StoryPage() {
       translationMutation.mutate({ story: storyMutation.data.story, languageCode: selectedLanguage })
     }
   }
+
+  if (vocabulariesQuery.isSuccess && availableWordCount < minimum) return <div className="page story-page">
+    <AlertDialog open tone="warning" title="스토리를 만들 단어가 부족해요" message={<>같은 언어의 단어가 <strong>3개 이상</strong> 필요해요.</>} onClose={onVocabulary}/>
+  </div>
 
   return <div className="page story-page">
     <LearningTimer activity="story" enabled={Boolean(storyMutation.data) && !storyMutation.isPending}/>

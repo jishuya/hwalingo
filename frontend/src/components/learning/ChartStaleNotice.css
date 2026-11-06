@@ -1,0 +1,9 @@
+.learning-progress-page .report-chart-stale{display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border:1px solid #f0dfb0;border-radius:12px;background:#fffbef;color:#86651e;text-align:left}
+.report-chart-stale-icon{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:10px;background:#fff1c9;color:#b9851c}
+.report-chart-stale-icon>svg{width:19px;height:19px}
+.report-chart-stale>div{min-width:0}
+.report-chart-stale strong{display:block;font-size:var(--font-sm);font-weight:600;line-height:1.5;word-break:keep-all}
+.learning-progress-page .report-chart-stale p{margin:3px 0 0;color:#937d4c;font-size:var(--font-xs);font-weight:400;line-height:1.6;word-break:keep-all}
+html[data-theme='dark'] .learning-progress-page .report-chart-stale{background:#302b1c;border-color:#55482a;color:#efda9a}
+html[data-theme='dark'] .report-chart-stale-icon{background:#44381b;color:#f0cd70}
+html[data-theme='dark'] .learning-progress-page .report-chart-stale p{color:#c4b383}
