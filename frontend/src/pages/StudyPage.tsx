@@ -9,6 +9,8 @@ import AnalysisPage from './AnalysisPage'
 type InputLanguageSelection = LanguageCode | 'auto'
 type LanguageOption = { code: InputLanguageSelection; label: string }
 
+const learningLanguageOptions = languageOptions.filter(language => language.code !== 'ko')
+
 function LanguageSelect({ value, onChange, ariaLabel, options = languageOptions, displayLabel }: { value: InputLanguageSelection; onChange: (value: InputLanguageSelection) => void; ariaLabel: string; options?: readonly LanguageOption[]; displayLabel?: string }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -79,7 +81,7 @@ export default function StudyPage() {
       </div>
     </section>}
     <section className="card input-card study-composer study-composer-v2">
-      <PhotoTextInput hasText={Boolean(text.trim())} disabled={isAnalyzing} characterCount={text.length} onApply={value => { setText(value); requestAnimationFrame(() => textareaRef.current?.focus()) }} controls={<div className="study-composer-settings"><div className="language-selectors"><div className="language-field"><span className="language-field-label">입력언어</span><LanguageSelect value={inputLanguage} onChange={setInputLanguage} ariaLabel="입력언어" options={inputLanguageOptions} displayLabel={inputLanguage === 'auto' ? autoDisplayLabel : undefined}/></div><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><div className="language-field"><span className="language-field-label">학습언어</span><LanguageSelect value={learningLanguage} onChange={value => setLearningLanguage(value as LanguageCode)} ariaLabel="학습언어"/></div></div></div>}>
+      <PhotoTextInput hasText={Boolean(text.trim())} disabled={isAnalyzing} characterCount={text.length} onApply={value => { setText(value); requestAnimationFrame(() => textareaRef.current?.focus()) }} controls={<div className="study-composer-settings"><div className="language-selectors"><div className="language-field"><span className="language-field-label">입력언어</span><LanguageSelect value={inputLanguage} onChange={setInputLanguage} ariaLabel="입력언어" options={inputLanguageOptions} displayLabel={inputLanguage === 'auto' ? autoDisplayLabel : undefined}/></div><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><div className="language-field"><span className="language-field-label">학습언어</span><LanguageSelect value={learningLanguage} onChange={value => setLearningLanguage(value as LanguageCode)} ariaLabel="학습언어" options={learningLanguageOptions}/></div></div></div>}>
         <div className="study-text-field"><textarea aria-label="학습할 내용" id="study-text" ref={textareaRef} value={text} maxLength={500} onChange={event => setText(event.target.value)} placeholder="학습하고 싶은 문장이나 문구를 입력해 주세요."/>
         {text.length > 0 && <button type="button" className="study-clear-text" aria-label="입력 내용 초기화" title="입력 내용 초기화" onClick={clearText}><ArrowClockwiseIcon weight="bold" aria-hidden="true"/></button>}</div>
       </PhotoTextInput>
