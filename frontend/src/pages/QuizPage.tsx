@@ -1,9 +1,10 @@
 import LoginRequired from '../components/ui/LoginRequired'
+import PageNotice from '../components/ui/PageNotice'
 import LearningTimer from '../components/learning/LearningTimer'
 import { AlertDialog } from '../components/ui/Dialog'
 import DialogCloseButton from '../components/ui/DialogCloseButton'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, FireIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TargetIcon, PauseCircleIcon, InfoIcon, TranslateIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon, ArrowsLeftRightIcon, EqualsIcon, PaletteIcon, BookOpenIcon, FireIcon, ImageIcon, LightbulbIcon, MagicWandIcon, SpeakerHighIcon, StarIcon, TargetIcon, PauseCircleIcon, InfoIcon, TranslateIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QuizRequestError, createQuizSession, generateVocabularyImage, getQuizSession, getVocabularyDeepAnalysis, submitQuizAnswer } from '../services/quiz'
 import QuizComplete from '../components/quiz/QuizComplete'
@@ -151,7 +152,9 @@ export default function QuizPage({ onHome, mode = 'standard', vocabularyIds }: {
   if ([sessionQuery.error, answerMutation.error, deepAnalysisMutation.error, imageMutation.error].some(error => error instanceof QuizRequestError && error.status === 401)) return <div className="quiz-page page"><LoginRequired/></div>
   if (sessionQuery.isPending) return <div className="quiz-page page"><div className="empty-state"><p>오늘의 테스트를 준비하고 있어요.</p></div></div>
   if (sessionQuery.isError && sessionQuery.error.message === '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.') return <div className="quiz-page page"><div className="empty-state vocabulary-empty"><StarIcon/><h2>테스트할 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘를 단어장에 저장하면<br/>이곳에서 테스트로 복습할 수 있어요.</p></div></div>
-  if (sessionQuery.isError && sessionQuery.error.message.startsWith('오늘 추가로 풀 단어')) return <div className="quiz-page page"><div className="empty-state"><h2>추가 학습을 모두 마쳤어요</h2><p>{sessionQuery.error.message}</p></div></div>
+  if (sessionQuery.isError && sessionQuery.error.message.startsWith('오늘 추가로 풀 단어')) return <div className="quiz-page page"><PageNotice icon={<CheckCircleIcon weight="bold"/>} title="추가 학습을 모두 마쳤어요" description={<>오늘 추가로 풀 단어를 모두 학습했어요.<br/>새 단어를 저장하거나 다음 복습일에 다시 만나요.</>}>
+    <button type="button" className="page-notice-button" onClick={onHome}>문장 분석하기</button>
+  </PageNotice></div>
   if (sessionQuery.isError && sessionQuery.error.message === '테스트할 오답 단어가 없어요.') return <div className="quiz-page page"><div className="empty-state"><h2>테스트할 오답 단어가 없어요</h2><button className="primary" onClick={onHome}>단어장으로</button></div></div>
   if (sessionQuery.isError && sessionQuery.error instanceof QuizRequestError && sessionQuery.error.code === 'INSUFFICIENT_VOCABULARY') return <div className="quiz-page page"><AlertDialog open tone="warning" title="테스트할 단어가 부족해요" message={<>{sessionQuery.error.message.split(/(\d+개)/u).map((part, index) => index % 2 === 1 ? <strong key={index}>{part}</strong> : part)}</>} onClose={onHome}/></div>
   if (sessionQuery.isError) return <div className="quiz-page page"><div className="empty-state"><h2>테스트를 시작할 수 없어요</h2><p>{sessionQuery.error.message}</p><button className="primary" onClick={() => void sessionQuery.refetch()}>다시 시도</button></div></div>
