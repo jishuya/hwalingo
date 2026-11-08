@@ -1,3 +1,4 @@
+import LoginRequired from '../components/ui/LoginRequired'
 import LearningTimer from '../components/learning/LearningTimer'
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -7,8 +8,8 @@ import { recommendStoryWords } from '../domain/storyRecommendation'
 import AiLoadingOverlay from '../components/ui/AiLoadingOverlay'
 import SpeechControls from '../components/study/SpeechControls'
 import { languageOptions, type LanguageCode } from '../services/analysis'
-import { getVocabularies, type Vocabulary } from '../services/vocabulary'
-import { createStory, getStoryTranslation, isKoreanStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
+import { VocabularyRequestError, getVocabularies, type Vocabulary } from '../services/vocabulary'
+import { StoryRequestError, createStory, getStoryTranslation, isKoreanStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
 
 const languageFlags: Record<LanguageCode, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵', zh: '🇨🇳', fr: '🇫🇷' }
 
@@ -165,6 +166,8 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
       translationMutation.mutate({ story: storyMutation.data.story, languageCode: selectedLanguage })
     }
   }
+
+  if ([vocabulariesQuery.error, storyMutation.error, translationMutation.error].some(error => (error instanceof VocabularyRequestError || error instanceof StoryRequestError) && error.status === 401)) return <div className="page story-page"><LoginRequired/></div>
 
   if (vocabulariesQuery.isSuccess && availableWordCount < minimum) return <div className="page story-page">
     <AlertDialog open tone="warning" title="스토리를 만들 단어가 부족해요" message={<>같은 언어의 단어가 <strong>3개 이상</strong> 필요해요.</>} onClose={onVocabulary}/>

@@ -1,3 +1,4 @@
+import LoginRequired from '../components/ui/LoginRequired'
 import LearningTimer from '../components/learning/LearningTimer'
 import { AlertDialog } from '../components/ui/Dialog'
 import DialogCloseButton from '../components/ui/DialogCloseButton'
@@ -147,6 +148,7 @@ export default function QuizPage({ onHome, mode = 'standard', vocabularyIds }: {
     else setDragOffset(0)
   }
 
+  if ([sessionQuery.error, answerMutation.error, deepAnalysisMutation.error, imageMutation.error].some(error => error instanceof QuizRequestError && error.status === 401)) return <div className="quiz-page page"><LoginRequired/></div>
   if (sessionQuery.isPending) return <div className="quiz-page page"><div className="empty-state"><p>오늘의 테스트를 준비하고 있어요.</p></div></div>
   if (sessionQuery.isError && sessionQuery.error.message === '테스트할 단어가 없습니다. 먼저 단어장에 단어를 저장해주세요.') return <div className="quiz-page page"><div className="empty-state vocabulary-empty"><StarIcon/><h2>테스트할 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘를 단어장에 저장하면<br/>이곳에서 테스트로 복습할 수 있어요.</p></div></div>
   if (sessionQuery.isError && sessionQuery.error.message.startsWith('오늘 추가로 풀 단어')) return <div className="quiz-page page"><div className="empty-state"><h2>추가 학습을 모두 마쳤어요</h2><p>{sessionQuery.error.message}</p></div></div>

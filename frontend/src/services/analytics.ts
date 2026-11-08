@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch'
 export interface AnalyticsSelection { from?: string; to?: string; period?: 'all' }
 export interface AnalyticsRange { start: string; end: string; today: string; grain: 'day' | 'month' | 'year' }
 export function analyticsQuery(selection: AnalyticsSelection = {}) { return new URLSearchParams(Object.entries(selection).filter(([,value]) => value !== undefined) as [string,string][]).toString() }
@@ -9,7 +10,7 @@ export interface LearningInsights {
   weekdays: Array<{ weekday: number; averageAnswers: number; averageSeconds: number | null; maxAnswers: number; maxSeconds: number | null; activeDays: number; observedDays: number; measuredDays: number }>
 }
 export async function getLearningInsights(selection: AnalyticsSelection): Promise<LearningInsights> {
-  const response = await fetch(`/api/progress/insights?${analyticsQuery(selection)}`, { credentials: 'include' })
+  const response = await apiFetch(`/api/progress/insights?${analyticsQuery(selection)}`, { credentials: 'include' })
   if (!response.ok) throw new Error('학습 통계를 불러오지 못했어요.')
   return response.json() as Promise<LearningInsights>
 }

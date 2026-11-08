@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch'
 export type Theme = 'light' | 'dark' | 'system'
 
 export interface UserSettings {
@@ -8,7 +9,7 @@ export interface UserSettings {
 }
 
 async function settingsRequest<T>(options?: RequestInit): Promise<T> {
-  const response = await fetch('/api/settings/me', {
+  const response = await apiFetch('/api/settings/me', {
     ...options,
     credentials: 'include',
     headers: options?.body ? { 'Content-Type': 'application/json', ...options.headers } : options?.headers,

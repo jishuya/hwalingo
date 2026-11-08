@@ -1,7 +1,8 @@
+import { apiFetch } from './apiFetch'
 export interface SupportInquiry { category: string; message: string }
 
 export async function sendSupportInquiry(inquiry: SupportInquiry): Promise<void> {
-  const response = await fetch('/api/support/inquiries', {
+  const response = await apiFetch('/api/support/inquiries', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(inquiry),
   })
   if (!response.ok) {

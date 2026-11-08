@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch'
 export interface AuthUser {
   id: string
   email: string
@@ -19,7 +20,7 @@ interface MessageResponse {
 export type ForgotPasswordResponse = MessageResponse
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await apiFetch(path, {
     ...options,
     credentials: 'include',
     headers: options?.body ? { 'Content-Type': 'application/json', ...options.headers } : options?.headers,

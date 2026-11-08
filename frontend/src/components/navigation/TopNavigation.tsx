@@ -7,13 +7,14 @@ import type { Page } from '../../types/navigation'
 import { navigationItems } from './navigationItems'
 
 interface TopNavigationProps {
+  showStreak?: boolean
   currentPage: Page
   onNavigate: (page: Page) => void
   onHome: () => void
 }
 
-export default function TopNavigation({ currentPage, onNavigate, onHome }: TopNavigationProps) {
-  const progressQuery = useQuery({ queryKey: ['progress', 'me'], queryFn: getUserProgress })
+export default function TopNavigation({ currentPage, onNavigate, onHome, showStreak = true }: TopNavigationProps) {
+  const progressQuery = useQuery({ queryKey: ['progress', 'me'], queryFn: getUserProgress, enabled: showStreak })
   const streak = progressQuery.data?.currentStreak
 
   return <header className="topbar">
@@ -30,9 +31,9 @@ export default function TopNavigation({ currentPage, onNavigate, onHome }: TopNa
         </button>
       })}
     </nav>
-    <div className="learning-streak" aria-label={streak === undefined ? (progressQuery.isPending ? '연속 학습 일수를 불러오는 중' : '연속 학습 일수를 불러오지 못했습니다') : `연속 학습 ${streak}일`} title="연속 학습">
+    {showStreak && <div className="learning-streak" aria-label={streak === undefined ? (progressQuery.isPending ? '연속 학습 일수를 불러오는 중' : '연속 학습 일수를 불러오지 못했습니다') : `연속 학습 ${streak}일`} title="연속 학습">
       <FireIcon size={22} weight="fill" aria-hidden="true"/>
       <span>{streak ?? '–'}일 연속</span>
-    </div>
+    </div>}
   </header>
 }

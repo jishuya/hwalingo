@@ -1,8 +1,9 @@
+import LoginRequired from '../components/ui/LoginRequired'
 import { getActiveIncorrectPractice } from '../services/quiz'
 import VocabularyWordCard, { type VocabularyView } from '../components/vocabulary/VocabularyWordCard'
 import LearningTimer from '../components/learning/LearningTimer'
 import { useEffect, useRef, useState } from 'react'
-import { SignInIcon, ArrowClockwiseIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, StarIcon, PlayIcon, TrashIcon } from '@phosphor-icons/react'
+import { ArrowClockwiseIcon, CaretDownIcon, XCircleIcon, GlobeIcon, ListBulletsIcon, MagnifyingGlassIcon, StarIcon, PlayIcon, TrashIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { languageOptions, type LanguageCode } from '../services/analysis'
 import { VocabularyRequestError, deleteVocabulary, getVocabularies, setVocabularyFavorite } from '../services/vocabulary'
@@ -107,7 +108,8 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
     </>}
 
     {vocabulariesQuery.isPending ? <div className="empty-state"><p>단어장을 불러오고 있어요.</p></div>
-      : vocabulariesQuery.isError ? <section className="vocabulary-load-error" role="alert"><span className="vocabulary-load-error-icon" aria-hidden="true">{needsLogin ? <SignInIcon/> : <ArrowClockwiseIcon/>}</span><h2>{needsLogin ? '로그인을 다시 해주세요' : '단어장을 불러오지 못했어요'}</h2><p>{needsLogin ? '저장한 단어를 보려면 다시 로그인해 주세요.' : '잠시 후 다시 시도해 주세요.'}</p>{needsLogin ? <a className="primary" href="/login">로그인하기</a> : <button type="button" className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 불러오기</button>}</section>
+      : needsLogin ? <LoginRequired/>
+      : vocabulariesQuery.isError ? <section className="vocabulary-load-error" role="alert"><span className="vocabulary-load-error-icon" aria-hidden="true"><ArrowClockwiseIcon/></span><h2>단어장을 불러오지 못했어요</h2><p>잠시 후 다시 시도해 주세요.</p><button type="button" className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 불러오기</button></section>
         : !saved.length ? <div className="empty-state vocabulary-empty"><StarIcon/><h2>아직 저장한 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘에서 즐겨찾기 별표를 누르면<br/>이곳에서 다시 학습할 수 있어요.</p></div>
           : !visibleWords.length ? <div className="empty-state vocabulary-empty"><MagnifyingGlassIcon/><h2>조건에 맞는 단어가 없어요</h2></div>
             : <div className="word-grid compact-word-grid">{visibleWords.map(word => {

@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch'
 export const languageOptions = [
   { code: 'ko', label: '한국어' },
   { code: 'en', label: '영어' },
@@ -78,7 +79,7 @@ function attachStandalonePunctuation(analysis: SentenceAnalysis): SentenceAnalys
 }
 
 export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSignal): Promise<SentenceAnalysis> {
-  const response = await fetch('/api/analysis', {
+  const response = await apiFetch('/api/analysis', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request), signal,
   })
   const result = await response.json().catch(() => ({})) as { analysis?: SentenceAnalysis; message?: string }
@@ -87,7 +88,7 @@ export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSi
 }
 
 export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'inputLanguage' | 'learningLanguage'> & { learningSentence: string }, signal?: AbortSignal): Promise<SentenceParaphrase[]> {
-  const response = await fetch('/api/analysis/paraphrases', {
+  const response = await apiFetch('/api/analysis/paraphrases', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
   })
   const result = await response.json().catch(() => ({})) as { paraphrases?: SentenceParaphrase[]; message?: string }
@@ -98,7 +99,7 @@ export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'input
 export async function getSentenceVocabulary(input: Pick<AnalysisRequest, 'inputLanguage' | 'learningLanguage'> & {
   sentences: Array<Pick<AnalyzedSentence, 'inputText' | 'learningSentence'>>
 }, signal?: AbortSignal): Promise<VocabularyAnalysis[][]> {
-  const response = await fetch('/api/analysis/vocabulary', {
+  const response = await apiFetch('/api/analysis/vocabulary', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
   })
   const result = await response.json().catch(() => ({})) as { vocabularies?: VocabularyAnalysis[][]; message?: string }

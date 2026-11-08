@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import LoginRequired from './components/ui/LoginRequired'
+import { SESSION_EXPIRED_EVENT } from './services/apiFetch'
+import { RobotIcon, StarIcon, ExamIcon, SparkleIcon, UserCircleIcon, ChartBarIcon } from '@phosphor-icons/react'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
 import LearningProgressPage from './pages/LearningProgressPage'
@@ -14,6 +17,7 @@ import { readRoute, type Page } from './types/navigation'
 import './App.css'
 
 export default function App() {
+  const [sessionExpired, setSessionExpired] = useState(false)
   const [page, setPage] = useState<Page>(readRoute)
   const [studyPageKey, setStudyPageKey] = useState(0)
   const [quizMode, setQuizMode] = useState<'standard' | 'incorrect'>(() => new URLSearchParams(location.search).get('mode') === 'incorrect' ? 'incorrect' : 'standard')
@@ -23,8 +27,17 @@ export default function App() {
     queryKey: ['auth', 'me'],
     queryFn: getCurrentUser,
     retry: false,
+    refetchOnWindowFocus: true,
   })
-  const settingsQuery = useQuery({ queryKey: ['settings', 'me'], queryFn: getUserSettings, enabled: Boolean(authQuery.data) })
+  useEffect(() => {
+    const expireSession = () => setSessionExpired(true)
+    window.addEventListener(SESSION_EXPIRED_EVENT, expireSession)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expireSession)
+  }, [])
+  useEffect(() => {
+    if (page !== 'login' && !sessionExpired) void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+  }, [page, sessionExpired, queryClient])
+  const settingsQuery = useQuery({ queryKey: ['settings', 'me'], queryFn: getUserSettings, enabled: Boolean(authQuery.data) && !sessionExpired })
 
   useEffect(() => {
     const theme = settingsQuery.data?.theme
@@ -65,6 +78,8 @@ export default function App() {
   }
 
   const finishAuth = (user: AuthUser) => {
+    queryClient.clear()
+    setSessionExpired(false)
     queryClient.setQueryData(['auth', 'me'], { user })
     go('study')
   }
@@ -76,7 +91,23 @@ export default function App() {
   }
 
   if (authQuery.isPending) return <div className="auth-loading">Hwalingo 불러오는 중...</div>
-  if (!authQuery.data || page === 'login') return <LoginPage done={finishAuth}/>
+  if (page === 'login' || (!authQuery.data && !sessionExpired)) return <LoginPage done={finishAuth}/>
+
+  if (sessionExpired) {
+    const titles = {
+      study: { title: 'AI 문장 분석', Icon: RobotIcon },
+      vocabulary: { title: '내 단어장', Icon: StarIcon },
+      quiz: { title: '테스트', Icon: ExamIcon },
+      story: { title: '스토리텔링', Icon: SparkleIcon },
+      profile: { title: '마이페이지', Icon: UserCircleIcon },
+      'learning-progress': { title: '학습 리포트', Icon: ChartBarIcon },
+    }
+    const { title, Icon } = titles[page]
+    return <AppShell page={page} go={go} onHome={goHome} sessionExpired><div className="page session-expired-page">
+      <header className="page-title"><span className="page-title-icon"><Icon weight="duotone" aria-hidden="true"/></span><h1>{title}</h1></header>
+      <LoginRequired/>
+    </div></AppShell>
+  }
 
   const content = page === 'study'
     ? <StudyPage key={studyPageKey}/>
@@ -88,7 +119,7 @@ export default function App() {
           ? <StoryPage onVocabulary={() => go('vocabulary')}/>
           : page === 'learning-progress'
             ? <LearningProgressPage onNavigate={go} onIncorrectTest={()=>startIncorrectTest()}/>
-          : <ProfilePage user={authQuery.data.user} logout={finishLogout} onNavigate={go}/>
+          : <ProfilePage user={authQuery.data!.user} logout={finishLogout} onNavigate={go}/>
 
   return <AppShell page={page} go={go} onHome={goHome}>{content}</AppShell>
 }

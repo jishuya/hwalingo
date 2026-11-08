@@ -1,4 +1,4 @@
-import { ArrowRight, ChatCircle, Check, EnvelopeSimple, Eye, EyeSlash, HourglassMedium, LockKey } from '@phosphor-icons/react'
+import { ArrowRight, Check, EnvelopeSimple, Eye, EyeSlash, LockKey } from '@phosphor-icons/react'
 import { useEffect, useState, type FormEvent } from 'react'
 import SignupModal from '../components/auth/SignupModal'
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal'
@@ -12,10 +12,9 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [signupOpen, setSignupOpen] = useState(false)
+  const [signupOpen, setSignupOpen] = useState(() => new URLSearchParams(window.location.search).get('signup') === '1')
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
   const [error, setError] = useState('')
-  const [socialLoginNotice, setSocialLoginNotice] = useState('')
   const [passwordChanged, setPasswordChanged] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -58,12 +57,8 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
         </form>
 
         <p className="auth-switch">처음 방문하셨나요? <button type="button" onClick={() => setSignupOpen(true)}>회원가입</button></p>
-        <div className="auth-divider"><span>간편 로그인</span></div>
-        <div className="auth-socials">
-          <button type="button" className="auth-social-google" onClick={() => setSocialLoginNotice('Google 로그인은 준비 중입니다.')}><b>G</b><span>Google</span></button>
-          <button type="button" className="auth-social-kakao" onClick={() => setSocialLoginNotice('카카오 로그인은 준비 중입니다.')}><ChatCircle weight="fill"/><span>Kakao</span></button>
-        </div>
+
       </div>
     </section>
-  </main>{signupOpen && <SignupModal onClose={() => setSignupOpen(false)} onComplete={done}/>} {forgotPasswordOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setForgotPasswordOpen(false)} onComplete={() => { setForgotPasswordOpen(false); setPassword(''); setPasswordChanged(true) }}/>}<AlertDialog open={Boolean(socialLoginNotice)} title="서비스 준비 중" message={socialLoginNotice} icon={<HourglassMedium weight="fill"/>} onClose={() => setSocialLoginNotice('')}/><AlertDialog open={passwordChanged} title="비밀번호 변경 완료" message={<>비밀번호가 변경되었습니다.<br/>새 비밀번호로 로그인해주세요.</>} tone="success" onClose={() => setPasswordChanged(false)}/></>
+  </main>{signupOpen && <SignupModal onClose={() => setSignupOpen(false)} onComplete={done}/>} {forgotPasswordOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setForgotPasswordOpen(false)} onComplete={() => { setForgotPasswordOpen(false); setPassword(''); setPasswordChanged(true) }}/>}<AlertDialog open={passwordChanged} title="비밀번호 변경 완료" message={<>비밀번호가 변경되었습니다.<br/>새 비밀번호로 로그인해주세요.</>} tone="success" onClose={() => setPasswordChanged(false)}/></>
 }

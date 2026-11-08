@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch'
 import { analyticsQuery, type AnalyticsSelection, type AnalyticsRange } from './analytics'
 export type LearningActivity = 'analysis' | 'vocabulary' | 'quiz' | 'story'
 export interface TimeEvent { id: string; activity: LearningActivity; startedAt: string; endedAt: string }
@@ -23,7 +24,7 @@ export async function flushLearningTime(userId: string) {
   if (!events.length) return
   sending = true
   try {
-    const response = await fetch('/api/learning-time/events', {
+    const response = await apiFetch('/api/learning-time/events', {
       method: 'POST', credentials: 'include', keepalive: true,
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, events }),
     })
@@ -35,7 +36,7 @@ export async function flushLearningTime(userId: string) {
   finally { sending = false }
 }
 export async function getLearningTime(selection: AnalyticsSelection = {}): Promise<LearningTimeSummary> {
-  const response = await fetch(`/api/learning-time/me?${analyticsQuery(selection)}`, { credentials: 'include' })
+  const response = await apiFetch(`/api/learning-time/me?${analyticsQuery(selection)}`, { credentials: 'include' })
   if (!response.ok) throw new Error('학습 시간을 불러오지 못했어요.')
   return response.json() as Promise<LearningTimeSummary>
 }

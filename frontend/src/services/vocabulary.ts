@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch'
 import type { LanguageCode } from './analysis'
 
 export interface Vocabulary {
@@ -49,7 +50,7 @@ export class VocabularyRequestError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, { ...options, credentials: 'include', headers: options?.body ? { 'Content-Type': 'application/json', ...options.headers } : options?.headers })
+  const response = await apiFetch(path, { ...options, credentials: 'include', headers: options?.body ? { 'Content-Type': 'application/json', ...options.headers } : options?.headers })
   if (!response.ok) {
     const error = await response.json().catch(() => ({})) as ErrorResponse
     throw new VocabularyRequestError(error.message ?? '단어장 요청을 처리하지 못했습니다.', response.status)

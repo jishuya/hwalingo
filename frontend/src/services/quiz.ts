@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch'
 export type QuestionType = 'multiple_choice' | 'recall' | 'context' | 'translation'
 
 export interface QuizItem {
@@ -70,23 +71,25 @@ interface ErrorResponse { message?: string; code?: string }
 
 export class QuizRequestError extends Error {
   code?: string
+  readonly status?: number
 
-  constructor(message: string, code?: string) {
+  constructor(message: string, code?: string, status?: number) {
     super(message)
     this.name = 'QuizRequestError'
+    this.status = status
     this.code = code
   }
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await apiFetch(path, {
     ...options,
     credentials: 'include',
     headers: options?.body ? { 'Content-Type': 'application/json', ...options.headers } : options?.headers,
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({})) as ErrorResponse
-    throw new QuizRequestError(error.message ?? '테스트 요청을 처리하지 못했습니다.', error.code)
+    throw new QuizRequestError(error.message ?? '테스트 요청을 처리하지 못했습니다.', error.code, response.status)
   }
   return response.json() as Promise<T>
 }
