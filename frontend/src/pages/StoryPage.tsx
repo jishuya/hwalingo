@@ -58,7 +58,9 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
   const selectedLanguage = selectedWords[0]?.languageCode
   const selectedLanguageName = languageOptions.find(language => language.code === selectedLanguage)?.label
   const storyTranslation = (isKoreanStoryTranslation(storyMutation.data?.translation) ? storyMutation.data.translation : '')
-    || (translationMutation.variables?.story === storyMutation.data?.story ? translationMutation.data : '')
+    || (translationMutation.variables?.story === storyMutation.data?.story ? translationMutation.data?.translation : '')
+  const titleTranslation = translationMutation.variables?.story === storyMutation.data?.story
+    && translationMutation.variables?.title === storyMutation.data?.title ? translationMutation.data?.titleTranslation : ''
   const draftWords = words.filter(word => draftSelectedIds.includes(word.vocabularyId))
   const draftLanguage = draftWords[0]?.languageCode
   const minimum = 3
@@ -171,8 +173,8 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
       return
     }
     setTranslationVisible(true)
-    if (!storyTranslation && storyMutation.data && selectedLanguage && !translationMutation.isPending) {
-      translationMutation.mutate({ story: storyMutation.data.story, languageCode: selectedLanguage })
+    if ((!storyTranslation || !titleTranslation) && storyMutation.data && selectedLanguage && !translationMutation.isPending) {
+      translationMutation.mutate({ title: storyMutation.data.title, story: storyMutation.data.story, languageCode: selectedLanguage })
     }
   }
 
@@ -234,6 +236,7 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
                   {selectedLanguage && selectedLanguageName && <div className="story-result-language"><dt className="story-filter-sr-only">언어</dt><dd><span aria-hidden="true">{languageFlags[selectedLanguage]}</span> {selectedLanguageName}</dd></div>}
                 </dl>
                 <h2>{storyMutation.data.title}</h2>
+                {translationVisible && titleTranslation && <p className="story-title-translation" aria-live="polite">{titleTranslation}</p>}
               </div>
               <section className="story-example">
                 <div className="word-detail-heading"><b><SparkleIcon weight="fill" aria-hidden="true"/>STORY</b><div>

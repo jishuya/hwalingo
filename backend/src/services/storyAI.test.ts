@@ -25,7 +25,7 @@ test('story translation retries foreign-language output once and rejects repeate
       assert.ok(input.instructions.includes('Korean Hangul'))
       return { output_text: JSON.stringify({ translation: calls === 1 ? source : korean }) }
     })
-    assert.equal(await generateStoryTranslation({ story: source, languageCode: 'zh' }), korean)
+    assert.equal((await generateStoryTranslation({ story: source, languageCode: 'zh' })).translation, korean)
     assert.equal(calls, 2)
     method.mock.restore()
     calls = 0
@@ -41,7 +41,7 @@ test('story translation retries foreign-language output once and rejects repeate
       calls++
       return { output_text: JSON.stringify({ translation: korean }) }
     })
-    assert.equal(await generateStoryTranslation({ story: source, languageCode: 'zh' }), korean)
+    assert.equal((await generateStoryTranslation({ story: source, languageCode: 'zh' })).translation, korean)
     assert.equal(calls, 1)
   } finally {
     mock.restoreAll()
@@ -64,6 +64,29 @@ test('generated stories include pronunciation alongside the used vocabulary', as
     assert.equal(story.vocabularyUsages[0].word, '决定')
     assert.equal(story.vocabularyUsages[0].meaning, '결정하다')
     assert.equal(story.segments.map(segment => segment.text).join(''), story.story)
+  } finally {
+    mock.restoreAll()
+  }
+})
+
+
+test('story translation includes the title and retries an invalid title translation', async () => {
+  process.env.JWT_SECRET = 'story-translation-test'
+  process.env.OPENAI_API_KEY = 'story-translation-test'
+  const { getOpenAIClient } = await import('../config/openai.js')
+  const { generateStoryTranslation } = await import('./storyAI.js')
+  let calls = 0
+  try {
+    mock.method(getOpenAIClient().responses, 'create', async (input: { input: string }) => {
+      calls++
+      assert.equal(JSON.parse(input.input).title, '周末')
+      return { output_text: JSON.stringify({ translation: '나는 공원에서 산책해요.', titleTranslation: calls === 1 ? '周末' : '주말' }) }
+    })
+    assert.deepEqual(await generateStoryTranslation({ title: '周末', story: '我在公园散步。', languageCode: 'zh' }), { translation: '나는 공원에서 산책해요.', titleTranslation: '주말' })
+    assert.equal(calls, 2)
+    mock.restoreAll()
+    mock.method(getOpenAIClient().responses, 'create', async () => ({ output_text: JSON.stringify({ translation: '나는 공원에서 산책해요.', titleTranslation: '周末' }) }))
+    await assert.rejects(generateStoryTranslation({ title: '周末', story: '我在公园散步。', languageCode: 'zh' }), /한국어 번역을 생성하지 못했어요/)
   } finally {
     mock.restoreAll()
   }

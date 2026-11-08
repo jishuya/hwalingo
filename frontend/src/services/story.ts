@@ -36,14 +36,14 @@ export async function createStory(input: CreateStoryInput): Promise<GeneratedSto
   return result.story
 }
 
-export async function getStoryTranslation(input: { story: string; languageCode: string }): Promise<string> {
+export async function getStoryTranslation(input: { title: string; story: string; languageCode: string }): Promise<{ translation: string; titleTranslation: string }> {
   const response = await apiFetch('/api/stories/translation', {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
   })
-  const result = await response.json().catch(() => ({})) as { translation?: string; message?: string }
+  const result = await response.json().catch(() => ({})) as { translation?: string; titleTranslation?: string; message?: string }
   if (!response.ok || !result.translation) throw new StoryRequestError(result.message ?? '스토리 번역을 불러오지 못했습니다.', response.status)
-  if (!isKoreanStoryTranslation(result.translation)) throw new Error('한국어 번역을 불러오지 못했어요. 다시 시도해주세요.')
-  return result.translation
+  if (!isKoreanStoryTranslation(result.translation) || !isKoreanStoryTranslation(result.titleTranslation)) throw new Error('한국어 번역을 불러오지 못했어요. 다시 시도해주세요.')
+  return { translation: result.translation, titleTranslation: result.titleTranslation }
 }
 
 export function isKoreanStoryTranslation(value: unknown): value is string {

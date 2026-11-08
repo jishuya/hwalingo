@@ -19,29 +19,30 @@ storiesRouter.post('/translation', requireAuth, async (request, response, next) 
   request.once('aborted', () => abortController.abort())
   try {
     const story = typeof request.body.story === 'string' ? request.body.story.trim() : ''
+    const title = typeof request.body.title === 'string' ? request.body.title.trim() : ''
     const languageCode = request.body.languageCode as LanguageCode
-    if (!story || story.length > 5_000) {
+    if (!story || story.length > 5_000 || title.length > 500) {
       response.status(400).json({ message: '번역할 스토리가 올바르지 않습니다.' }); return
     }
     if (!(languageCode in languageNames)) {
       response.status(400).json({ message: '스토리 언어가 올바르지 않습니다.' }); return
     }
-    const cachedTranslation = await readAIResponseCache<unknown>({
+    const cachedTranslation = await readAIResponseCache<{ translation: string; titleTranslation: string }>({
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_translation_ko_v2',
-      keyParts: { story, languageCode },
+      operation: 'vocabulary_story_translation_ko_v3',
+      keyParts: { title, story, languageCode },
     })
-    const translation = isKoreanStoryTranslation(cachedTranslation)
+    const translation = cachedTranslation && isKoreanStoryTranslation(cachedTranslation.translation) && (!title || isKoreanStoryTranslation(cachedTranslation.titleTranslation))
       ? cachedTranslation
-      : await generateStoryTranslation({ story, languageCode }, abortController.signal)
+      : await generateStoryTranslation({ title, story, languageCode }, abortController.signal)
     await writeAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'vocabulary_story_translation_ko_v2',
-      keyParts: { story, languageCode },
+      operation: 'vocabulary_story_translation_ko_v3',
+      keyParts: { title, story, languageCode },
       value: translation,
       ttlMs: AI_RULES.cache.storyTranslationTtlMs,
     })
-    response.json({ translation })
+    response.json(translation)
   } catch (error) { next(error) }
 })
 

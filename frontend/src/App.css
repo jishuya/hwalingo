@@ -928,3 +928,5 @@ html[data-theme='dark'] .login-required p a{color:#50dab0}
 
 .story-result-filters>.story-result-language{justify-self:end;padding:0;border:0;border-radius:0;box-shadow:none;color:var(--muted);white-space:nowrap}
 .story-result-language dd span{letter-spacing:normal;color:inherit}
+
+.story-result .story-title-translation{margin:0;font-size:var(--font-sm);line-height:1.5;color:var(--muted)}
