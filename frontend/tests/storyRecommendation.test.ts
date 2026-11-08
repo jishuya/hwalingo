@@ -39,15 +39,15 @@ test('fills missing groups without duplicates and stays in one language', () => 
   assert.equal(selected.length, 5)
   assert.equal(new Set(selected.map(word => word.vocabularyId)).size, 5)
   assert.ok(selected.every(word => word.languageCode === 'en'))
-  assert.equal(recommendStoryWords(source.slice(0, 2), settings).length, 2)
+  assert.equal(recommendStoryWords(source.slice(0, 2), settings).length, 0)
 })
 
-test('honors an explicit language even when it has fewer than five words', () => {
+test('does not recommend an explicit language with fewer than three words', () => {
   const selected = recommendStoryWords([
     ...Array.from({ length: 6 }, (_, index) => make(`en${index}`, 'new')),
     make('ja1', 'new', { language: 'ja' }), make('ja2', 'familiar', { language: 'ja' }),
   ], { ...settings, language: 'ja' })
-  assert.equal(selected.length, 2)
+  assert.equal(selected.length, 0)
   assert.ok(selected.every(word => word.languageCode === 'ja'))
 })
 
@@ -113,4 +113,35 @@ test('automatic repeat ignores other languages with fewer than three words', () 
   const selected = recommendStoryWords(source,{...settings,previousIds:['en0','en1','en2'],allowLanguageChange:true})
   assert.equal(selected.length,3)
   assert.ok(selected.every(word=>word.languageCode==='en'))
+})
+
+
+test('cycles through all languages with more than five words and varies words on return', () => {
+  const source = (['en', 'es', 'ja'] as const).flatMap(language => Array.from({ length: 10 }, (_, index) => ({ ...make(`${language}${index}`, 'new'), languageCode: language })))
+  const history: Partial<Record<'en' | 'es' | 'ja', string[]>> = {}
+  let selected = recommendStoryWords(source, { ...settings, language: 'es' })
+  const first = selected.map(word => word.vocabularyId)
+  history.es = first
+  const visited = [selected[0].languageCode]
+  for (let index = 0; index < 3; index++) {
+    selected = recommendStoryWords(source, { ...settings, language: selected[0].languageCode, previousIds: selected.map(word => word.vocabularyId), allowLanguageChange: true, previousByLanguage: history })
+    visited.push(selected[0].languageCode)
+    history[selected[0].languageCode] = selected.map(word => word.vocabularyId)
+    assert.equal(selected.length, 5)
+    assert.equal(new Set(selected.map(word => word.languageCode)).size, 1)
+  }
+  assert.equal(new Set(visited.slice(0, 3)).size, 3)
+  assert.equal(visited[3], 'es')
+  assert.ok(selected.every(word => !first.includes(word.vocabularyId)))
+})
+
+
+test('never recommends one or two words, including duplicate candidates', () => {
+  const one = make('one', 'new')
+  const two = make('two', 'new')
+  for (const source of [[one], [one, two], [one, one, two]]) {
+    assert.deepEqual(recommendStoryWords(source, settings), [])
+    assert.deepEqual(recommendStoryWords(source, { ...settings, language: 'en', allowLanguageChange: true, previousIds: ['one'] }), [])
+  }
+  assert.equal(recommendStoryWords([one, two, make('three', 'new')], settings).length, 3)
 })

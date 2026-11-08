@@ -1,6 +1,6 @@
 import LoginRequired from '../components/ui/LoginRequired'
 import LearningTimer from '../components/learning/LearningTimer'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowClockwiseIcon, BookOpenIcon, CaretRightIcon, CheckCircleIcon, CheckIcon, ChecksIcon, MagnifyingGlassIcon, ListBulletsIcon, XCircleIcon, LightningIcon, PlusIcon, SlidersHorizontalIcon, SparkleIcon, StarIcon, TranslateIcon, XIcon } from '@phosphor-icons/react'
 import { AlertDialog, Modal } from '../components/ui/Dialog'
@@ -28,6 +28,7 @@ const difficulties: Array<{ value: StoryDifficulty; label: string }> = [
 
 export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
   const queryClient = useQueryClient()
+  const recommendationHistory = useRef<Partial<Record<LanguageCode, string[]>>>({})
   const [selectionMode, setSelectionMode] = useState<'recommended' | 'manual' | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [draftSelectedIds, setDraftSelectedIds] = useState<string[]>([])
@@ -55,6 +56,7 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
   const languageFilter = selectedLanguageFilter === 'all' || savedLanguages.has(selectedLanguageFilter) ? selectedLanguageFilter : 'all'
   const selectedWords = words.filter(word => selectedIds.includes(word.vocabularyId))
   const selectedLanguage = selectedWords[0]?.languageCode
+  const selectedLanguageName = languageOptions.find(language => language.code === selectedLanguage)?.label
   const storyTranslation = (isKoreanStoryTranslation(storyMutation.data?.translation) ? storyMutation.data.translation : '')
     || (translationMutation.variables?.story === storyMutation.data?.story ? translationMutation.data : '')
   const draftWords = words.filter(word => draftSelectedIds.includes(word.vocabularyId))
@@ -104,7 +106,10 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
     setDraftSelectedIds(current => [...current, id])
   }
   const recommendedIds = (candidates = words, preferredLanguage?: LanguageCode, previousIds = selectedIds, allowLanguageChange=false) => {
-    return recommendStoryWords(candidates, { language: preferredLanguage, previousIds, allowLanguageChange }).map(word => word.vocabularyId)
+    const recommended = recommendStoryWords(candidates, { language: preferredLanguage, previousIds, allowLanguageChange, previousByLanguage: recommendationHistory.current })
+    const ids = recommended.map(word => word.vocabularyId)
+    if (recommended[0]) recommendationHistory.current[recommended[0].languageCode] = ids
+    return ids
   }
   const notifyPartialRecommendation = (ids:string[], candidates:Vocabulary[], filtered=false) => {
     if (ids.length===0 || ids.length>=5) return
@@ -114,6 +119,10 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
   }
   const selectRecommended = () => {
     const ids = recommendedIds(words,selectedLanguage,selectedIds,selectionMode==='recommended')
+    if (!ids.length) {
+      setAlert({title:'추천할 단어가 부족해요',message:'추천하려면 같은 언어의 단어가 3개 이상 필요해요. 기존 선택은 유지했어요.'})
+      return
+    }
     setSelectionMode('recommended')
     setSelectedIds(ids)
     storyMutation.reset()
@@ -122,7 +131,7 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
   const selectDraftRecommended = () => {
     const ids = recommendedIds(visibleWords, languageFilter === 'all' ? undefined : languageFilter, draftSelectedIds,languageFilter==='all')
     if (!ids.length) {
-      setAlert({title:'추천할 단어가 없어요',message:'선택한 조건에 맞는 단어가 없어요.'})
+      setAlert({title:'추천할 단어가 부족해요',message:'선택한 조건에 맞는 같은 언어의 단어가 3개 이상 필요해요. 기존 선택은 유지했어요.'})
       return
     }
     setDraftSelectedIds(ids)
@@ -178,8 +187,8 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
     <AiLoadingOverlay open={storyMutation.isPending} kind="story"/>
     <section className="story-intro" aria-labelledby="story-intro-title">
       <div className="story-intro-copy">
-        <span className="story-intro-badge"><SparkleIcon weight="fill"/> 단어로 만드는 나만의 영어 이야기</span>
-        <h1 id="story-intro-title">AI 스토리 빌더 <span aria-hidden="true">🪄</span></h1>
+        <span className="story-intro-badge"><SparkleIcon weight="fill"/> 단어로 만드는 나만의 이야기</span>
+        <h1 id="story-intro-title">AI 스토리텔링 <span aria-hidden="true">🪄</span></h1>
         <p>암기한 단어들을 실제 맥락 속 생생한 에피소드로 엮어 자연스럽게 체득해보세요.</p>
       </div>
     </section>
@@ -206,7 +215,7 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
                     </button>
                   </div>
                   <div className="story-picked-words">
-                    <div className="story-picked-heading"><p>선택된 단어 <span className="story-picked-count" aria-live="polite">{selectedIds.length} / 30</span></p><button type="button" className="story-reset-words" aria-label="선택된 단어 초기화" title="선택 초기화" disabled={!selectedIds.length} onClick={() => { setSelectedIds([]); setDraftSelectedIds([]); setSelectionMode(null); storyMutation.reset() }}><ArrowClockwiseIcon/></button></div>
+                    <div className="story-picked-heading"><p aria-live="polite">선택된 단어{selectedLanguage && selectedLanguageName ? <>: <span aria-hidden="true">{languageFlags[selectedLanguage]}</span> {selectedLanguageName}</> : ''} <span className="story-picked-count">{selectedIds.length} / 30</span></p><button type="button" className="story-reset-words" aria-label="선택된 단어 초기화" title="선택 초기화" disabled={!selectedIds.length} onClick={() => { setSelectedIds([]); setDraftSelectedIds([]); setSelectionMode(null); storyMutation.reset() }}><ArrowClockwiseIcon/></button></div>
                     <div className="story-picked-chips">{selectedWords.map(word => <span key={word.vocabularyId}><b>{word.word}</b><small>{word.meaning}</small><button type="button" aria-label={`${word.word} 선택 해제`} onClick={() => removeSelectedWord(word.vocabularyId)}><XIcon weight="bold"/></button></span>)}</div>
                     <div className="story-picked-footer"><button type="button" className="story-add-word" onClick={openSelector}><PlusIcon weight="bold"/> 단어 추가</button></div>
                   </div>
@@ -222,6 +231,7 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
                   <div className="story-result-length"><dt className="story-filter-sr-only">길이</dt><dd>{lengths.find(item => item.value === storyMutation.variables?.length)?.label}</dd></div>
                   <div className="story-result-genre"><dt className="story-filter-sr-only">장르</dt><dd>{genres.find(item => item.value === storyMutation.variables?.genre)?.label}</dd></div>
                   <div className="story-result-difficulty"><dt className="story-filter-sr-only">난이도</dt><dd>{difficulties.find(item => item.value === storyMutation.variables?.difficulty)?.label.replace(/\s*\([^)]*\)/u, '')}</dd></div>
+                  {selectedLanguage && selectedLanguageName && <div className="story-result-language"><dt className="story-filter-sr-only">언어</dt><dd><span aria-hidden="true">{languageFlags[selectedLanguage]}</span> {selectedLanguageName}</dd></div>}
                 </dl>
                 <h2>{storyMutation.data.title}</h2>
               </div>

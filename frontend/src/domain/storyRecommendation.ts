@@ -5,7 +5,7 @@ export const STORY_RECOMMENDATION_RULES = { minimum: 3, count: 5, review: 3, new
 
 type Candidate = Pick<Vocabulary, 'vocabularyId' | 'languageCode' | 'progress' | 'lastStoryUsedAt'>
 
-export function recommendStoryWords<T extends Candidate>(candidates: T[], options: { language?: LanguageCode; now?: number; random?: () => number; previousIds?: readonly string[]; allowLanguageChange?: boolean } = {}): T[] {
+export function recommendStoryWords<T extends Candidate>(candidates: T[], options: { language?: LanguageCode; now?: number; random?: () => number; previousIds?: readonly string[]; allowLanguageChange?: boolean; previousByLanguage?: Partial<Record<LanguageCode, readonly string[]>> } = {}): T[] {
   const now = options.now ?? Date.now()
   const random = options.random ?? Math.random
   const previous = new Set(options.previousIds ?? [])
@@ -27,19 +27,20 @@ export function recommendStoryWords<T extends Candidate>(candidates: T[], option
   const chooseLanguage = (choices:LanguageCode[]) => {
     const viable = choices.filter(language=>group(language).length>=rules.count)
     const usable = choices.filter(language=>group(language).length>=rules.minimum)
-    return [...(viable.length?viable:usable.length?usable:choices)].sort((a,b)=>
+    return [...(viable.length?viable:usable)].sort((a,b)=>
       coverage(group(b))-coverage(group(a)) || group(b).length-group(a).length)[0]
   }
   let language = options.language ?? chooseLanguage(languages)
   const previousLanguage = unique.find(word=>previous.has(word.vocabularyId))?.languageCode
   if (options.allowLanguageChange && previousLanguage) {
-    const previousGroup = group(previousLanguage)
-    if (previousGroup.length<=rules.count && previousGroup.every(word=>previous.has(word.vocabularyId))) {
-      const alternatives = languages.filter(candidate=>candidate!==previousLanguage && group(candidate).length>=rules.minimum)
-      if (alternatives.length) language = chooseLanguage(alternatives)
-    }
+    const cycle = languages.filter(candidate => group(candidate).length >= rules.minimum).sort()
+    const currentIndex = cycle.indexOf(previousLanguage)
+    if (cycle.length > 1) language = cycle[(currentIndex + 1) % cycle.length]
   }
+  const lastSelection = language ? options.previousByLanguage?.[language] : undefined
+  for (const id of lastSelection ?? []) previous.add(id)
   const source = shuffled.filter(word => word.languageCode === language)
+  if (source.length < rules.minimum) return []
   const rank = (words: T[], review = false) => [...words].sort((a, b) => Number(previous.has(a.vocabularyId)) - Number(previous.has(b.vocabularyId))
     || recent(a) - recent(b)
     || (review ? Date.parse(a.progress.nextReviewAt) - Date.parse(b.progress.nextReviewAt) : 0)

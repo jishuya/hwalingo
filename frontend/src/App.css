@@ -709,7 +709,7 @@ html[data-theme='dark'] .story-picked-chips button{background:#41474d;color:#8ee
 .story-selector-reset:focus-visible{outline:3px solid #8fc7a3;outline-offset:3px}
 html[data-theme='dark'] .story-selector-reset{border-color:#405449;background:#202e27;color:#b6c5bc}
 
-.story-result-filters{display:grid;grid-template-columns:repeat(3,52px);gap:4px;flex:0 0 auto;margin:1px 0 0}
+.story-result-filters{display:grid;width:100%;grid-template-columns:repeat(3,52px) minmax(0,1fr);gap:4px;flex:0 0 auto;margin:1px 0 0}
 .story-result-filters>div{display:flex;align-items:center;justify-content:center;min-width:0;height:26px;padding:3px 4px;border:1px solid transparent;border-radius:7px;line-height:1.4;box-shadow:0 2px 5px rgba(24,51,42,.1)}
 .story-result-filters dt{font-size:var(--font-xs);font-weight:400;opacity:.75}
 .story-result-filters dd{margin:0;font-size:var(--font-xs);font-weight:600}
@@ -925,3 +925,6 @@ html[data-theme='dark'] .login-required h2{color:#e5f4eb}
 html[data-theme='dark'] .login-required-icon{border-color:#315747;background:#203d2d;color:#50dab0}
 html[data-theme='dark'] .login-required-icon i{border-color:#18251d}
 html[data-theme='dark'] .login-required p a{color:#50dab0}
+
+.story-result-filters>.story-result-language{justify-self:end;padding:0;border:0;border-radius:0;box-shadow:none;color:var(--muted);white-space:nowrap}
+.story-result-language dd span{letter-spacing:normal;color:inherit}

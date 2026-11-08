@@ -25,7 +25,7 @@ analysisRouter.post('/paraphrases', requireAuth, async (request, response, next)
     }
     const paraphrases = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_paraphrases_v2',
+      operation: 'sentence_paraphrases_v3',
       keyParts: { inputLanguage, learningLanguage, learningSentence },
       ttlMs: AI_RULES.cache.sentenceParaphrasesTtlMs,
       generate: () => generateSentenceParaphrases({ inputLanguage, learningLanguage, learningSentence }, abortController.signal),
@@ -122,7 +122,7 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
     const generationStartedAt = Date.now()
     const analysis = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_analysis_core_v25',
+      operation: 'sentence_analysis_core_v26',
       keyParts: { text, inputLanguage, learningLanguage },
       ttlMs: AI_RULES.cache.sentenceAnalysisTtlMs,
       generate: () => analyzeSentence({ text, inputLanguage, learningLanguage }, abortController.signal),
