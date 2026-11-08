@@ -3,13 +3,15 @@ import type { LanguageCode } from './openai.js'
 const pronunciationRules: Record<LanguageCode, string> = {
   en: 'General American IPA in slashes, including stress.',
   fr: 'Standard French IPA in slashes.',
+  de: 'Standard German IPA in slashes, including stress.',
+  es: 'Standard Spanish IPA in slashes, including stress.',
   zh: 'Hanyu Pinyin with tone marks.',
   ja: 'Kana only for the exact displayed form, including inflections; no kanji, romaji, IPA, or slashes. Example: 挑戦します → ちょうせんします.',
   ko: 'Standard Hangul pronunciation in square brackets.',
 }
 
 const explanationRules = `FIELD LANGUAGES (independent of input language)
-- word and exampleSentence: learningLanguage.
+- word and the ENTIRE exampleSentence: learningLanguage only; select word from learningSentence. Never insert the learning word into a Korean or other-language sentence. Only exampleMeaning is the Korean translation of the example.
 - partOfSpeech, basicMeaning, contextualMeaning, exampleMeaning: Korean only. Use Hangul for names too; no Latin letters, Han characters, or kana.
 - etymology and memoryTip: Korean prose. Foreign words or morphemes are allowed only as short quoted terms, for example 'salt'; never use foreign-language explanatory sentences.
 

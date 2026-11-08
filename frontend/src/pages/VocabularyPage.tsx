@@ -15,7 +15,7 @@ const languageFlags: Record<LanguageCode, string> = {
   en: '🇺🇸',
   ja: '🇯🇵',
   zh: '🇨🇳',
-  fr: '🇫🇷',
+  fr: '🇫🇷', de: '🇩🇪', es: '🇪🇸',
 }
 
 export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (vocabularyIds?:string[]) => void }) {

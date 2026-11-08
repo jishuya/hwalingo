@@ -5,6 +5,8 @@ export const languageOptions = [
   { code: 'ja', label: '일본어' },
   { code: 'zh', label: '중국어' },
   { code: 'fr', label: '프랑스어' },
+  { code: 'de', label: '독일어' },
+  { code: 'es', label: '스페인어' },
 ] as const
 
 export type LanguageCode = typeof languageOptions[number]['code']

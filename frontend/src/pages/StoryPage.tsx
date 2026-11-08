@@ -11,7 +11,7 @@ import { languageOptions, type LanguageCode } from '../services/analysis'
 import { VocabularyRequestError, getVocabularies, type Vocabulary } from '../services/vocabulary'
 import { StoryRequestError, createStory, getStoryTranslation, isKoreanStoryTranslation, type StoryDifficulty, type StoryGenre, type StoryLength } from '../services/story'
 
-const languageFlags: Record<LanguageCode, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵', zh: '🇨🇳', fr: '🇫🇷' }
+const languageFlags: Record<LanguageCode, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵', zh: '🇨🇳', fr: '🇫🇷', de: '🇩🇪', es: '🇪🇸' }
 
 const genres: Array<{ value: StoryGenre; label: string }> = [
   { value: 'daily', label: '일상' }, { value: 'business', label: '비즈니스' },
@@ -144,7 +144,7 @@ export default function StoryPage({onVocabulary}:{onVocabulary:()=>void}) {
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = speechRate
-    utterance.lang = selectedLanguage === 'en' ? 'en-US' : selectedLanguage === 'fr' ? 'fr-FR' : selectedLanguage
+    utterance.lang = selectedLanguage === 'en' ? 'en-US' : selectedLanguage === 'fr' ? 'fr-FR' : selectedLanguage === 'de' ? 'de-DE' : selectedLanguage === 'es' ? 'es-ES' : selectedLanguage
     window.speechSynthesis.speak(utterance)
   }
   const startWithNewWords = () => {

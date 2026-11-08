@@ -1,3 +1,4 @@
+import { VocabularyLanguageError } from '../services/vocabularyLanguage.js'
 import { VocabularyExplanationError } from '../services/vocabularyPresentation.js'
 import type { ErrorRequestHandler } from 'express'
 
@@ -6,7 +7,7 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     response.status(400).json({ message: '조회 기간이 올바르지 않습니다.' })
     return
   }
-  if (error instanceof VocabularyExplanationError) {
+  if (error instanceof VocabularyExplanationError || error instanceof VocabularyLanguageError) {
     response.status(502).json({ status: 'error', message: error.message })
     return
   }

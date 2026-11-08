@@ -1,3 +1,4 @@
+import { isExampleInLearningLanguage } from '../services/vocabularyLanguage.js'
 import { reconcileArchivedQuizItems } from '../services/quizSessionCleanup.js'
 import { Router } from 'express'
 import { pool } from '../config/database.js'
@@ -57,13 +58,15 @@ function optionalText(value: unknown): string | null {
 function parseVocabularyInput(body: Record<string, unknown>): VocabularyInput | undefined {
   const languageCode = body.languageCode as LanguageCode
   const rawWord = typeof body.word === 'string' ? body.word.trim() : ''
-  const word = languageCode === 'en' || languageCode === 'fr' ? rawWord.toLocaleLowerCase() : rawWord
+  const word = ['en', 'fr', 'es'].includes(languageCode) ? rawWord.toLocaleLowerCase() : rawWord
   const meaning = typeof body.meaning === 'string' ? body.meaning.trim() : ''
   const contextMeaning = typeof body.contextMeaning === 'string' ? body.contextMeaning.trim() : ''
   const rawCefrLevel = optionalText(body.cefrLevel)?.toUpperCase() ?? ''
   const cefrLevel = rawCefrLevel.match(/^(A1|A2|B1|B2|C1|C2)$/u)?.[1] as CefrLevel | undefined
   if (!(languageCode in languageNames) || !word || !meaning || word.length > 255 || !cefrLevel || !cefrLevels.has(cefrLevel)) return undefined
-  return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence: optionalText(body.exampleSentence), exampleTranslation: optionalText(body.exampleTranslation) }
+  const exampleSentence = optionalText(body.exampleSentence)
+  if (exampleSentence && !isExampleInLearningLanguage(exampleSentence, languageCode)) return undefined
+  return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence, exampleTranslation: optionalText(body.exampleTranslation) }
 }
 
 function serializeVocabulary(row: VocabularyRow) {
@@ -79,8 +82,8 @@ function serializeVocabulary(row: VocabularyRow) {
     cefrLevel: row.cefr_level,
     etymology: row.etymology,
     memoryTip: row.memory_tip,
-    exampleSentence: row.example_sentence,
-    exampleTranslation: row.example_translation,
+    exampleSentence: row.example_sentence && isExampleInLearningLanguage(row.example_sentence, row.language_code) ? row.example_sentence : null,
+    exampleTranslation: row.example_sentence && isExampleInLearningLanguage(row.example_sentence, row.language_code) ? row.example_translation : null,
     savedAt: row.saved_at,
     lastStoryUsedAt: row.last_story_used_at ?? null,
     progress: {

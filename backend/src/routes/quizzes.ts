@@ -1,3 +1,4 @@
+import { isExampleInLearningLanguage } from '../services/vocabularyLanguage.js'
 import { reconcileArchivedQuizItems } from '../services/quizSessionCleanup.js'
 import { Router } from 'express'
 import type { PoolClient } from 'pg'
@@ -18,6 +19,7 @@ import { withAIResponseCache } from '../services/aiResponseCache.js'
 import { AI_RULES } from '../config/aiRules.js'
 
 interface CandidateRow {
+  language_code: string
   vocabulary_id: string
   word: string
   meaning: string
@@ -99,7 +101,8 @@ function shuffled<T>(items: T[]): T[] {
 }
 
 function buildQuestion(candidate: CandidateRow, allCandidates: CandidateRow[]) {
-  const type = questionTypeForLevel(candidate.mastery_level, Boolean(candidate.example_sentence))
+  const example = candidate.example_sentence && isExampleInLearningLanguage(candidate.example_sentence, candidate.language_code) ? candidate.example_sentence : null
+  const type = questionTypeForLevel(candidate.mastery_level, Boolean(example))
   if (type === 'multiple_choice') {
     const distractors = shuffled(allCandidates.filter(item => item.vocabulary_id !== candidate.vocabulary_id).map(item => item.meaning))
       .filter((meaning, index, meanings) => meaning !== candidate.meaning && meanings.indexOf(meaning) === index)
@@ -114,9 +117,9 @@ function buildQuestion(candidate: CandidateRow, allCandidates: CandidateRow[]) {
       generationSource: 'deterministic' as const,
     }
   }
-  if (type === 'context' && candidate.example_sentence) {
-    const blanked = candidate.example_sentence.replace(new RegExp(`\\b${escapeRegExp(candidate.word)}\\b`, 'iu'), '_____')
-    if (blanked !== candidate.example_sentence) {
+  if (type === 'context' && example) {
+    const blanked = example.replace(new RegExp(`\\b${escapeRegExp(candidate.word)}\\b`, 'iu'), '_____')
+    if (blanked !== example) {
       return { questionType: type, prompt: blanked, correctAnswer: candidate.word, choices: [], acceptableAnswers: [], explanation: null, generationSource: 'deterministic' as const }
     }
   }
@@ -184,8 +187,8 @@ async function getSession(userId: string, sessionId: string) {
       languageCode: item.language_code,
       meaning: item.meaning,
       contextMeaning: item.context_meaning,
-      exampleSentence: item.example_sentence,
-      exampleTranslation: item.example_translation,
+      exampleSentence: item.example_sentence && isExampleInLearningLanguage(item.example_sentence, item.language_code) ? item.example_sentence : null,
+      exampleTranslation: item.example_sentence && isExampleInLearningLanguage(item.example_sentence, item.language_code) ? item.example_translation : null,
       etymology: item.etymology,
       memoryTip: item.memory_tip,
       reviewIntervalMinutes: item.review_interval_minutes,
@@ -216,7 +219,7 @@ quizzesRouter.post('/sessions', requireAuth, async (request, response, next) => 
     const requested = Number.isInteger(request.body.count) ? Number(request.body.count) : configuredCount
     const requestedCount = Math.min(QUIZ_RULES.maxQuestionCount, Math.max(1, requested))
     const candidatesResult = await client.query<CandidateRow>(
-      `SELECT v.id AS vocabulary_id, v.word, v.meaning, v.example_sentence,
+      `SELECT v.id AS vocabulary_id, v.word, v.meaning, v.example_sentence, v.language_code,
               p.mastery_level, p.mastery_score, p.total_attempts, p.correct_count,
               p.incorrect_count, p.incorrect_practice_excluded_at, p.correct_streak, p.incorrect_streak,
               p.last_reviewed_at, p.next_review_at, p.mastered_at

@@ -19,9 +19,20 @@ const characterCount = (text: string, pattern: RegExp) => text.match(pattern)?.l
 
 function detectLatinLanguage(text: string): LanguageCode {
   const latinText = text.toLocaleLowerCase()
-  if (/[àâæçéèêëîïôœùûüÿ]/u.test(latinText)) return 'fr'
-
   const words = latinText.match(/\p{Script=Latin}+(?:['’]\p{Script=Latin}+)*/gu) ?? []
+  const germanMarkers = new Set(['ich', 'bin', 'das', 'der', 'die', 'ein', 'eine', 'und', 'ist', 'nicht', 'wir', 'sie', 'mit', 'für', 'heute', 'hallo', 'danke', 'lernen', 'deutsch'])
+  const spanishMarkers = new Set(['hola', 'gracias', 'soy', 'somos', 'estoy', 'está', 'están', 'los', 'las', 'una', 'del', 'pero', 'muy', 'para', 'quiero', 'aprender', 'español', 'buenos', 'días'])
+  const scores = [
+    { language: 'de' as const, score: words.filter(word => germanMarkers.has(word)).length + (/[äöß]/u.test(latinText) ? 2 : 0) },
+    { language: 'es' as const, score: words.filter(word => spanishMarkers.has(word)).length + (/[ñáíóú¿¡]/u.test(latinText) ? 2 : 0) },
+    { language: 'fr' as const, score: words.filter(word => FRENCH_MARKERS.has(word)).length },
+  ].sort((a, b) => b.score - a.score)
+  const best = scores[0]
+  if (best.language !== 'fr' && best.score >= 2 && best.score > scores[1].score) return best.language
+  if (/[àâæçéèêëîïôœùûÿ]/u.test(latinText)) return 'fr'
+  if (/ü/u.test(latinText) && best.language !== 'fr' && best.language !== 'es') return 'de'
+  if (words.some(word => ['hallo', 'danke', 'deutsch'].includes(word))) return 'de'
+  if (words.some(word => ['hola', 'gracias', 'español'].includes(word))) return 'es'
   if (words.some(word => STRONG_FRENCH_MARKERS.has(word))) return 'fr'
   const frenchScore = words.reduce((score, word) => {
     const parts = word.split(/['’]/u)

@@ -8,6 +8,8 @@ test('sentence limits work across supported learning languages', () => {
     ['ko', ['미나는 문을 열었어요.', '편지를 발견했어요.', '천천히 읽었어요.']],
     ['ja', ['ミナはドアを開けました。', '手紙を見つけました。', 'ゆっくり読みました。']],
     ['zh', ['米娜打开门。', '她发现了一封信。', '她慢慢地读了起来。']],
+    ['de', ['Mina öffnet die Tür.', 'Sie findet einen Brief.', 'Sie liest ihn langsam.']],
+    ['es', ['Mina abre la puerta.', 'Encuentra una carta.', 'La lee despacio.']],
     ['fr', ['Mina ouvre la porte.', 'Elle trouve une lettre.', 'Elle la lit lentement.']],
   ] as const) {
     assert.equal(countStorySentences(sentences.join(' '), language), 3)

@@ -4,6 +4,8 @@ import { buildVocabularyInstructions } from './sentenceVocabularyPrompts.js'
 import type { LanguageCode, VocabularyAnalysis } from './openai.js'
 
 const fixtures = [
+  { language: 'de', word: 'Ausdauer', pronunciation: '/ˈaʊ̯sˌdaʊ̯ɐ/', sentence: 'Ihre Ausdauer hilft ihr beim Lernen.', foreign: '인내심: die Fähigkeit durchzuhalten' },
+  { language: 'es', word: 'perseverancia', pronunciation: '/peɾseβeˈɾanθja/', sentence: 'Su perseverancia le ayuda a aprender.', foreign: '인내심: la capacidad de perseverar' },
   { language: 'en', word: 'resilience', pronunciation: '/rɪˈzɪliəns/', sentence: 'Her resilience helped her recover.', foreign: '회복 능력: the ability to recover' },
   { language: 'fr', word: 'résilience', pronunciation: '/ʁe.zil.jɑ̃s/', sentence: 'Sa résilience lui permet de rebondir.', foreign: '회복 능력: la capacité à rebondir' },
   { language: 'ja', word: '奪還', pronunciation: 'だっかん', sentence: 'チームは首位の奪還を目指す。', foreign: '다시: 失ったものを取り戻すこと' },
@@ -67,7 +69,7 @@ test('all learning languages correct mixed explanations, preserve good fields, a
       for (const { language: inputLanguage } of fixtures) {
         assert.deepEqual((await generateSentenceVocabulary({ ...request, inputLanguage }))[0][0], good)
       }
-      assert.equal(valid.mock.callCount(), 5)
+      assert.equal(valid.mock.callCount(), fixtures.length)
     } finally { valid.mock.restore() }
   }
 })

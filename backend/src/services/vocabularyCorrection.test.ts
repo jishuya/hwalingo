@@ -16,15 +16,23 @@ test('vocabulary generation corrects readings and etymology and hides failed cor
   const output = (vocabulary: typeof item) => ({ output_text: JSON.stringify({ sentences: [{ sentenceIndex: 0, vocabulary: [vocabulary] }] }) })
   try {
     for (const learningLanguage of ['ja', 'en', 'fr', 'zh', 'ko'] as const) {
+      const forms = {
+        ja: { word: item.word, exampleSentence: item.exampleSentence },
+        en: { word: 'challenge', exampleSentence: 'This is a challenge.' },
+        fr: { word: 'défi', exampleSentence: 'C’est un défi.' },
+        zh: { word: '挑战', exampleSentence: '这是一个挑战。' },
+        ko: { word: '도전', exampleSentence: '이것은 새로운 도전이에요.' },
+      }
+      const localized = { ...item, ...forms[learningLanguage] }
       let calls = 0
       const method = mock.method(client.responses, 'create', async () => {
         calls++
-        return output(calls === 1 ? item : {
-          ...item, pronunciation: 'ちょうせんします', etymology: '두 한자가 합쳐진 말이에요.',
+        return output(calls === 1 ? localized : {
+          ...localized, pronunciation: 'ちょうせんします', etymology: '두 한자가 합쳐진 말이에요.',
         })
       })
       const result = await generateSentenceVocabulary({ text: '도전해요.', inputLanguage: 'ko', learningLanguage,
-        sentences: [{ inputText: '도전해요.', learningSentence: item.exampleSentence }] })
+        sentences: [{ inputText: '도전해요.', learningSentence: localized.exampleSentence }] })
       assert.equal(calls, 2)
       assert.equal(result[0][0].etymology, '두 한자가 합쳐진 말이에요.')
       assert.equal(result[0][0].pronunciation, learningLanguage === 'ja' ? 'ちょうせんします' : item.pronunciation)

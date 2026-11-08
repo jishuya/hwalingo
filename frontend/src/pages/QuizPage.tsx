@@ -11,9 +11,9 @@ import './QuizPage.css'
 
 type DetailPanel = 'etymology' | 'memory' | 'deep' | 'image' | null
 
-const languageFlags: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵', zh: '🇨🇳', fr: '🇫🇷' }
+const languageFlags: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵', zh: '🇨🇳', fr: '🇫🇷', de: '🇩🇪', es: '🇪🇸' }
 
-const speechLocales: Record<string, string> = { en: 'en-US', ko: 'ko-KR', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
+const speechLocales: Record<string, string> = { en: 'en-US', ko: 'ko-KR', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' }
 
 function highlightLearningText(text: string, word: string, meaning: string) {
   const keywords = [word, ...meaning.split(/[,;·/\n]/u)]

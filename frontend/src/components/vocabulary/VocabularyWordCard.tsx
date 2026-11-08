@@ -39,7 +39,7 @@ export default function VocabularyWordCard({word,expanded,view='both',onToggle,o
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = languageCode==='en'?'en-US':languageCode==='fr'?'fr-FR':languageCode
+    utterance.lang = languageCode==='en'?'en-US':languageCode==='fr'?'fr-FR':languageCode==='de'?'de-DE':languageCode==='es'?'es-ES':languageCode
     window.speechSynthesis.speak(utterance)
   }
   const pronounceWord = () => {

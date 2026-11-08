@@ -85,7 +85,8 @@ test('corrections survive reordered items and changed levels without changing vo
       : [second, good].map(item => ({ ...item, level: 'B1' })) }] }) }
   })
   try {
-    const result = await generateSentenceVocabulary(request)
+    const result = await generateSentenceVocabulary({ ...request, sentences: [{ ...request.sentences[0],
+      learningSentence: `${good.exampleSentence}${second.exampleSentence}` }] })
     assert.equal(calls, 2)
     assert.deepEqual(result[0], [good, second])
   } finally { method.mock.restore() }

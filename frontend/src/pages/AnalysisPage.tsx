@@ -24,7 +24,7 @@ import { AlertDialog } from '../components/ui/Dialog'
 import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
-const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }
+const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' }
 
 function highlightExampleWord(text: string, word: string, memoryTip = false) {
   const escaped = word.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
