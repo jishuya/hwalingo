@@ -319,9 +319,11 @@ function sanitizeVocabularyExplanations(vocabularies: VocabularyAnalysis[][], le
 }
 
 function mergeCorrectedVocabularyExplanations(original: VocabularyAnalysis[][], corrected: VocabularyAnalysis[][], learningLanguage: LanguageCode) {
-  return original.map((items, sentenceIndex) => items.map((item, itemIndex) => {
-    const correction = corrected[sentenceIndex]?.[itemIndex]
-    if (!correction || correction.word !== item.word || correction.level !== item.level) return item
+  return original.map((items, sentenceIndex) => items.map(item => {
+    const candidates = corrected[sentenceIndex] ?? []
+    const correction = candidates.find(candidate => candidate.word === item.word
+      && candidate.exampleSentence === item.exampleSentence)
+    if (!correction) return item
     return {
       ...item,
       pronunciation: learningLanguage === 'ja' && !isKanaReading(item.pronunciation) ? correction.pronunciation : item.pronunciation,
@@ -348,7 +350,14 @@ async function correctVocabularyExplanationLanguage(
     input: JSON.stringify({
       task: 'correct_vocabulary_explanations_to_korean',
       learningLanguage: { code: learningLanguage, name: languageNames[learningLanguage] },
-      sentences: vocabularies.map((vocabulary, sentenceIndex) => ({ sentenceIndex, vocabulary })),
+      sentences: vocabularies.map((vocabulary, sentenceIndex) => ({ sentenceIndex, vocabulary,
+        invalidFields: vocabulary.map((item, itemIndex) => ({ itemIndex,
+          fields: (['partOfSpeech', 'basicMeaning', 'contextualMeaning', 'exampleMeaning', 'memoryTip', 'etymology'] as const)
+            .filter(field => field === 'etymology'
+              ? Boolean(item.etymology) && (!isKoreanExplanation(item.etymology, true) || !isPoliteEtymology(item.etymology))
+              : !isKoreanExplanation(item[field], field === 'memoryTip')),
+        })),
+      })),
     }),
     text: { verbosity: 'low', format: { type: 'json_schema', name: 'sentence_vocabulary_korean_correction', strict: true, schema: sentenceVocabularySchema } },
   }, { timeout: AI_RULES.sentenceVocabulary.timeoutMs, maxRetries: AI_RULES.sentenceVocabulary.maxRetries, signal }), {

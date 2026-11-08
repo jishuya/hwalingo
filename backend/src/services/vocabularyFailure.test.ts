@@ -68,3 +68,25 @@ test('required explanation failure reaches the client with a Korean message and 
   assert.equal(status, 502)
   assert.deepEqual(body, { status: 'error', message: new VocabularyExplanationError().message })
 })
+
+test('corrections survive reordered items and changed levels without changing vocabulary identity', async () => {
+  const { getOpenAIClient } = await import('../config/openai.js')
+  const { generateSentenceVocabulary } = await import('./openai.js')
+  const second = { ...good, word: '恢复', exampleSentence: '他恢复了健康。', exampleMeaning: '그는 건강을 회복했어요.' }
+  let calls = 0
+  const method = mock.method(getOpenAIClient().responses, 'create', async (payload: { input: string }) => {
+    calls++
+    if (calls > 1) {
+      const input = JSON.parse(payload.input)
+      assert.deepEqual(input.sentences[0].invalidFields[0].fields, ['partOfSpeech'])
+    }
+    return { output_text: JSON.stringify({ sentences: [{ sentenceIndex: 0, vocabulary: calls === 1
+      ? [good, second].map(item => ({ ...item, partOfSpeech: '動詞' }))
+      : [second, good].map(item => ({ ...item, level: 'B1' })) }] }) }
+  })
+  try {
+    const result = await generateSentenceVocabulary(request)
+    assert.equal(calls, 2)
+    assert.deepEqual(result[0], [good, second])
+  } finally { method.mock.restore() }
+})
