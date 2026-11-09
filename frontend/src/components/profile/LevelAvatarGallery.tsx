@@ -22,9 +22,11 @@ export default function LevelAvatarGallery({ open, currentLevel, onClose }: Leve
 
   return <Modal open={open} title="화랑이 성장 도감" icon={<StepsIcon weight="duotone"/>} onClose={onClose} size="large">
     <section className="avatar-collection-summary">
-      <div><span>현재 화랑이 등급</span><strong>{currentGrade.name} · {currentGrade.step}단계</strong></div><b>{unlockedLevel} / 50 달성</b>
-      <div className="avatar-evolution-progress"><i style={{ width: `${currentGrade.step * 10}%` }}/></div>
-      <small>{currentGrade.step < 10 ? `${currentGrade.name} 완성까지 ${10 - currentGrade.step}단계` : currentGrade.index === HWARANG_GRADES.length - 1 ? '모든 화랑이 등급을 달성했어요!' : `${currentGrade.name} 완성! 다음 등급이 곧 시작돼요.`}</small>
+      <div><span>현재 화랑이 등급</span><div className="avatar-current-grade"><b className={`avatar-grade-badge avatar-grade-badge-${currentStage}`}>등급 {String(currentStage).padStart(2, '0')}</b><strong>{currentGrade.name}</strong><span>{currentGrade.step}단계</span></div></div>
+      <div className="avatar-collection-total">
+        <div className="avatar-collection-total-heading"><span>전체 도감 달성률</span><b>{unlockedLevel}<small> / {AVAILABLE_AVATAR_LEVELS.length}</small></b></div>
+        <div className="avatar-evolution-progress" role="progressbar" aria-label="화랑이 전체 도감 달성률" aria-valuemin={0} aria-valuemax={AVAILABLE_AVATAR_LEVELS.length} aria-valuenow={unlockedLevel}><i style={{ width: `${unlockedLevel / AVAILABLE_AVATAR_LEVELS.length * 100}%` }}/></div>
+      </div>
     </section>
     <div className="avatar-evolution-list">
       {HWARANG_GRADES.map((grade, index) => {

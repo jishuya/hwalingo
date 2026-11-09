@@ -45,6 +45,7 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
         <header className="auth-heading">
           <span className="auth-heading-mascot"><img src={logo} alt="Hwalingo 로고"/></span>
           <h1 className="auth-wordmark"><img src={wordmark} alt="Hwalingo"/></h1>
+          <p className="auth-tagline">매일 조금씩, <span>함께 배우는 즐거움</span></p>
         </header>
 
         <form className="auth-form" onSubmit={submit}>

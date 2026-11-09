@@ -13,7 +13,7 @@ export const GROWTH_RULES = {
 } as const
 
 export const HWARANG_GRADE_RULES = [
-  { minLevel: 1, maxLevel: 10, name: '새싹 학습자' },
+  { minLevel: 1, maxLevel: 10, name: '새싹 화랑이' },
   { minLevel: 11, maxLevel: 20, name: '화랑 수련생' },
   { minLevel: 21, maxLevel: 30, name: '정예 화랑' },
   { minLevel: 31, maxLevel: 40, name: '화랑 마스터' },
