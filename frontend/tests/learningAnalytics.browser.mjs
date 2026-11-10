@@ -55,7 +55,7 @@ function fixture(url,method,body={}){
  if(u.pathname==='/api/learning-time/me')return{range,measurementStartedAt:date(-5)+'T00:00:00+09:00',days:days.map((d,i)=>({date:d,endDate:d,seconds:empty?0:i*30,measuredDays:i?1:0,activeDays:empty?0:1,byActivity:{analysis:empty?0:i*10,quiz:empty?0:i*10,story:empty?0:i*10,vocabulary:0}}))}
  if(u.pathname==='/api/progress/calendar')return{days:Array.from({length:365},(_,i)=>({date:date(i-364),activityCount:empty?0:i%35,answerCount:empty?0:i%20,earnedXp:empty?0:i*3}))}
  if(u.pathname==='/api/progress/relearning')return{range,days:days.map((date,i)=>({date,completed:empty?0:i%4,remaining:empty?0:i%2,unavailable:empty?0:i%2,standardRemaining:empty?0:i%2,incorrectRemaining:0}))}
- if(u.pathname==='/api/progress/insights')return{range,activities:empty?[]:[{type:'analysis',count:10},{type:'vocabulary',count:20},{type:'quiz',count:42},{type:'story',count:3}],languages:empty?[]:[{language:'en',saved:20,learned:15,mastered:5,answers:30},{language:'fr',saved:20,learned:10,mastered:5,answers:12}],weekdays:Array.from({length:7},(_,i)=>({weekday:i+1,maxAnswers:empty?0:i*4,maxSeconds:empty?null:i*80,averageAnswers:empty?0:i*2,averageSeconds:empty?null:i*40,activeDays:empty?0:i,observedDays:8,measuredDays:empty?0:4})),growth:{openingXp:empty?0:100,days:days.map((date,i)=>({date,totalXp:empty?0:100+i*50,earnedXp:empty?0:50,level:empty?1:2+Math.floor(i/3),levelsGained:empty?0:i%3===0?1:0,grade:'새싹 학습자'}))}}
+ if(u.pathname==='/api/progress/insights')return{range,activities:empty?[]:[{type:'analysis',count:10},{type:'vocabulary',count:20},{type:'quiz',count:42},{type:'story',count:3}],languages:empty?[]:[{language:'en',saved:20,learned:15,mastered:5,answers:30},{language:'fr',saved:20,learned:10,mastered:5,answers:12}],weekdays:Array.from({length:7},(_,i)=>({weekday:i+1,maxAnswers:empty?0:i*4,maxSeconds:empty?null:i*80,averageAnswers:empty?0:i*2,averageSeconds:empty?null:i*40,activeDays:empty?0:i,observedDays:8,measuredDays:empty?0:4})),growth:{openingXp:empty?0:11318,days:days.map((date,i)=>({date,totalXp:empty?0:11318+(i>=count-2?30:0)+(i===count-1?47:0),earnedXp:empty?0:i===count-1?47:i===count-2?30:0,level:empty?1:2+Math.floor(i/3),levelsGained:empty?0:i%3===0?1:0,grade:'새싹 학습자'}))}}
  return{}
 }
 const server=createServer(async(req,res)=>{try{
@@ -186,16 +186,19 @@ try{
   assert.ok(await evaluate(`document.querySelector('[role="dialog"] .report-word-language').textContent.length>0`))
   await screenshot('mastery-words-'+width)
   await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);await pause(100)
-  await click('#analytics-tab-growth');await ready('누적 XP 성장 곡선');await ready('기간 마지막 누적 XP')
+  await click('#analytics-tab-growth');await ready('기간별 XP 획득');await ready('기간 획득 XP')
   assert.equal(await evaluate(`document.documentElement.scrollWidth>innerWidth`),false,'growth overflow '+width)
-  assert.ok(await evaluate(`document.querySelector('.growth-area').getAttribute('d').endsWith('Z')`))
+  assert.ok(await evaluate(`document.querySelectorAll('.growth-earned-bar').length===7`))
+  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.growth-earned-value')).map(node=>node.textContent)`),['0','0','0','0','0','+30','+47'],'daily gains remain visible against a large cumulative balance')
+  assert.equal(await evaluate(`document.querySelectorAll('.growth-earned-bar.zero').length`),5,'zero XP days have baseline markers')
+  assert.ok(await evaluate(`parseFloat(document.querySelectorAll('.growth-earned-bar')[6].style.height)>100`),'47 XP uses the earned XP scale')
   await click('.analytics-growth-columns>button')
   assert.equal(await evaluate(`document.querySelector('.analytics-growth-columns>button').getAttribute('aria-pressed')`),'true')
   assert.ok(await evaluate(`document.querySelector('[role="tooltip"]').textContent.includes('누적')`),'click shows XP tooltip')
   await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`)
   assert.equal(await evaluate(`document.querySelector('[role="tooltip"]')`),null,'escape dismisses tooltip')
   await click('.analytics-growth-columns>button:last-child .growth-date')
-  assert.ok(await evaluate(`document.querySelector('[role="tooltip"]').textContent.includes('400 XP')`),'date click shows last value')
+  assert.ok(await evaluate(`document.querySelector('[role="tooltip"]').textContent.includes('47 XP')`),'date click shows last value')
   assert.ok(await evaluate(`(() => {const rect=document.querySelector('[role="tooltip"]').getBoundingClientRect();return rect.left>=0&&rect.right<=innerWidth})()`),'edge tooltip stays in viewport')
   assert.equal(await evaluate(`document.querySelector('.growth-hero-avatar img').alt`),'레벨 7 프로필 캐릭터','hero uses user character')
   assert.equal(await evaluate(`document.querySelector('.growth-hero-avatar>span').textContent`),'Lv.7')
@@ -267,22 +270,22 @@ try{
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/learning-progress?tab=records&test=${state}`});await ready(state==='empty'?'하루 평균':'다시 시도');await screenshot(state)
   await click('#analytics-tab-vocabulary');await ready('언어별 학습 현황');await screenshot(state+'-vocabulary')
   if(state==='empty'){await ready('아직 언어별 학습 기록이 없어요');assert.ok(await evaluate(`document.querySelector('.learning-language-empty svg')!==null`));assert.equal(await evaluate(`document.querySelector('.analytics-horizontal.languages')`),null,'empty languages shows illustration instead of empty plot')}
-  await click('#analytics-tab-growth');await ready('누적 XP 성장 곡선');await screenshot(state+'-growth')
+  await click('#analytics-tab-growth');await ready('기간별 XP 획득');await screenshot(state+'-growth')
   if(state==='empty') assert.equal(await evaluate(`document.querySelectorAll('.growth-date').length`),7,'zero XP days keep all dates')
   if(state==='error'){
-    await ready('누적 XP 성장 기록을 불러오지 못했어요.')
+    await ready('XP 획득 기록을 불러오지 못했어요.')
     assert.equal(await evaluate(`document.querySelector('.analytics-card .report-chart-error>button').textContent`),'다시 시도')
     assert.equal(await evaluate(`document.querySelector('.analytics-card .report-chart-error').getAttribute('role')`),'alert')
     assert.equal(await evaluate(`document.documentElement.scrollWidth>innerWidth`),false,'chart error has no overflow')
     mode='normal'
     await click('.analytics-card .report-chart-error>button')
-    await ready('기간 마지막 누적 XP')
+    await ready('기간 획득 XP')
     assert.equal(await evaluate(`document.querySelector('.analytics-card .report-chart-error')`),null,'retry restores growth chart')
     mode='error'
     await click('.analytics-card .report-chart-refresh')
     await ready('마지막으로 확인한 기록을 표시하고 있어요.')
     assert.ok(await evaluate(`document.querySelector('.analytics-card .report-chart-stale')!==null`),'cached data has styled notice')
-    assert.ok(await evaluate(`document.querySelector('.growth-area')!==null`),'refresh failure preserves chart')
+    assert.ok(await evaluate(`document.querySelector('.growth-earned-bar')!==null`),'refresh failure preserves chart')
 
   }
 

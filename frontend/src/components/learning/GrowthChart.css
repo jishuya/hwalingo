@@ -19,3 +19,10 @@
 .growth-tooltip>span {display:block;color:var(--report-muted);font-size:var(--font-xs)}
 .growth-tooltip>strong {display:block;margin-top:3px;color:var(--green);font-size:var(--font-sm);font-weight:700}
 .growth-tooltip>small {display:block;margin-top:3px;color:var(--report-muted);font-size:var(--font-xs)}
+
+/* Bars share the SVG grid's 160px zero baseline. */
+.growth-fit-chart .growth-earned-bar {position:absolute;bottom:10px;left:20%;width:60%;max-width:40px;margin-left:auto;margin-right:auto;right:20%;border-radius:5px 5px 0 0;background:var(--green);opacity:.65;pointer-events:none}
+.growth-fit-chart button[aria-pressed='true'] .growth-earned-bar {opacity:1;background:var(--green)}
+.growth-fit-chart .growth-earned-bar.zero {height:0;border-top:2px solid var(--report-muted);border-radius:0;opacity:.4}
+.growth-fit-chart .growth-earned-value {position:absolute;left:50%;transform:translateX(-50%);font-size:var(--font-xs);font-weight:600;white-space:nowrap;color:var(--green);pointer-events:none}
+.growth-fit-chart button:has(.growth-earned-bar.zero) .growth-earned-value {color:var(--report-muted);font-weight:400}

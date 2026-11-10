@@ -20,7 +20,7 @@ export default function useChartEntrance(rootRef: RefObject<HTMLDivElement | nul
       ['.learning-relearning-total-bar', ':scope>span', 'horizontal'],
       ['.analytics-horizontal', '.analytics-track>i', 'horizontal'],
       ['.learning-calendar-grid', 'button', 'fade'],
-      ['.analytics-growth-columns', 'svg path:not(.growth-area)', 'line'],
+      ['.analytics-growth-columns', '.growth-earned-bar:not(.zero)', 'vertical'],
     ]
     const observer = new IntersectionObserver(entries => {
       for (const entry of entries) {

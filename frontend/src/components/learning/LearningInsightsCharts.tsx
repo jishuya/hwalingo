@@ -16,7 +16,7 @@ import { Modal } from '../ui/Dialog'
 function InsightCard({title,description,children,periodControls=false}: {title:string;description:string;periodControls?:boolean;children:(data:LearningInsights)=>ReactNode}) {
   const {selection} = useAnalyticsPeriod()
   const query = useQuery({queryKey:['progress','insights',selection],queryFn:()=>getLearningInsights(selection),refetchInterval:20_000})
-  const errorMessage = title==='요일별 학습 패턴'?'요일별 학습 기록을 불러오지 못했어요.':title==='언어별 학습 현황'?'언어별 학습 현황을 불러오지 못했어요.':'누적 XP 성장 기록을 불러오지 못했어요.'
+  const errorMessage = title==='요일별 학습 패턴'?'요일별 학습 기록을 불러오지 못했어요.':title==='언어별 학습 현황'?'언어별 학습 현황을 불러오지 못했어요.':'XP 획득 기록을 불러오지 못했어요.'
   const TitleIcon = title==='요일별 학습 패턴'?CalendarDotsIcon:title==='언어별 학습 현황'?GlobeIcon:TrendUpIcon
   return <section className="card analytics-card"><div className="analytics-card-head report-chart-heading"><div><h2><TitleIcon weight="duotone" aria-hidden="true"/>{title}</h2>{description&&<p>{description}</p>}</div><button type="button" className="report-chart-refresh" title="새로고침" disabled={query.isFetching} onClick={()=>void query.refetch()} aria-label={`${title} 새로고침`}><ArrowCounterClockwiseIcon weight="regular" aria-hidden="true"/></button></div>{periodControls&&<AnalyticsPeriodControls/>}{query.isPending ? <p role="status">통계를 불러오는 중이에요.</p> : query.isError && !query.data ? <ChartErrorState message={errorMessage} retrying={query.isFetching} onRetry={()=>void query.refetch()}/> : query.data && children(query.data)}{query.isError && query.data && <ChartStaleNotice/>}</section>
 }
@@ -56,15 +56,15 @@ function Languages() {
 }
 function Growth() {
   const [selected,setSelected] = useState<string>()
-  return <InsightCard periodControls title="누적 XP 성장 곡선" description="">{data=>{
-    const points = [{date:'opening',earnedXp:0,totalXp:data.growth.openingXp,level:0,levelsGained:0,grade:''},...data.growth.days]
+  return <InsightCard periodControls title="기간별 XP 획득" description="">{data=>{
+    const points = data.growth.days
     const active = points.find(point=>point.date===selected)??points.at(-1)!
     const earned = data.growth.days.reduce((sum,day)=>sum+day.earnedXp,0)
-    return <><ReportSummary className="analytics-growth-summary" items={[{label:'기간 마지막 누적 XP',value:number(points.at(-1)!.totalXp),unit:'XP'},{label:'기간 획득 XP',value:`+${number(earned)}`,unit:'XP',tone:'amber'}]}/><GrowthChart key={`${data.range.start}-${data.range.end}-${data.range.grain}`} points={points} grain={data.range.grain} selected={active.date} onSelect={setSelected}/><div className="analytics-detail learning-time-details" aria-live="polite">
+    return <><ReportSummary className="analytics-growth-summary" items={[{label:'기간 획득 XP',value:`+${number(earned)}`,unit:'XP'},{label:'최다 획득 XP',value:`+${number(Math.max(0,...points.map(point=>point.earnedXp)))}`,unit:'XP',tone:'amber'}]}/><GrowthChart key={`${data.range.start}-${data.range.end}-${data.range.grain}`} points={points} grain={data.range.grain} selected={active.date} onSelect={setSelected}/><div className="analytics-detail learning-time-details" aria-live="polite">
       <div className="learning-time-record"><div className="learning-time-record-header"><span className="learning-time-record-date">{active.date==='opening'?'기간 시작 전':formatAnalyticsDate(active.date,data.range.grain)}</span>{active.levelsGained>0&&<span className="learning-time-record-status">+{active.levelsGained}레벨</span>}</div>
-        <div className="learning-time-record-copy"><p><span>누적 XP</span><strong>{number(active.totalXp)} XP</strong></p></div>
+        <div className="learning-time-record-copy"><p><span>획득 XP</span><strong>+{number(active.earnedXp)} XP</strong></p></div>
       </div>
-      {active.date!=='opening'&&<><dl className="learning-time-averages"><div><dt>획득 XP</dt><dd>+{number(active.earnedXp)} XP</dd></div><div><dt>레벨</dt><dd>Lv.{active.level}</dd></div></dl><p className="analytics-detail-grade">{active.grade}</p></>}
+      {active.date!=='opening'&&<><dl className="learning-time-averages"><div><dt>누적 XP</dt><dd>{number(active.totalXp)} XP</dd></div><div><dt>레벨</dt><dd>Lv.{active.level}</dd></div></dl><p className="analytics-detail-grade">{active.grade}</p></>}
     </div></>
   }}</InsightCard>
 }
