@@ -73,11 +73,11 @@ html[data-theme='dark'] .learning-progress-page .analytics-overview>div:nth-chil
 .learning-progress-page .analytics-period-dates button {width:26px;height:26px;padding:4px;border-radius:50%}
 .learning-progress-page .analytics-period>p {text-align:center;color:#94a3b8}
 .learning-progress-page [role='tabpanel']>.card {padding:22px;margin-bottom:20px}
-.learning-progress-page :is(.learning-time-heading,.learning-accuracy-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) h2 {font-size:var(--font-lg);font-weight:700;line-height:1.3;letter-spacing:-.3px;margin:6px 0}
-.learning-progress-page :is(.learning-time-heading,.learning-accuracy-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) p {font-size:var(--font-xs);color:#94a3b8;line-height:1.6}
-.learning-progress-page :is(.learning-time-eyebrow,.learning-accuracy-eyebrow,.learning-volume-eyebrow,.learning-calendar-eyebrow) {display:inline-flex;gap:5px;padding:4px 8px;background:var(--report-mint);border-radius:6px;font-size:var(--font-sm);color:#047857}
-.learning-progress-page :is(.learning-time-eyebrow,.learning-accuracy-eyebrow,.learning-volume-eyebrow,.learning-calendar-eyebrow) svg {width:15px;height:15px}
-.learning-progress-page :is(.learning-time-refresh,.learning-accuracy-refresh,.learning-volume-refresh,.learning-calendar-refresh,.analytics-card-head>button) {border-radius:99px;padding:6px 10px;color:var(--report-muted);font-size:var(--font-xs);background:transparent;border-color:#e2e8f0}
+.learning-progress-page :is(.learning-time-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) h2 {font-size:var(--font-lg);font-weight:700;line-height:1.3;letter-spacing:-.3px;margin:6px 0}
+.learning-progress-page :is(.learning-time-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) p {font-size:var(--font-xs);color:#94a3b8;line-height:1.6}
+.learning-progress-page :is(.learning-time-eyebrow,.learning-volume-eyebrow,.learning-calendar-eyebrow) {display:inline-flex;gap:5px;padding:4px 8px;background:var(--report-mint);border-radius:6px;font-size:var(--font-sm);color:#047857}
+.learning-progress-page :is(.learning-time-eyebrow,.learning-volume-eyebrow,.learning-calendar-eyebrow) svg {width:15px;height:15px}
+.learning-progress-page :is(.learning-time-refresh,.learning-volume-refresh,.learning-calendar-refresh,.analytics-card-head>button) {border-radius:99px;padding:6px 10px;color:var(--report-muted);font-size:var(--font-xs);background:transparent;border-color:#e2e8f0}
 .learning-progress-page :is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary) {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:18px 0 0;padding:0;gap:var(--report-summary-gap)}
 .learning-progress-page :is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary)>div {min-width:0;padding:var(--report-summary-padding);border:1px solid #d1fae5;border-radius:16px;background:linear-gradient(135deg,#ecfdf5b3,#ecfdf533)}
 .learning-progress-page :is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary)>div+div {border-color:#fef3c7;background:linear-gradient(135deg,#fffbebcc,#fffbeb33)}
@@ -86,8 +86,8 @@ html[data-theme='dark'] .learning-progress-page .analytics-overview>div:nth-chil
 .learning-progress-page :is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary) strong {display:flex;align-items:baseline;gap:4px;margin:7px 0 0;padding:0;font-size:var(--font-lg);font-weight:700;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .learning-progress-page :is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary) strong small {margin:0;font-size:var(--font-sm);line-height:1;font-weight:500}
 .learning-progress-page .analytics-time-legend {border-top:1px solid var(--line);padding-top:10px;margin:10px 0 14px;font-size:var(--font-xs)}
-.learning-progress-page :is(.learning-volume-legend,.learning-relearning-legend) {margin:10px 0 14px}
-.learning-progress-page :is(.analytics-time-legend,.learning-volume-legend,.learning-relearning-legend,.learning-calendar-legend) {justify-content:center;margin:0;padding:0}
+.learning-progress-page .learning-volume-legend {margin:10px 0 14px}
+.learning-progress-page :is(.analytics-time-legend,.learning-volume-legend,.learning-calendar-legend) {justify-content:center;margin:0;padding:0}
 .learning-progress-page .time-analysis {background:#38bdf8}
 .learning-progress-page .time-vocabulary {background:#fbbf24}
 .learning-progress-page .time-quiz {background:#10b981}
@@ -105,13 +105,7 @@ html[data-theme='dark'] .learning-progress-page .analytics-overview>div:nth-chil
 html[data-theme='dark'] .learning-progress-page .learning-time-record-date {background:#28523d;color:#8ee2a9}
 .learning-time-record-status {flex-shrink:0;padding:4px 7px;border:1px solid var(--report-border);border-radius:8px;background:var(--report-surface);color:var(--green);font-size:var(--font-xs);font-weight:700}
 html[data-theme='dark'] .learning-progress-page .learning-time-record {border-color:var(--report-border)}
-.learning-progress-page .learning-accuracy-summary {border:1px solid #fde68a99;border-radius:16px;background:linear-gradient(110deg,#fffbeb,#fff7ed);padding:16px;margin:18px 0;color:#78350f}
-.learning-progress-page .learning-accuracy-summary :is(span,p,b) {color:#92400e}
-.learning-progress-page .learning-accuracy-summary p {text-align:right}
-.learning-progress-page .learning-accuracy-summary strong {font-weight:700}
-.learning-progress-page .accuracy-marker {background:var(--report-surface);border-width:2.5px}
-.learning-progress-page .selected>.accuracy-marker {background:var(--report-surface)}
-.learning-progress-page :is(.analytics-detail,.learning-accuracy-detail) {background:var(--report-soft);border-color:var(--report-border);border-radius:14px}
+.learning-progress-page .analytics-detail {background:var(--report-soft);border-color:var(--report-border);border-radius:14px}
 .learning-progress-page .learning-calendar-detail {background:#ecfdf580;border:1px solid #d1fae5;border-radius:16px}
 .learning-progress-page .learning-calendar-detail dl {text-align:center}
 .learning-progress-page .learning-calendar-card .level-0 {background:#f1f5f9}
@@ -127,8 +121,8 @@ html[data-theme='dark'] .learning-progress-page .learning-time-record {border-co
 html[data-theme='dark'] .learning-progress-page {--report-heading-ink:#edf6ef;--report-heading-accent:#8ee2a9;--report-surface:#182b23;--report-soft:#20352b;--report-border:#30483b;--report-mint:#203d2d;--report-amber:#393316;--report-ink:#edf6ef;--report-muted:#a4b7ab;--mint:#203d2d;--line:#30483b;background:#13221b}
 html[data-theme='dark'] .learning-progress-page :is(.analytics-period>div:first-child,.analytics-switch,.learning-calendar-period,.analytics-track) {background:#263c30}
 html[data-theme='dark'] .learning-progress-page :is(:is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary)>div,.analytics-overview>button,.learning-calendar-detail) {background:#203d2d;border-color:#355842}
-html[data-theme='dark'] .learning-progress-page :is(:is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary)>div+div,.learning-accuracy-summary) {background:#393316;border-color:#67572b}
-html[data-theme='dark'] .learning-progress-page :is(:is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary) span,.learning-accuracy-summary span,.learning-accuracy-summary p,.learning-accuracy-summary b,.analytics-overview>button span,.analytics-overview>button small) {color:#d3dcb5}
+html[data-theme='dark'] .learning-progress-page :is(:is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary)>div+div) {background:#393316;border-color:#67572b}
+html[data-theme='dark'] .learning-progress-page :is(:is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary) span,.analytics-overview>button span,.analytics-overview>button small) {color:#d3dcb5}
 @media(max-width:720px) {
   .page.learning-progress-page {padding-top:0}
   .learning-progress-page .learning-progress-header {padding-block:7.5px}
@@ -144,8 +138,8 @@ html[data-theme='dark'] .learning-progress-page :is(:is(.learning-time-totals,.l
   .learning-progress-page .analytics-overview span {gap:4px;font-size:var(--font-xs);flex-wrap:wrap}
   .learning-progress-page .analytics-overview strong {font-size:var(--font-lg)}
   .learning-progress-page [role='tabpanel']>.card {padding:20px 16px}
-  .learning-progress-page :is(.learning-time-heading,.learning-accuracy-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) {gap:8px}
-  .learning-progress-page :is(.learning-time-heading,.learning-accuracy-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) h2 {font-size:var(--font-lg)}
+  .learning-progress-page :is(.learning-time-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) {gap:8px}
+  .learning-progress-page :is(.learning-time-heading,.learning-volume-heading,.learning-calendar-heading,.analytics-card-head) h2 {font-size:var(--font-lg)}
   .learning-progress-page :is(.learning-time-totals,.learning-volume-summary,.learning-calendar-summary) strong {font-size:var(--font-lg)}
   .learning-progress-page .learning-time-bar {max-width:18px}
 }

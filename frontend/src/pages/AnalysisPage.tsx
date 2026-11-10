@@ -1,3 +1,4 @@
+import { highlightVocabularyText } from '../utils/highlightVocabularyText'
 import LearningTimer from '../components/learning/LearningTimer'
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -25,20 +26,6 @@ import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type An
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' }
-
-function highlightExampleWord(text: string, word: string, memoryTip = false) {
-  const escaped = word.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  if (!escaped) return text
-  // Keep Latin words whole while allowing vocabulary in unspaced languages.
-  const term = /[\p{Script=Latin}]/u.test(word)
-    ? `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`
-    : escaped
-  const quoted = memoryTip ? '|[“「『‘][^”」』’\\n]+[”」』’]|"[^"\\n]+"|\'[^\'\\n]+\'' : ''
-  const pattern = new RegExp(`(${term}${quoted})`, 'giu')
-  return text.split(pattern).map((part, index) => index % 2 === 1
-    ? <mark className={memoryTip ? 'analysis-tip-highlight' : 'analysis-example-highlight'} key={index}>{part}</mark>
-    : part)
-}
 
 export default function AnalysisPage({ request, requestId, onLoadingChange }: { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void }) {
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -265,9 +252,9 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                   <div className="sentence-vocab-title"><div className="sentence-vocab-name"><h4><span className="sentence-vocab-word">{word.word}</span><span className="sentence-vocab-level" aria-label={`CEFR ${word.level}`}>{word.level}</span></h4>{word.pronunciation && <small className="vocab-pronunciation" aria-label={`발음 ${word.pronunciation}`}>{word.pronunciation}</small>}</div><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.learningLanguage)}><SpeakerHighIcon/></button></div>
                   <p className="sentence-vocab-basic"><b>기본:</b> {word.basicMeaning}</p><p className="sentence-vocab-context"><b>문맥:</b> {word.contextualMeaning}</p>
                   <div className="analysis-word-details">
-                    {word.exampleSentence && <div className="analysis-word-example"><div className="analysis-word-detail-heading"><b><SparkleIcon weight="fill" aria-hidden="true"/>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.learningLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><blockquote>{word.exampleMeaning ? <button type="button" className="analysis-example-toggle" aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-expanded={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}>{highlightExampleWord(word.exampleSentence, word.word)}</button> : highlightExampleWord(word.exampleSentence, word.word)}</blockquote>{exampleTranslationOpen && word.exampleMeaning && <p className="analysis-word-example-translation">{word.exampleMeaning}</p>}</div>}
+                    {word.exampleSentence && <div className="analysis-word-example"><div className="analysis-word-detail-heading"><b><SparkleIcon weight="fill" aria-hidden="true"/>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.learningLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><blockquote>{word.exampleMeaning ? <button type="button" className="analysis-example-toggle" aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-expanded={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}>{highlightVocabularyText(word.exampleSentence, word.word, 'analysis-example-highlight')}</button> : highlightVocabularyText(word.exampleSentence, word.word, 'analysis-example-highlight')}</blockquote>{exampleTranslationOpen && word.exampleMeaning && <p className="analysis-word-example-translation">{word.exampleMeaning}</p>}</div>}
                     {word.etymology && <div className="analysis-word-etymology"><b><PlantIcon weight="fill" aria-hidden="true"/>어원</b><p>{word.etymology}</p></div>}
-                    {word.memoryTip && <div className="analysis-word-memory-tip"><b><LightbulbIcon weight="fill" aria-hidden="true"/>AI 스마트 암기 팁</b><p>{highlightExampleWord(word.memoryTip, word.word, true)}</p></div>}
+                    {word.memoryTip && <div className="analysis-word-memory-tip"><b><LightbulbIcon weight="fill" aria-hidden="true"/>AI 스마트 암기 팁</b><p>{highlightVocabularyText(word.memoryTip, word.word, 'analysis-tip-highlight', true)}</p></div>}
                   </div>
                 </article>
               })}

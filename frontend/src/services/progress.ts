@@ -51,16 +51,6 @@ export async function getLearningCalendar(): Promise<LearningCalendar> {
   return response.json() as Promise<LearningCalendar>
 }
 
-export interface RelearningProgress {
-  range?: AnalyticsRange
-  days: Array<{ date: string; completed: number; remaining: number; unavailable: number; standardRemaining: number; incorrectRemaining: number }>
-}
-export async function getRelearningProgress(selection: AnalyticsSelection = {}): Promise<RelearningProgress> {
-  const response = await apiFetch(`/api/progress/relearning?${analyticsQuery(selection)}`, { credentials: 'include' })
-  if (!response.ok) throw new Error('오답 재학습 기록을 불러오지 못했어요.')
-  return response.json() as Promise<RelearningProgress>
-}
-
 export interface GrowingWord {
   vocabularyId: string
   word: string

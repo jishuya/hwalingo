@@ -54,7 +54,6 @@ function fixture(url,method,body={}){
  if(u.pathname==='/api/progress/activity')return{range,uniqueWords:empty?0:23,days:days.map((date,i)=>({date,newAnswers:empty?0:i%4,reviewAnswers:empty?0:i%5,correctAnswers:empty?0:i%4,uniqueWords:empty?0:i%5}))}
  if(u.pathname==='/api/learning-time/me')return{range,measurementStartedAt:date(-5)+'T00:00:00+09:00',days:days.map((d,i)=>({date:d,endDate:d,seconds:empty?0:i*30,measuredDays:i?1:0,activeDays:empty?0:1,byActivity:{analysis:empty?0:i*10,quiz:empty?0:i*10,story:empty?0:i*10,vocabulary:0}}))}
  if(u.pathname==='/api/progress/calendar')return{days:Array.from({length:365},(_,i)=>({date:date(i-364),activityCount:empty?0:i%35,answerCount:empty?0:i%20,earnedXp:empty?0:i*3}))}
- if(u.pathname==='/api/progress/relearning')return{range,days:days.map((date,i)=>({date,completed:empty?0:i%4,remaining:empty?0:i%2,unavailable:empty?0:i%2,standardRemaining:empty?0:i%2,incorrectRemaining:0}))}
  if(u.pathname==='/api/progress/insights')return{range,activities:empty?[]:[{type:'analysis',count:10},{type:'vocabulary',count:20},{type:'quiz',count:42},{type:'story',count:3}],languages:empty?[]:[{language:'en',saved:20,learned:15,mastered:5,answers:30},{language:'fr',saved:20,learned:10,mastered:5,answers:12}],weekdays:Array.from({length:7},(_,i)=>({weekday:i+1,maxAnswers:empty?0:i*4,maxSeconds:empty?null:i*80,averageAnswers:empty?0:i*2,averageSeconds:empty?null:i*40,activeDays:empty?0:i,observedDays:8,measuredDays:empty?0:4})),growth:{openingXp:empty?0:11318,days:days.map((date,i)=>({date,totalXp:empty?0:11318+(i>=count-2?30:0)+(i===count-1?47:0),earnedXp:empty?0:i===count-1?47:i===count-2?30:0,level:empty?1:2+Math.floor(i/3),levelsGained:empty?0:i%3===0?1:0,grade:'새싹 학습자'}))}}
  return{}
 }
@@ -170,7 +169,7 @@ try{
   await click('[aria-label="숙련도 단계 안내 닫기"]')
   assert.equal(await evaluate(`document.querySelector('[role="dialog"]')`),null)
   await click('.learning-weak-card:not(.learning-word-growth-card) .learning-weak-ranking li>button');await ready('단어 상세')
-  assert.equal(await evaluate(`document.querySelector('[role="dialog"] .compact-delete')`),null,'detail hides delete')
+  assert.equal(await evaluate(`document.querySelector('[role="dialog"] .vocabulary-remove-control')`),null,'detail hides delete')
   assert.equal(await evaluate(`document.querySelector('[role="dialog"] .favorite-star')`),null,'detail hides favorite')
   assert.ok(await evaluate(`document.querySelector('[role="dialog"] .vocabulary-page .compact-word-card.expanded')!==null`))
   assert.ok(await evaluate(`document.querySelector('[role="dialog"] .vocabulary-etymology')!==null`))
@@ -228,7 +227,9 @@ try{
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/vocabulary`});await ready('내 단어장');await ready('example-1')
   await click('.compact-word-card .vocabulary-pronounce')
   assert.ok(await evaluate(`document.querySelector('.compact-word-card.expanded .word-details')!==null`))
-  assert.ok(await evaluate(`document.querySelector('.compact-word-card .compact-delete')!==null`),'vocabulary keeps delete')
+  await click('.vocabulary-edit-toolbar button')
+  assert.ok(await evaluate(`document.querySelector('.compact-word-card .vocabulary-remove-control')!==null`),'vocabulary keeps delete')
+  await click('.vocabulary-edit-toolbar button')
   assert.ok(await evaluate(`document.querySelector('.compact-word-card .favorite-star')!==null`),'vocabulary keeps favorite')
   await screenshot('vocabulary-shared-card-'+width)
   await click('.vocabulary-filter-incorrect')
@@ -236,7 +237,7 @@ try{
   assert.ok(wrongIds>10)
   await click('.vocabulary-practice-checkbox')
   await evaluate(`document.querySelectorAll('.vocabulary-practice-checkbox')[1].click()`);await pause(100)
-  await ready('틀린단어 집중연습 · 2개')
+  await ready('선택한 2개 단어 집중 풀기')
   await screenshot('incorrect-selection-'+width)
   await click('.vocabulary-incorrect-test button')
   await ready('틀린단어 집중연습')
@@ -249,22 +250,33 @@ try{
   await evaluate(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))`);await pause(500)
   assert.equal(await evaluate(`document.querySelector('.quiz-progress [role="progressbar"]').getAttribute('aria-valuenow')`),'1')
   await click('.quiz-practice-notice button');await ready('내 단어장')
-  await click('.vocabulary-filter-incorrect');await ready('틀린단어 집중연습');await click('.vocabulary-incorrect-test button');await ready('틀린단어 집중연습')
+  await click('.vocabulary-filter-incorrect');await ready('틀린단어 집중 연습');await click('.vocabulary-incorrect-test button');await ready('틀린단어 집중연습')
   assert.equal(await evaluate(`document.querySelector('.quiz-progress [role="progressbar"]').getAttribute('aria-valuenow')`),'1','practice resumes')
   await click('[aria-label="안내 닫기"]')
   await evaluate(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))`);await ready('틀린단어 집중연습 완료!')
   assert.equal(await evaluate(`document.querySelector('.quiz-completion-stats').textContent.includes('XP')`),false)
   await screenshot('incorrect-complete-'+width)
   await click('.quiz-completion-home');await ready('내 단어장');await click('.vocabulary-filter-incorrect')
-  assert.equal(await evaluate(`document.querySelector('.compact-word-card .compact-delete')`),null,'wrong word cards hide delete')
+  assert.equal(await evaluate(`document.querySelector('.compact-word-card .vocabulary-remove-control')`),null,'wrong word cards hide delete')
   assert.equal(await evaluate(`document.querySelector('.compact-word-card .favorite-star')`),null,'wrong word cards hide favorite')
   assert.equal(await evaluate(`getComputedStyle(document.querySelector('.vocabulary-practice-checkbox')).borderRadius`),'5px')
   await click('.vocabulary-filter-all')
-  assert.ok(await evaluate(`document.querySelector('.compact-word-card .compact-delete')!==null`),'other tabs keep delete')
+  await click('.vocabulary-edit-toolbar button')
+  assert.ok(await evaluate(`document.querySelector('.compact-word-card .vocabulary-remove-control')!==null`),'other tabs keep delete')
+  await click('.vocabulary-edit-toolbar button')
 
-
-
+  // Exercise lazy page chunks through the same navigation used by the app.
+  const navigation=width<500?'.bottom-nav':'.desktop-nav'
+  await click(navigation+' button:nth-child(4)');await ready('AI 스토리텔링')
+  assert.equal(await evaluate(`location.pathname`),'/story')
+  await click(navigation+' button:nth-child(5)');await ready('preview@example.test')
+  assert.equal(await evaluate(`location.pathname`),'/profile')
+  await click('.profile-learning-title');await ready('요일별 학습 패턴')
+  assert.equal(await evaluate(`location.pathname`),'/learning-progress')
+  await click(navigation+' button:nth-child(1)');await ready('AI 문장 분석')
+  assert.equal(await evaluate(`location.pathname`),'/study')
  }
+
  for(const state of ['empty','error']){
   mode=state
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/learning-progress?tab=records&test=${state}`});await ready(state==='empty'?'하루 평균':'다시 시도');await screenshot(state)

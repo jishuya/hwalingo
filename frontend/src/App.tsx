@@ -1,20 +1,21 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import LoginRequired from './components/ui/LoginRequired'
 import { SESSION_EXPIRED_EVENT } from './services/apiFetch'
 import { RobotIcon, StarIcon, ExamIcon, SparkleIcon, UserCircleIcon, ChartBarIcon } from '@phosphor-icons/react'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
-import LearningProgressPage from './pages/LearningProgressPage'
-import ProfilePage from './pages/ProfilePage'
-import QuizPage from './pages/QuizPage'
-import StoryPage from './pages/StoryPage'
 import StudyPage from './pages/StudyPage'
-import VocabularyPage from './pages/VocabularyPage'
 import { getCurrentUser, logout, type AuthUser } from './services/auth'
 import { getUserSettings } from './services/settings'
 import { readRoute, type Page } from './types/navigation'
 import './App.css'
+
+const LearningProgressPage = lazy(() => import('./pages/LearningProgressPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const QuizPage = lazy(() => import('./pages/QuizPage'))
+const StoryPage = lazy(() => import('./pages/StoryPage'))
+const VocabularyPage = lazy(() => import('./pages/VocabularyPage'))
 
 export default function App() {
   const [sessionExpired, setSessionExpired] = useState(false)
@@ -121,5 +122,5 @@ export default function App() {
             ? <LearningProgressPage onNavigate={go} onIncorrectTest={()=>startIncorrectTest()}/>
           : <ProfilePage user={authQuery.data!.user} logout={finishLogout} onNavigate={go}/>
 
-  return <AppShell page={page} go={go} onHome={goHome}>{content}</AppShell>
+  return <AppShell page={page} go={go} onHome={goHome}><Suspense fallback={<div className="page" role="status">화면을 불러오는 중이에요.</div>}>{content}</Suspense></AppShell>
 }

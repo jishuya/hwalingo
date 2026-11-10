@@ -10,14 +10,11 @@ export default function useChartEntrance(rootRef: RefObject<HTMLDivElement | nul
     const visible = new WeakSet<Element>()
     const playing = new WeakMap<Element, Animation>()
     const animations = new Set<Animation>()
-    const groups: Array<[string, string, 'vertical' | 'horizontal' | 'fade' | 'line']> = [
+    const groups: Array<[string, string, 'vertical' | 'horizontal' | 'fade']> = [
       ['.learning-time-bars', '.learning-time-bar', 'vertical'],
       ['.learning-volume-bars', '.learning-volume-stack', 'vertical'],
-      ['.learning-review-bars', '.learning-review-track>span', 'vertical'],
       ['.learning-mastery-rows', '.learning-mastery-track>span', 'horizontal'],
       ['.learning-weak-ranking', '.learning-weak-track>span', 'horizontal'],
-      ['.learning-relearning-days', '[role="img"]', 'horizontal'],
-      ['.learning-relearning-total-bar', ':scope>span', 'horizontal'],
       ['.analytics-horizontal', '.analytics-track>i', 'horizontal'],
       ['.learning-calendar-grid', 'button', 'fade'],
       ['.analytics-growth-columns', '.growth-earned-bar:not(.zero)', 'vertical'],
@@ -34,19 +31,16 @@ export default function useChartEntrance(rootRef: RefObject<HTMLDivElement | nul
         const config = groups.find(([selector]) => entry.target.matches(selector))
         if (!config) continue
         const [, selector, kind] = config
-        entry.target.querySelectorAll<HTMLElement | SVGPathElement>(selector).forEach((element, index) => {
+        entry.target.querySelectorAll<HTMLElement>(selector).forEach((element, index) => {
           playing.get(element)?.cancel()
           let frames: Keyframe[]
-          if (kind === 'line' && element instanceof SVGPathElement) {
-            const length = element.getTotalLength()
-            frames = [{ strokeDasharray: `${length}`, strokeDashoffset: `${length}` }, { strokeDasharray: `${length}`, strokeDashoffset: '0' }]
-          } else if (kind === 'fade') {
+          if (kind === 'fade') {
             frames = [{ opacity: 0 }, { opacity: 1 }]
           } else {
             const origin = kind === 'vertical' ? 'center bottom' : 'left center'
             frames = [{ transform: kind === 'vertical' ? 'scaleY(0)' : 'scaleX(0)', transformOrigin: origin }, { transform: 'scale(1)', transformOrigin: origin }]
           }
-          const animation = element.animate(frames, { duration: kind === 'line' ? 1000 : 650, delay: Math.min(index * (kind === 'fade' ? 7 : 55), 550), easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' })
+          const animation = element.animate(frames, { duration: 650, delay: Math.min(index * (kind === 'fade' ? 7 : 55), 550), easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' })
           animations.add(animation)
           playing.set(element, animation)
           animation.oncancel = () => animations.delete(animation)

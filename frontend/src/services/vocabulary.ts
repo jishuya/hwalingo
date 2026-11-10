@@ -75,7 +75,3 @@ export function deleteVocabulary(vocabularyId: string): Promise<void> {
 export function setVocabularyFavorite(vocabularyId: string, favorite: boolean): Promise<void> {
   return request(`/api/vocabularies/${vocabularyId}/favorite`, { method: favorite ? 'POST' : 'DELETE' })
 }
-
-export function excludeIncorrectPractice(vocabularyId:string): Promise<void> {
-  return request(`/api/vocabularies/${vocabularyId}/incorrect-practice`,{method:'DELETE'})
-}

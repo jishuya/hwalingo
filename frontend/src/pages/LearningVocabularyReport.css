@@ -39,21 +39,10 @@
 .learning-progress-page .learning-mastery-track>span {background:linear-gradient(90deg,#6ee7b7,#10b981)}
 .learning-progress-page .mastered .learning-mastery-track>span {background:linear-gradient(90deg,#fcd58a,#f5a742)}
 
-.learning-progress-page .learning-review-plot {height:210px;margin-top:16px}
-.learning-progress-page .learning-review-bars {gap:8px;background:repeating-linear-gradient(to right,var(--report-border) 0 3px,transparent 3px 7px) left 20px / 100% 1px no-repeat,repeating-linear-gradient(to right,var(--report-border) 0 3px,transparent 3px 7px) left calc(50% - 7px) / 100% 1px no-repeat,linear-gradient(var(--report-border),var(--report-border)) left calc(100% - 34px) / 100% 1px no-repeat}
-.learning-progress-page .learning-review-track {border-bottom:0}
-.learning-progress-page .learning-review-track>span {width:65%;max-width:26px;border-radius:7px 7px 3px 3px;background:linear-gradient(0deg,#10b981,#6ee7b7)}
-.learning-progress-page .learning-review-bars .today .learning-review-track>span {background:linear-gradient(0deg,#10b981,#6ee7b7)}
-.learning-progress-page .learning-review-bars>.selected {background:transparent}
-.learning-progress-page .learning-review-bars>.selected .learning-review-day {color:var(--green);font-weight:700}
-.learning-progress-page .learning-review-bars>button>strong {color:var(--report-muted);font-weight:500}
-
-.learning-progress-page :is(.learning-review-action,.learning-weak-action) {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:14px;border:1px solid var(--report-border);border-radius:16px;background:var(--report-soft)}
-.learning-progress-page :is(.learning-review-action,.learning-weak-action) strong {font-size:var(--font-sm);line-height:1.5}
-.learning-progress-page :is(.learning-review-action,.learning-weak-action) button,
-.learning-progress-page .learning-relearning-actions button {display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:0;border-radius:10px;background:var(--green);color:#fff;font-size:var(--font-sm);font-weight:600;box-shadow:none}
-.learning-progress-page :is(.learning-review-action,.learning-relearning-actions) button svg {width:16px;height:16px}
-.learning-progress-page :is(.learning-review-action,.learning-weak-action) button:disabled {opacity:.5}
+.learning-progress-page .learning-weak-action {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:14px;border:1px solid var(--report-border);border-radius:16px;background:var(--report-soft)}
+.learning-progress-page .learning-weak-action strong {font-size:var(--font-sm);line-height:1.5}
+.learning-progress-page .learning-weak-action button {display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:0;border-radius:10px;background:var(--green);color:#fff;font-size:var(--font-sm);font-weight:600;box-shadow:none}
+.learning-progress-page .learning-weak-action button:disabled {opacity:.5}
 .learning-progress-page .learning-weak-action button {position:relative;overflow:hidden;isolation:isolate;background:#b95048;color:#fff}
 .learning-progress-page .learning-weak-action button:not(:disabled)::after {content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 25%,#ffffff55 50%,transparent 75%);transform:translateX(-120%);animation:weak-practice-shimmer 4s ease-in-out infinite}
 @keyframes weak-practice-shimmer {0%,60%{transform:translateX(-120%)}90%,100%{transform:translateX(120%)}}
@@ -69,17 +58,6 @@
 .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-counts strong {color:#b95048}
 html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-rank {background:#442b28;color:#f3b8ad}
 html[data-theme='dark'] .learning-progress-page .learning-weak-card:not(.learning-word-growth-card) .learning-weak-counts strong {color:#f3b8ad}
-
-.learning-progress-page .learning-relearning-summary {grid-template-columns:repeat(3,minmax(0,1fr))}
-.learning-progress-page .learning-relearning-total-bar {height:12px;padding:0;margin-top:18px;background:var(--report-soft)}
-.learning-progress-page .learning-relearning-days {gap:8px;margin:16px 0 12px;padding:0;border:0}
-.learning-progress-page .learning-relearning-days>button {display:grid;grid-template-columns:48px minmax(0,1fr) 78px;align-items:center;gap:8px;padding:7px 0;border:0;border-radius:8px;background:transparent;color:var(--report-muted);text-align:left;font-size:var(--font-xs)}
-.learning-progress-page .learning-relearning-days>button>div {display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--report-soft)}
-.learning-progress-page .learning-relearning-days>button>strong {font-size:var(--font-xs);text-align:right;font-variant-numeric:tabular-nums}
-.learning-progress-page .learning-relearning-days>button[aria-pressed='true']>span {color:var(--green);font-weight:700}
-.learning-progress-page .learning-relearning-days>button:focus-visible {outline:2px solid var(--green);outline-offset:3px}
-.learning-progress-page .learning-relearning-legend {justify-content:center;margin:0;padding:0;gap:8px 12px}
-.learning-progress-page .learning-relearning-message {margin-top:12px;padding:10px 12px;font-size:var(--font-sm)}
 
 .learning-progress-page .analytics-horizontal.languages {gap:8px;margin-top:20px}
 .learning-progress-page .analytics-horizontal.languages>button {grid-template-columns:1fr auto;gap:8px;padding:10px;border:1px solid var(--report-border);border-radius:12px;background:var(--report-surface)}
@@ -120,9 +98,8 @@ html[data-theme='dark'] .learning-progress-page .learning-mastery-rows>button.ma
 html[data-theme='dark'] .learning-progress-page .learning-weak-ranking li:first-child>button {background:#393316;border-color:#67572b}
 @media(max-width:520px) {
   .learning-progress-page .report-summary-item>strong {font-size:var(--font-lg)}
-  .learning-progress-page :is(.learning-review-action,.learning-weak-action) {align-items:stretch;flex-direction:column}
-  .learning-progress-page :is(.learning-review-action,.learning-weak-action) button {width:100%}
-  .learning-progress-page .learning-review-bars {gap:4px}
+  .learning-progress-page .learning-weak-action {align-items:stretch;flex-direction:column}
+  .learning-progress-page .learning-weak-action button {width:100%}
   .learning-progress-page [role='tabpanel']>.analytics-growth-hero {padding:14px 12px;gap:12px}
   .learning-progress-page .analytics-growth-hero>.growth-hero-avatar {flex-basis:64px;width:64px;height:80px;border-radius:13px}
 }

@@ -15,7 +15,7 @@ interface Session {
   items:Array<{id:string;word:string;result:string|null;retryOfItemId:string|null}>
 }
 
-test('incorrect practice selects all or a subset and never changes official learning state',async()=>{
+test('incorrect practice selects all or a subset and never changes official learning state', async()=>{
   const dir=await mkdtemp(join(tmpdir(),'hwalingo-practice-test-'))
   const pg=process.env.PG_BINDIR??'/usr/lib/postgresql/16/bin'
   let started=false
