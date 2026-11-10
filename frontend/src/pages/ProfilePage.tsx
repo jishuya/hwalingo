@@ -1,4 +1,4 @@
-import { ChartBarIcon, ChartLineUpIcon, BellIcon, CaretRightIcon, FireIcon, GearSixIcon, ListNumbersIcon, LockKeyIcon, MoonStarsIcon, PencilSimpleIcon, QuestionIcon, SignOutIcon, BookOpenIcon, StarIcon, PlantIcon } from '@phosphor-icons/react'
+import { ChartBarIcon, ChartLineUpIcon, BellIcon, CaretRightIcon, FireIcon, GearSixIcon, ListNumbersIcon, LockKeyIcon, MoonStarsIcon, PencilSimpleIcon, QuestionIcon, SignOutIcon, BooksIcon, SealCheckIcon, StarIcon, PlantIcon } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import LevelAvatar from '../components/profile/LevelAvatar'
@@ -72,8 +72,8 @@ export default function ProfilePage({ user, logout, onNavigate }: ProfilePagePro
 
   return <div className="page profile-page">
     <div className="profile-hero-stack"><section className="profile-card card">
-      <div className="profile-level-avatar"><LevelAvatar className="profile-level-avatar-image" level={level} eager sizes="(max-width: 600px) 128px, 148px"/><button type="button" className="profile-avatar-collection-button" aria-label="화랑이 성장 도감 보기" title="화랑이 성장 도감 보기" aria-haspopup="dialog" disabled={!progress} onClick={() => setAvatarsOpen(true)}><BookOpenIcon weight="duotone" aria-hidden="true"/></button></div>
-      <div className="profile-character-grade"><span className="profile-character-step"><span>{hwarangGrade.step}</span>단계</span><strong>{hwarangGrade.name}</strong></div>
+      <div className="profile-level-avatar"><LevelAvatar className="profile-level-avatar-image" level={level} eager sizes="(max-width: 600px) 128px, 148px"/><button type="button" className="profile-avatar-collection-button" aria-label="화랑이 성장 도감 보기" title="화랑이 성장 도감 보기" aria-haspopup="dialog" disabled={!progress} onClick={() => setAvatarsOpen(true)}><BooksIcon weight="duotone" aria-hidden="true"/></button></div>
+      <div className="profile-character-grade"><SealCheckIcon weight="duotone" aria-hidden="true"/><strong>{hwarangGrade.name}</strong></div>
       <div className="profile-name-row"><h1>{user.displayName}</h1><button type="button" aria-label="이름 변경" title="이름 변경" onClick={() => { setDisplayName(user.displayName); setPanel('profile') }}><PencilSimpleIcon weight="bold"/></button></div><p>{user.email}</p>
       <div className="profile-hero-stats">
         <div><span>연속 학습</span><strong><FireIcon weight="fill"/>{progress ? progress.currentStreak : '—'}<small>일째</small></strong></div>

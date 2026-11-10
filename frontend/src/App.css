@@ -471,7 +471,7 @@ html[data-theme='dark'] .vocabulary-page .compact-word-name .word-language-badge
 .story-method-copy em{display:inline-block;margin-left:4px;padding:1px 4px;border-radius:4px;background:var(--green);color:#fff;font-size:var(--font-xs);font-style:normal;vertical-align:1px}
 .story-method-copy small{color:#7b8d82;font-size:var(--font-xs);line-height:1.5;word-break:keep-all}
 .story-method-card:first-child .story-method-copy small{color:var(--green)}
-.story-method-check{flex:0 0 auto;width:23px;height:23px;color:var(--green)}
+.story-method-check{flex:0 0 auto;width:19px;height:19px;color:var(--green)}
 .story-method-action{display:flex;align-items:center;gap:3px;flex:0 0 auto;color:#7b8d82;font-size:var(--font-xs)}
 .story-method-action svg{width:13px;height:13px}
 .story-picked-words{margin-top:14px;padding-top:12px;border-top:1px dashed #dce8e0}
@@ -1016,14 +1016,13 @@ html[data-theme='dark'] .avatar-collection-total .avatar-evolution-progress{back
 @media(max-width:600px){.avatar-collection-summary{padding:16px;gap:14px}.avatar-current-grade{gap:6px}.avatar-current-grade strong{font-size:var(--font-md)}}
 @media(prefers-reduced-motion:reduce){.avatar-collection-total .avatar-evolution-progress i::after{animation:none;transform:none;opacity:.3}}
 
-/* Character rank: a separate stage badge keeps longer grade names readable. */
-.profile-character-grade{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;width:fit-content;max-width:100%;margin:6px auto 8px;padding:3px 8px 3px 3px;border:1px solid #d5e9dc;border-radius:18px;background:linear-gradient(120deg,#f0f9f3,#fffdf5);box-shadow:0 3px 10px rgba(24,51,42,.04)}
-.profile-character-step{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex-shrink:0;min-height:22px;padding:2px 6px;border-radius:8px;background:#008c44;color:#fff;font-size:var(--font-xs);font-weight:600;line-height:1.4}
-.profile-character-step>span{font-weight:800;font-variant-numeric:tabular-nums}
-.profile-character-grade>strong{color:#18332a;font-size:var(--font-sm);font-weight:700;line-height:1.35;word-break:keep-all}
-html[data-theme='dark'] .profile-character-grade{border-color:#395545;background:linear-gradient(120deg,#20382a,#283325);box-shadow:none}
-html[data-theme='dark'] .profile-character-grade>strong{color:#e7f4eb}
-html[data-theme='dark'] .profile-character-step{background:#087a43}
+/* A fitted nameplate anchors the character and its rank. */
+.profile-character-grade{position:relative;z-index:4;display:flex;align-items:center;justify-content:center;gap:6px;width:fit-content;max-width:100%;margin:-12px auto 10px;padding:6px 12px 6px 9px;border:1px solid #c6ddce;border-radius:10px;background:linear-gradient(180deg,#fff 0%,#f0f7f2 100%);box-shadow:0 3px 8px #18332a12,inset 0 1px 0 #fff}
+.profile-character-grade>svg{width:18px;height:18px;flex-shrink:0;color:#008c44}
+.profile-character-grade>strong{color:#214c37;font-size:var(--font-sm);font-weight:700;line-height:1.4;letter-spacing:-.3px;word-break:keep-all}
+html[data-theme='dark'] .profile-character-grade{border-color:#456552;background:linear-gradient(180deg,#2b4234,#203329);box-shadow:0 3px 8px #0002,inset 0 1px 0 #ffffff0d}
+html[data-theme='dark'] .profile-character-grade>strong{color:#e2f0e6}
+html[data-theme='dark'] .profile-character-grade>svg{color:#80d2a1}
 
 /* Profile growth cards, inspired by the soft mint collection layout. */
 .profile-hero-stack{display:grid;gap:12px;margin-bottom:20px}
@@ -1065,20 +1064,21 @@ html[data-theme='dark'] .profile-growth-track>span{border-color:#18231d}
 html[data-theme='dark'] .profile-growth-xp-footer>strong{background:#203d2d;color:#83e1b5}
 @media(max-width:480px){.profile-hero-stack{gap:10px}.profile-hero-stack .profile-card{padding:18px 14px 12px}.profile-hero-stack .profile-growth-collection{padding:10px 12px;gap:12px}.profile-hero-stack .profile-collection-copy strong{font-size:var(--font-md)}.profile-hero-stack .profile-collection-copy small{font-size:var(--font-xs)}.profile-hero-stack .profile-collection-book{width:34px;height:36px;border-radius:10px}.profile-hero-stack .profile-collection-open{width:30px;height:30px}.profile-growth-xp{padding:12px}.profile-hero-stats{gap:7px}.profile-growth-xp-footer>strong{padding-inline:4px}}
 
-/* Open the growth collection directly beside the character. */
-.profile-level-avatar>.profile-avatar-collection-button{width:40px;height:40px;background:#008c44;box-shadow:0 3px 10px #008c4426;transition:background-color .2s}
-.profile-level-avatar>.profile-avatar-collection-button:hover{background:#006f36;transform:none}
+/* Emerald collection button with a fine inset rim. */
+.profile-level-avatar>.profile-avatar-collection-button{width:36px;height:36px;border:2px solid #fff;border-radius:50%;background:linear-gradient(145deg,#219764,#08653e);color:#fff;box-shadow:0 3px 9px #125a3c30,inset 0 0 0 1px #ffffff35,inset 0 2px 3px #ffffff20;transition:transform .2s,box-shadow .2s}
+.profile-level-avatar>.profile-avatar-collection-button>svg:first-child{width:20px;height:20px;transform-origin:50% 80%;filter:drop-shadow(0 1px 1px #00452640)}
+.profile-level-avatar>.profile-avatar-collection-button:hover:not(:disabled){background:linear-gradient(145deg,#2aaa73,#087448);transform:translateY(-2px);box-shadow:0 5px 14px #125a3c40,inset 0 0 0 1px #ffffff40}
 .profile-level-avatar>.profile-avatar-collection-button:focus-visible{outline:2px solid var(--green);outline-offset:3px}
 .profile-level-avatar>.profile-avatar-collection-button:disabled{cursor:default;opacity:.5}
-.profile-level-avatar>.profile-avatar-collection-button svg{width:19px;height:19px}
-html[data-theme='dark'] .profile-level-avatar>.profile-avatar-collection-button{border-color:#18231d;background:#087a43}
+.profile-level-avatar>.profile-avatar-collection-button:active:not(:disabled){transform:scale(.95)}
+html[data-theme='dark'] .profile-level-avatar>.profile-avatar-collection-button{border-color:#18231d}
+@media(prefers-reduced-motion:reduce){.profile-level-avatar>.profile-avatar-collection-button{transition:none}.profile-level-avatar>.profile-avatar-collection-button:hover:not(:disabled),.profile-level-avatar>.profile-avatar-collection-button:active:not(:disabled){transform:none}}
 
-/* A brief invitation to explore, followed by a quiet pause. */
+/* Keep the invitation animation on the smaller collection badge. */
 .profile-avatar-collection-button:not(:disabled)::after{content:'';position:absolute;inset:-3px;border:2px solid #35bf7a;border-radius:50%;pointer-events:none;opacity:0;animation:profile-collection-ripple 2s ease-out infinite}
-.profile-avatar-collection-button:not(:disabled)>svg{transform-origin:50% 80%;animation:profile-collection-wiggle 2s ease-in-out infinite}
-.profile-level-avatar>.profile-avatar-collection-button:hover:not(:disabled),.profile-level-avatar>.profile-avatar-collection-button:focus-visible:not(:disabled){box-shadow:0 4px 16px #008c4459}
-.profile-avatar-collection-button:hover>svg,.profile-avatar-collection-button:focus-visible>svg{animation-play-state:paused;transform:rotate(-8deg) scale(1.1)}
-.profile-level-avatar>.profile-avatar-collection-button:active:not(:disabled){transform:scale(.94)}
-@keyframes profile-collection-wiggle{0%,6%,28%,100%{transform:translateY(0) rotate(0)}12%{transform:translateY(-3px) rotate(-12deg)}18%{transform:translateY(-2px) rotate(10deg)}23%{transform:translateY(-1px) rotate(-5deg)}}
+.profile-avatar-collection-button:not(:disabled)>svg:first-child{animation:profile-collection-wiggle 2s ease-in-out infinite}
+.profile-avatar-collection-button:hover>svg:first-child,.profile-avatar-collection-button:focus-visible>svg:first-child{animation-play-state:paused}
+@keyframes profile-collection-wiggle{0%,6%,28%,100%{transform:translateY(0) rotate(0)}12%{transform:translateY(-3px) rotate(-10deg)}18%{transform:translateY(-2px) rotate(6deg)}23%{transform:translateY(-1px) rotate(-4deg)}}
 @keyframes profile-collection-ripple{0%,6%{transform:scale(.9);opacity:0}12%{opacity:.55}32%,100%{transform:scale(1.4);opacity:0}}
-@media(prefers-reduced-motion:reduce){.profile-avatar-collection-button:not(:disabled)::after{animation:none;display:none}.profile-avatar-collection-button:not(:disabled)>svg{animation:none}.profile-level-avatar>.profile-avatar-collection-button{transition:none}.profile-level-avatar>.profile-avatar-collection-button:active:not(:disabled),.profile-avatar-collection-button:hover>svg,.profile-avatar-collection-button:focus-visible>svg{transform:none}}
+@media(prefers-reduced-motion:reduce){.profile-avatar-collection-button:not(:disabled)::after{animation:none;display:none}.profile-avatar-collection-button:not(:disabled)>svg:first-child{animation:none}}
+
