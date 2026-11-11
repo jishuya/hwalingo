@@ -93,8 +93,10 @@ node --import tsx --test backend/src/services/vocabularyLanguage.test.ts backend
 기본 문장 분석은 `POST /api/analysis`에서 HTTP 202와 `job.id`를 즉시 반환한다.
 프론트엔드는 `GET /api/analysis/jobs/:id`를 2초 간격으로 조회하며,
 `GET /api/analysis/jobs/latest`로 로그인한 사용자의 최근 작업을 복원한다.
-다른 사용자의 작업은 조회할 수 없다. 이전 프론트엔드의 동기 응답 형식과 호환되지 않으므로
-백엔드와 프론트엔드를 함께 반영한다.
+다른 사용자의 작업은 조회할 수 없다. 최근 완료 작업과 같은 요청은 저장된 결과를 즉시 재사용하며,
+구버전 앱을 위해 최상위 `analysis` 필드도 제공한다. 새 작업 접수 응답에는 구버전 화면에서
+분석 실패 대신 새로고침·이전 분석 이어보기를 안내하는 `message`를 포함한다.
+백엔드와 프론트엔드는 함께 반영한다.
 
 기존 DB에는 **백엔드 재시작 전에** 다음 마이그레이션만 적용한다.
 인증 정보는 기존 DB 접속 방식을 사용한다. `docs/db.sql` 전체를 운영 DB에 실행하지 않는다.
@@ -122,4 +124,18 @@ AI 작업에는 전체 120초 제한이 있으며, 일반 AI 실패는 자동 �
 
 ```bash
 node --import tsx --test backend/src/routes/analysisJobs.test.ts frontend/tests/analysisJobs.test.ts
+```
+
+### 설치된 앱의 버전 갱신
+
+PWA는 새 서비스 워커가 활성화돼도 이미 열린 화면의 JavaScript가 자동으로 바뀌지 않는다.
+새 버전이 활성화되면 공통 확인창으로 새로고침을 안내하며, 사용자는 작성 중인 내용을 마친 뒤 적용할 수 있다.
+앱 재활성화·온라인 복귀 및 활성 화면에서 1분 간격으로 서비스 워커 업데이트를 확인한다.
+구버전 화면이 작업 ID 응답을 분석 결과로 읽어 오류를 표시했다면, 새로고침 후
+**이전 분석 이어보기**로 서버에 저장된 결과를 확인한다. 같은 문장을 재요청해도 완료 결과를 재사용한다.
+
+다음 브라우저 검사는 로컬 모의 API로 결과 복원과 서비스 워커 갱신을 검증한다.
+
+```bash
+node frontend/tests/analysisRecovery.browser.mjs
 ```

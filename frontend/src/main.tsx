@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import Providers from './Providers'
 import App from './App'
+import PwaUpdateNotice from './components/ui/PwaUpdateNotice'
 import './styles/global.css'
 
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Providers>
       <App />
+      <PwaUpdateNotice />
     </Providers>
   </StrictMode>,
 )

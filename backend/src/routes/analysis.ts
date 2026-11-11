@@ -128,11 +128,23 @@ analysisRouter.post('/', requireAuth, async (request, response, next) => {
       response.status(400).json({ message: '지원하지 않는 언어입니다.' })
       return
     }
+    const previous = await findAnalysisJob(request.auth!.userId)
+    if (previous?.status === 'completed' && previous.result
+      && previous.request_data.text === text && previous.request_data.inputLanguage === inputLanguage
+      && previous.request_data.learningLanguage === learningLanguage) {
+      // Both legacy synchronous clients and current polling clients can read this.
+      response.set('Cache-Control', 'no-store').json({ job: presentAnalysisJob(previous), analysis: previous.result })
+      return
+    }
     const job = await createAnalysisJob(request.auth!.userId, { text, inputLanguage, learningLanguage })
     if (job.request_data.text !== text || job.request_data.inputLanguage !== inputLanguage || job.request_data.learningLanguage !== learningLanguage) {
       response.status(409).json({ message: '진행 중인 분석이 있습니다. 이전 분석을 이어서 확인해 주세요.' })
       return
     }
-    response.set('Cache-Control', 'no-store').status(202).json({ job: presentAnalysisJob(job) })
+    response.set('Cache-Control', 'no-store').status(202).json({
+      job: presentAnalysisJob(job),
+      // Older installed apps read message when the synchronous analysis field is absent.
+      message: '분석이 접수되었습니다. 이전 버전의 화면을 사용 중이면 새로고침한 뒤 이전 분석 이어보기를 눌러주세요.',
+    })
   } catch (error) { next(error) }
 })

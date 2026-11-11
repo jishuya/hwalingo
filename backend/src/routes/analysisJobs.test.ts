@@ -67,7 +67,9 @@ test('durable analysis jobs: auth, deduplication, ownership, completion, failure
     assert.equal((await send('', { ...request, learningLanguage: 'toString' })).status, 400)
     const posted = await send('', request)
     assert.equal(posted.status, 202)
-    const { job } = await posted.json()
+    const accepted = await posted.json()
+    assert.match(accepted.message, /분석이 접수.*새로고침/)
+    const { job } = accepted
     assert.equal(job.status, 'queued')
     assert.equal(job.request.text, 'Hola. Mundo.')
     assert.equal((await (await send('', request)).json()).job.id, job.id)
@@ -87,6 +89,14 @@ test('durable analysis jobs: auth, deduplication, ownership, completion, failure
     await until(async () => (await (await send('/jobs/' + job.id)).json()).job.status === 'completed')
     await Promise.all(workers.splice(0).map(stop => stop()))
     assert.equal(entered, 1)
+    // An old installed client expects top-level analysis. Repeating the completed
+    // request must return that result, not create another paid job or activity.
+    const repeated = await send('', request)
+    assert.equal(repeated.status, 200)
+    const compatible = await repeated.json()
+    assert.deepEqual(compatible.analysis, analysis)
+    assert.equal(compatible.job.id, job.id)
+    assert.equal((await pool.query('SELECT count(*)::integer AS n FROM sentence_analysis_jobs')).rows[0].n, 1)
     assert.deepEqual((await (await send('/jobs/latest')).json()).job.analysis, analysis)
     assert.equal((await pool.query('SELECT count(*)::integer AS n FROM learning_activities')).rows[0].n, 1)
     assert.equal((await pool.query('SELECT duration_seconds FROM learning_activities')).rows[0].duration_seconds, 0)
