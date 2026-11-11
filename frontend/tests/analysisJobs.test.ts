@@ -40,7 +40,7 @@ test('analysis polling, recovery, upstream failure, auth and cancellation', asyn
     })
     await t.test('non-JSON 504 gives useful guidance', async () => {
       globalThis.fetch = async () => new Response('<html>timeout</html>', { status: 504 })
-      await assert.rejects(analyzeSentence(request), /이전 분석/)
+      await assert.rejects(analyzeSentence(request), /같은 문장으로 다시 분석/)
     })
     await t.test('abort stops polling without cancelling the durable server job', async () => {
       const controller = new AbortController()

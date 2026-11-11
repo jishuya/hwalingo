@@ -94,7 +94,7 @@ export interface AnalysisJob {
 async function readJobResponse(response: Response): Promise<AnalysisJob> {
   const result = await response.json().catch(() => ({})) as { job?: AnalysisJob; message?: string }
   if (!response.ok || !result.job) throw new Error(result.message ?? (response.status === 504
-    ? '서버 응답 시간이 초과되었습니다. 잠시 후 이전 분석을 이어서 확인해 주세요.'
+    ? '서버 응답 시간이 초과되었습니다. 잠시 후 같은 문장으로 다시 분석해 주세요.'
     : '분석 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'))
   return result.job
 }

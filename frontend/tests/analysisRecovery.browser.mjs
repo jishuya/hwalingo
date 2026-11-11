@@ -10,6 +10,7 @@ const root = fileURLToPath(new URL('../dist/', import.meta.url))
 const profile = await mkdtemp(path.join(tmpdir(), 'hwalingo-recovery-browser-'))
 let workerVersion = 1
 let analysisPosts = 0
+let latestReads = 0
 const analysis = { inputLanguage:'es', learningLanguage:'en', detectedSourceLanguage:'es', backgroundKnowledge:'광장을 설계한 상황이에요.', warnings:[], sentences:[{inputText:'Una plaza.',learningSentence:'A plaza.',koreanTranslation:'광장입니다.',englishTranslation:'A plaza.',chunks:[{targetText:'A plaza.',sourceMeaning:'광장.'}],keyExpressions:[],paraphrases:[],vocabulary:[]}] }
 const job = {id:'saved-job',status:'completed',request:{text:'Una plaza.',inputLanguage:'es',learningLanguage:'en'},analysis,message:null}
 const server = createServer(async (req,res) => {
@@ -18,12 +19,13 @@ const server = createServer(async (req,res) => {
  if (url.pathname.startsWith('/api/')) {
   res.setHeader('Content-Type','application/json')
   if(req.method==='POST'&&url.pathname==='/api/analysis')analysisPosts++
+  if(url.pathname==='/api/analysis/jobs/latest')latestReads++
   const fixture = url.pathname==='/api/auth/me'?{user:{id:'1',displayName:'검증',email:'test@example.invalid'}}
    :url.pathname==='/api/settings/me'?{settings:{theme:'light',weeklyGoalDays:5,quizQuestionCount:10}}
    :url.pathname==='/api/progress/me'?{progress:{currentStreak:3}}
    :url.pathname==='/api/vocabularies'?{vocabularies:[]}
    :url.pathname==='/api/analysis/vocabulary'?{vocabularies:[[]]}
-   :url.pathname.startsWith('/api/analysis/jobs/')?{job}:{}
+   :url.pathname.startsWith('/api/analysis/jobs/')||url.pathname==='/api/analysis'?{job,analysis}:{}
   res.end(JSON.stringify(fixture));return
  }
  const file = url.pathname.includes('.')?url.pathname.slice(1):'index.html'
@@ -52,10 +54,14 @@ try {
  session=(await cdp('Target.attachToTarget',{targetId:target.targetId,flatten:true},undefined)).sessionId
  await cdp('Runtime.enable');await cdp('Page.enable')
  await cdp('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/study`})
- await until(`document.body.innerText.includes('이전 분석 이어보기')`)
- await evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='이전 분석 이어보기').click()`)
+ await until(`document.body.innerText.includes('AI 분석 시작')`)
+ assert.equal(await evaluate(`document.body.innerText.includes('이전 분석 이어보기')`),false)
+ assert.equal(latestReads,0,'Opening study must not automatically fetch a previous analysis')
+ await evaluate(`(() => {const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'Para un proyecto universitario, diseñé una pequeña plaza con formas elegantes.');input.dispatchEvent(new Event('input',{bubbles:true}))})()`)
+ await evaluate(`document.querySelector('.study-composer-submit button').click()`)
+
  await until(`document.body.innerText.includes('광장을 설계한 상황이에요.')`)
- assert.equal(analysisPosts,0,'Restoring a completed analysis must not enqueue another analysis')
+ assert.equal(analysisPosts,1,'Study submits the requested analysis once')
  await evaluate(`document.querySelector('.clickable-chunks button').click()`)
  assert.equal(await evaluate(`document.querySelector('.clickable-chunks button').textContent`),'광장')
  await until(`Boolean(navigator.serviceWorker.controller)`)
@@ -70,7 +76,7 @@ try {
  await evaluate(`navigator.serviceWorker.getRegistration().then(r=>r.update()).then(()=>true)`)
  await until(`document.body.innerText.includes('새 버전이 준비됐어요')`)
  await evaluate(`Array.from(document.querySelectorAll('[role="alertdialog"] button')).find(b=>b.textContent==='새로고침').click()`)
- await until(`document.body.innerText.includes('이전 분석 이어보기')`)
+ await until(`document.body.innerText.includes('AI 분석 시작')`)
  assert.equal(await evaluate(`document.querySelector('textarea').value`),'','Confirmed update must reload the page')
- console.log('PASS: saved analysis restored without another POST; cached-client update is announced, deferrable, and reloads on confirmation.')
+ console.log('PASS: previous-analysis UI and automatic lookup removed, normal analysis still works; cached-client update is announced, deferrable, and reloads on confirmation.')
 } finally {clearTimeout(timeout);chrome.kill('SIGTERM');await new Promise(resolve=>server.close(resolve))}

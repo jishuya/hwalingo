@@ -27,7 +27,7 @@ import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyI
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' }
 
-export default function AnalysisPage({ request, requestId, resumeJobId, onLoadingChange }: { request: AnalysisRequest; requestId: number; resumeJobId?: string; onLoadingChange: (isLoading: boolean) => void }) {
+export default function AnalysisPage({ request, requestId, onLoadingChange }: { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void }) {
   const [showScrollTop, setShowScrollTop] = useState(false)
   useEffect(() => {
     const updateScrollTop = () => setShowScrollTop(window.scrollY > 400)
@@ -135,7 +135,7 @@ export default function AnalysisPage({ request, requestId, resumeJobId, onLoadin
       setVocabularyError('')
       setWordActionAlert(undefined)
       try {
-        const nextAnalysis = await analyzeSentence(request, controller.signal, resumeJobId)
+        const nextAnalysis = await analyzeSentence(request, controller.signal)
         setAnalysis(nextAnalysis)
         setRevealedChunks(new Set())
         setOpenTranslations(new Set())
@@ -186,7 +186,7 @@ export default function AnalysisPage({ request, requestId, resumeJobId, onLoadin
       controller.abort()
       onLoadingChange(false)
     }
-  }, [onLoadingChange, request, requestId, resumeJobId])
+  }, [onLoadingChange, request, requestId])
 
   return <div className="analysis-page analysis-page-v2 analysis-results-root">
     <LearningTimer activity="analysis" enabled={Boolean(analysis) && !isLoading}/>
