@@ -1,7 +1,9 @@
 import { app } from './app.js'
 import { closeDatabase } from './config/database.js'
 import { env } from './config/env.js'
+import { startAnalysisWorker } from './services/analysisJobs.js'
 
+const stopAnalysisWorker = startAnalysisWorker()
 const server = app.listen(env.port, env.host)
 
 server.on('listening', () => {
@@ -15,7 +17,9 @@ server.on('error', (error) => {
 
 async function shutdown(signal: string): Promise<void> {
   console.log(`${signal} received; shutting down`)
+  const workerStopped = stopAnalysisWorker()
   server.close(async () => {
+    await workerStopped
     await closeDatabase()
     process.exit(0)
   })

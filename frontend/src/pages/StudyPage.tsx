@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowClockwiseIcon, CaretDownIcon, ArrowRightIcon, CheckIcon, SparkleIcon } from '@phosphor-icons/react'
 import PhotoTextInput from '../components/study/PhotoTextInput'
 import { AlertDialog, ConfirmDialog } from '../components/ui/Dialog'
-import { languageOptions, type AnalysisRequest, type LanguageCode } from '../services/analysis'
+import { getLatestAnalysisJob, languageOptions, type AnalysisJob, type AnalysisRequest, type LanguageCode } from '../services/analysis'
 import { getLanguageDetection } from '../utils/detectLanguage'
 import AnalysisPage from './AnalysisPage'
 
@@ -32,6 +32,29 @@ export default function StudyPage() {
   const [inputLanguage, setInputLanguage] = useState<InputLanguageSelection>('auto')
   const [learningLanguage, setLearningLanguage] = useState<LanguageCode>('en')
   const [activeRequest, setActiveRequest] = useState<AnalysisRequest>()
+  const [previousJob, setPreviousJob] = useState<AnalysisJob | null>(null)
+  const [resumeJobId, setResumeJobId] = useState<string>()
+  const [restoreError, setRestoreError] = useState('')
+  const hasSubmitted = useRef(false)
+  useEffect(() => {
+    const controller = new AbortController()
+    void getLatestAnalysisJob(controller.signal).then(job => {
+      if (!controller.signal.aborted && !hasSubmitted.current) setPreviousJob(job)
+    }).catch(() => {
+      if (!controller.signal.aborted) setRestoreError('이전 분석을 확인하지 못했어요. 새로고침하면 다시 확인할 수 있어요.')
+    })
+    return () => controller.abort()
+  }, [])
+  const restoreAnalysis = () => {
+    if (!previousJob) return
+    hasSubmitted.current = true
+    setResumeJobId(previousJob.id)
+    setText(previousJob.request.text)
+    setInputLanguage(previousJob.request.inputLanguage)
+    setLearningLanguage(previousJob.request.learningLanguage)
+    setActiveRequest(previousJob.request)
+    setPreviousJob(null)
+  }
   const [requestId, setRequestId] = useState(0)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [detectionNoticeOpen, setDetectionNoticeOpen] = useState(false)
@@ -44,6 +67,9 @@ export default function StudyPage() {
   const selectedLanguageLabel = languageOptions.find(language => language.code === inputLanguage)?.label
   const inputLanguageOptions = [{ code: 'auto', label: '자동 감지' }, ...languageOptions] as const
   const runAnalysis = (sentence: string, language: LanguageCode) => {
+    hasSubmitted.current = true
+    setResumeJobId(undefined)
+    setPreviousJob(null)
     setText(sentence)
     setActiveRequest({ text: sentence, inputLanguage: language, learningLanguage })
     setRequestId(current => current + 1)
@@ -80,6 +106,8 @@ export default function StudyPage() {
         </ul>
       </div>
     </section>}
+    {restoreError && <p role="status">{restoreError}</p>}
+    {!activeRequest && previousJob && previousJob.status !== 'failed' && <section className="card"><p>{previousJob.status === 'completed' ? '이전에 분석한 결과가 있어요.' : '진행 중인 분석이 있어요. 화면을 닫아도 분석은 계속됩니다.'}</p><button type="button" className="primary" onClick={restoreAnalysis}>이전 분석 이어보기</button></section>}
     <section className="card input-card study-composer study-composer-v2">
       <PhotoTextInput hasText={Boolean(text.trim())} disabled={isAnalyzing} characterCount={text.length} onApply={value => { setText(value); requestAnimationFrame(() => textareaRef.current?.focus()) }} controls={<div className="study-composer-settings"><div className="language-selectors"><div className="language-field"><span className="language-field-label">입력언어</span><LanguageSelect value={inputLanguage} onChange={setInputLanguage} ariaLabel="입력언어" options={inputLanguageOptions} displayLabel={inputLanguage === 'auto' ? autoDisplayLabel : undefined}/></div><span className="language-arrow" aria-hidden="true"><ArrowRightIcon weight="bold" /></span><div className="language-field"><span className="language-field-label">학습언어</span><LanguageSelect value={learningLanguage} onChange={value => setLearningLanguage(value as LanguageCode)} ariaLabel="학습언어" options={learningLanguageOptions}/></div></div></div>}>
         <div className="study-text-field"><textarea aria-label="학습할 내용" id="study-text" ref={textareaRef} value={text} maxLength={500} onChange={event => setText(event.target.value)} placeholder="학습하고 싶은 문장이나 문구를 입력해 주세요."/>
@@ -87,5 +115,5 @@ export default function StudyPage() {
       </PhotoTextInput>
 
       <div className="input-footer study-composer-submit"><button type="button" className="primary" disabled={isAnalyzing || !text.trim()} onClick={submit} aria-busy={isAnalyzing}><SparkleIcon size={16} weight="fill" aria-hidden="true"/> {isAnalyzing ? 'AI 분석 중...' : 'AI 분석 시작'}</button></div>
-    </section>{activeRequest && <AnalysisPage request={activeRequest} requestId={requestId} onLoadingChange={setIsAnalyzing}/>}</div><AlertDialog open={detectionNoticeOpen} title="입력언어를 선택해 주세요" message="여러 언어가 섞여 있거나 문장이 짧아 입력언어를 확실하게 감지하지 못했어요." tone="warning" onClose={() => setDetectionNoticeOpen(false)}/><ConfirmDialog open={Boolean(languageMismatch)} title="입력언어가 다른 것 같아요" message={`선택한 언어는 ${selectedLanguageLabel ?? ''}이지만 ${mismatchDetectedLabel}(으)로 감지되었습니다.`} confirmLabel={`${mismatchDetectedLabel}로 변경`} cancelLabel={`${selectedLanguageLabel ?? '선택한 언어'}로 계속`} onCancel={() => { if (languageMismatch && inputLanguage !== 'auto') runAnalysis(languageMismatch.sentence, inputLanguage); setLanguageMismatch(undefined) }} onConfirm={() => { if (languageMismatch) { setInputLanguage(languageMismatch.detectedLanguage); runAnalysis(languageMismatch.sentence, languageMismatch.detectedLanguage) } setLanguageMismatch(undefined) }}/></>
+    </section>{activeRequest && <AnalysisPage request={activeRequest} requestId={requestId} resumeJobId={resumeJobId} onLoadingChange={setIsAnalyzing}/>}</div><AlertDialog open={detectionNoticeOpen} title="입력언어를 선택해 주세요" message="여러 언어가 섞여 있거나 문장이 짧아 입력언어를 확실하게 감지하지 못했어요." tone="warning" onClose={() => setDetectionNoticeOpen(false)}/><ConfirmDialog open={Boolean(languageMismatch)} title="입력언어가 다른 것 같아요" message={`선택한 언어는 ${selectedLanguageLabel ?? ''}이지만 ${mismatchDetectedLabel}(으)로 감지되었습니다.`} confirmLabel={`${mismatchDetectedLabel}로 변경`} cancelLabel={`${selectedLanguageLabel ?? '선택한 언어'}로 계속`} onCancel={() => { if (languageMismatch && inputLanguage !== 'auto') runAnalysis(languageMismatch.sentence, inputLanguage); setLanguageMismatch(undefined) }} onConfirm={() => { if (languageMismatch) { setInputLanguage(languageMismatch.detectedLanguage); runAnalysis(languageMismatch.sentence, languageMismatch.detectedLanguage) } setLanguageMismatch(undefined) }}/></>
 }

@@ -81,6 +81,7 @@ READING CHUNKS
 Split learningSentence into the smallest natural reading units, preferring one independently meaningful word; separate optional modifiers, conjunctions, objects, successive complements, and auxiliaries/modals when separately glossable.
 Keep articles/elisions with the immediately following word, prepositions with a short unmodified complement, phrasal-verb particles with their verb, and attached particles/inflections with their word; use 3+ words only for these minimal attachments or indivisible names/fixed expressions, never to match keyExpressions or smooth the Korean translation.
 Cover learningSentence exactly once in order, preserving punctuation in its original position (opening marks with the following word, closing marks with the preceding word), and give only each chunk's own concise Korean meaning; do not split Chinese lexical words into characters.
+Write chunks.sourceMeaning as short Korean glosses without trailing full stops.
 Example boundaries (do not output slashes): "She / will / carefully / review / the report / with us / tomorrow."
 
 LANGUAGE AND CONTENT
@@ -269,7 +270,10 @@ export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSi
       chunks: attachCommaAndPeriodToPreviousChunk(attachJapaneseParticlesToPreviousChunk(attachEnglishFunctionWordsToFollowingChunk(sentence.chunks.map(chunk => ({
         ...chunk,
         sourceMeaning: chunk.sourceMeaning.replace(/\s*[（(][^）)]*[）)]\s*/gu, '').trim() || chunk.sourceMeaning,
-      })), request.learningLanguage), request.learningLanguage)),
+      })), request.learningLanguage), request.learningLanguage)).map(chunk => ({
+        ...chunk,
+        sourceMeaning: chunk.sourceMeaning.trim().replace(/[.。．｡]+$/u, '').trimEnd(),
+      })),
     })),
   }
 }
