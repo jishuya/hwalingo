@@ -34,6 +34,7 @@ export interface AnalyzedSentence {
   keyExpressions: Array<{ text: string; meaning: string }>
   chunks: Array<{ targetText: string; sourceMeaning: string }>
   paraphrases: Array<{ level: 'B1' | 'B2' | 'C1' | 'C2'; targetText: string; sourceMeaning: string }>
+  vocabularySummaries?: VocabularySummary[]
   vocabulary: Array<{ word: string; pronunciation?: string; partOfSpeech: string; level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'; basicMeaning: string; contextualMeaning: string; etymology: string; memoryTip: string; exampleSentence: string; exampleMeaning: string }>
 }
 
@@ -110,10 +111,10 @@ export async function getLatestAnalysisJob(signal?: AbortSignal): Promise<Analys
   return result.job
 }
 
-function waitForPoll(signal?: AbortSignal): Promise<void> {
+function waitForPoll(signal?: AbortSignal, intervalMs = 2_000): Promise<void> {
   return new Promise((resolve, reject) => {
     const abort = () => { clearTimeout(timer); reject(signal?.reason ?? new DOMException('Aborted', 'AbortError')) }
-    const timer = setTimeout(() => { signal?.removeEventListener('abort', abort); resolve() }, 2_000)
+    const timer = setTimeout(() => { signal?.removeEventListener('abort', abort); resolve() }, intervalMs)
     if (signal?.aborted) abort()
     else signal?.addEventListener('abort', abort, { once: true })
   })
@@ -126,7 +127,7 @@ export async function analyzeSentence(request: AnalysisRequest, signal?: AbortSi
   }))
   let failures = 0
   while (job.status === 'queued' || job.status === 'running') {
-    await waitForPoll(signal)
+    await waitForPoll(signal, job.status === 'running' && failures === 0 ? 1_000 : 2_000)
     try {
       const response = await apiFetch(`/api/analysis/jobs/${encodeURIComponent(job.id)}`, { credentials: 'include', cache: 'no-store', signal })
       // Authentication and missing jobs require user action; do not retry these.
@@ -158,6 +159,22 @@ export async function getSentenceVocabularyDetail(input: VocabularyRequest & { t
   const [[detail] = []] = await requestVocabulary<VocabularyAnalysis>('/api/analysis/vocabulary?async=1', input, signal)
   if (!detail?.partOfSpeech || detail.word !== input.target.word) throw new Error('어휘 상세 정보를 불러오지 못했습니다.')
   return detail
+}
+
+export function sentenceVocabularyDetailQuery(
+  inputLanguage: LanguageCode,
+  learningLanguage: LanguageCode,
+  { inputText, learningSentence }: Pick<AnalyzedSentence, 'inputText' | 'learningSentence'>,
+  target: VocabularySummary,
+) {
+  return {
+    queryKey: ['analysis-vocabulary-detail', inputLanguage, learningLanguage, inputText, learningSentence, target],
+    queryFn: ({ signal }: { signal: AbortSignal }) => getSentenceVocabularyDetail({
+      inputLanguage, learningLanguage, target, sentences: [{ inputText, learningSentence }],
+    }, signal),
+    staleTime: Infinity,
+    retry: false,
+  }
 }
 
 async function requestVocabulary<T extends VocabularySummary>(path: string, input: VocabularyRequest & { target?: VocabularySummary }, signal?: AbortSignal): Promise<T[][]> {

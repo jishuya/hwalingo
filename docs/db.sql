@@ -24,6 +24,8 @@ CREATE TABLE vocabularies (
     meaning         TEXT NOT NULL,
     context_meaning TEXT,
     cefr_level      VARCHAR(2),
+    part_of_speech  TEXT,
+    pronunciation   TEXT,
     etymology       TEXT,
     memory_tip      TEXT,
     example_sentence TEXT,

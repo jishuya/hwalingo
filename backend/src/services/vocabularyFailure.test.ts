@@ -27,13 +27,39 @@ test('the vocabulary list uses the compact schema and details stay scoped to the
       return { output_text: JSON.stringify({ sentences: [{ sentenceIndex: 0, vocabulary: [target, target, { ...target, level: 'A2' }] }] }) }
     }
     assert.deepEqual(JSON.parse(payload.input).target, target)
-    return output(good)
+    assert.equal(payload.text.format.name, 'sentence_vocabulary_detail')
+    assert.doesNotMatch(JSON.stringify(payload.text.format.schema), /"word"|"level"|"basicMeaning"/)
+    return { output_text: JSON.stringify({
+      pronunciation: good.pronunciation, partOfSpeech: good.partOfSpeech,
+      contextualMeaning: good.contextualMeaning, etymology: good.etymology, memoryTip: good.memoryTip,
+      exampleSentence: good.exampleSentence, exampleMeaning: good.exampleMeaning,
+    }) }
   })
   try {
     assert.deepEqual(await generateVocabularySummaries(request, new AbortController().signal), [[target]])
     assert.equal(method.mock.callCount(), 1)
     assert.deepEqual(await generateSentenceVocabulary({ ...request, target }), [[good]])
     assert.equal(method.mock.callCount(), 2)
+  } finally { method.mock.restore() }
+})
+
+test('French detail keeps the selected inflected form and accepts a natural example', async () => {
+  const { getOpenAIClient } = await import('../config/openai.js')
+  const { generateSentenceVocabulary } = await import('./openai.js')
+  const target = { word: 'accueilli', basicMeaning: '환영하다', level: 'B1' as const }
+  const detail = {
+    pronunciation: '/a.kœ.ji/', partOfSpeech: '동사', contextualMeaning: '맞이했다',
+    etymology: '', memoryTip: '문을 열어 손님을 맞이하는 모습을 떠올려요.',
+    exampleSentence: 'Elle accueille les nouveaux voisins.', exampleMeaning: '그녀는 새 이웃들을 맞이한다.',
+  }
+  const method = mock.method(getOpenAIClient().responses, 'create', async () => ({ output_text: JSON.stringify(detail) }))
+  try {
+    const result = await generateSentenceVocabulary({
+      text: 'Les élèves ont accueilli leur professeur.', inputLanguage: 'fr', learningLanguage: 'fr', target,
+      sentences: [{ inputText: 'Les élèves ont accueilli leur professeur.', learningSentence: 'Les élèves ont accueilli leur professeur.' }],
+    })
+    assert.deepEqual(result, [[{ ...detail, ...target }]])
+    assert.equal(method.mock.callCount(), 1)
   } finally { method.mock.restore() }
 })
 

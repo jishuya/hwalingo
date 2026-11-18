@@ -84,7 +84,7 @@ export function startAnalysisWorker(generate: GenerateAnalysis = generateAnalysi
       try {
         const analysis = await withAIResponseCache({
           userId: job.user_id,
-          operation: 'sentence_analysis_core_v26',
+          operation: 'sentence_analysis_core_v27',
           keyParts: job.request_data,
           ttlMs: AI_RULES.cache.sentenceAnalysisTtlMs,
           generate: () => generate(job.request_data, signal),

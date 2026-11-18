@@ -88,6 +88,8 @@ node --import tsx --test backend/src/services/vocabularyLanguage.test.ts backend
 스토리 제목 번역 누락 등 최신 응답 필드 관련 오류가 나면 실행 중인 백엔드에 최신 빌드가 반영됐는지 확인한다.
 핵심 어휘 예문 언어 검증 변경은 백엔드 재시작으로 반영하며, 해당 검증 자체를 위한 추가 SQL은 없다.
 
+단어장의 품사·발음기호 기능은 백엔드 반영 전에 `backend/sql/021_vocabulary_readings.sql`을 적용한다. 기존 단어의 빈 정보는 카드가 열릴 때 보완한다.
+
 ## 비동기 문장 분석
 
 기본 문장 분석은 `POST /api/analysis`에서 HTTP 202와 `job.id`를 즉시 반환한다.
@@ -118,7 +120,7 @@ PostgreSQL 세션 잠금으로 전체 백엔드에서 기본 분석은 한 번�
 AI 작업에는 전체 120초 제한이 있으며, 일반 AI 실패는 자동 재실행하지 않고 사용자에게 재시도를 안내한다.
 프로세스 중단 시 이미 전송한 외부 AI 요청의 과금까지 취소되는 것은 아니다.
 완료·실패 작업의 입력과 결과는 7일 후 작업자의 시간별 정리에서 삭제하며, 계정 삭제 시에도 삭제한다.
-핵심 어휘 목록은 `POST /api/analysis/vocabulary?async=1&view=summary`로 접수한다. 상세 어휘는 카드를 펼칠 때 `POST /api/analysis/vocabulary?async=1`에 선택한 어휘를 `target`으로 보내고, 목록과 상세 모두 HTTP 202를 받으면 `GET /api/analysis/vocabulary/jobs/:id`로 결과를 조회한다. 어휘 작업 상태는 백엔드 프로세스 메모리에 보관하므로 진행 중 서버가 재시작되면 다시 요청해야 한다. 이전 앱의 동기 어휘 요청과 패러프레이징 API도 지원한다.
+핵심 어휘 목록은 기본 문장 분석 결과에 포함한다. 목록 정보가 없는 응답은 `POST /api/analysis/vocabulary?async=1&view=summary`로 보완한 뒤 결과 화면을 표시한다. 상세 어휘는 기본 분석이 준비되면 백그라운드에서 하나씩 미리 요청한다. 먼저 펼친 카드가 아직 대기 중이면 해당 어휘를 즉시 요청한다. 상세 요청은 `POST /api/analysis/vocabulary?async=1`에 어휘를 `target`으로 보내고, 목록과 상세 모두 HTTP 202를 받으면 `GET /api/analysis/vocabulary/jobs/:id`로 결과를 조회한다. 어휘 작업 상태는 백엔드 프로세스 메모리에 보관하므로 진행 중 서버가 재시작되면 다시 요청해야 한다. 이전 앱의 동기 어휘 요청과 패러프레이징 API도 지원한다.
 
 검증은 앱 DB와 실제 AI를 사용하지 않는 다음 테스트로 실행한다.
 

@@ -4,6 +4,8 @@ import { Router } from 'express'
 import { pool } from '../config/database.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { languageNames, type CefrLevel, type LanguageCode } from '../services/openai.js'
+import { generateVocabularyReading } from '../services/vocabularyInsightsAI.js'
+import { isKanaReading, isKoreanExplanation } from '../services/vocabularyPresentation.js'
 import { recordLearningActivity } from '../services/learningActivity.js'
 
 interface VocabularyRow {
@@ -14,6 +16,8 @@ interface VocabularyRow {
   meaning: string
   context_meaning: string | null
   cefr_level: string | null
+  part_of_speech: string | null
+  pronunciation: string | null
   etymology: string | null
   memory_tip: string | null
   example_sentence: string | null
@@ -40,6 +44,8 @@ interface VocabularyInput {
   meaning: string
   contextMeaning: string
   cefrLevel: CefrLevel
+  partOfSpeech: string | null
+  pronunciation: string | null
   etymology: string | null
   memoryTip: string | null
   exampleSentence: string | null
@@ -66,7 +72,13 @@ function parseVocabularyInput(body: Record<string, unknown>): VocabularyInput | 
   if (!(languageCode in languageNames) || !word || !meaning || word.length > 255 || !cefrLevel || !cefrLevels.has(cefrLevel)) return undefined
   const exampleSentence = optionalText(body.exampleSentence)
   if (exampleSentence && !isExampleInLearningLanguage(exampleSentence, languageCode)) return undefined
-  return { languageCode, word, meaning, contextMeaning, cefrLevel, etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence, exampleTranslation: optionalText(body.exampleTranslation) }
+  const partOfSpeech = optionalText(body.partOfSpeech)
+  const pronunciation = optionalText(body.pronunciation)
+  return {
+    languageCode, word, meaning, contextMeaning, cefrLevel,
+    partOfSpeech: partOfSpeech && partOfSpeech.length <= 100 && isKoreanExplanation(partOfSpeech) ? partOfSpeech : null,
+    pronunciation: pronunciation && pronunciation.length <= 500 && (languageCode !== 'ja' || isKanaReading(pronunciation)) ? pronunciation : null,
+    etymology: optionalText(body.etymology), memoryTip: optionalText(body.memoryTip), exampleSentence, exampleTranslation: optionalText(body.exampleTranslation) }
 }
 
 function serializeVocabulary(row: VocabularyRow) {
@@ -80,6 +92,8 @@ function serializeVocabulary(row: VocabularyRow) {
     meaning: row.meaning,
     contextMeaning: row.context_meaning,
     cefrLevel: row.cefr_level,
+    partOfSpeech: row.part_of_speech,
+    pronunciation: row.pronunciation,
     etymology: row.etymology,
     memoryTip: row.memory_tip,
     exampleSentence: row.example_sentence && isExampleInLearningLanguage(row.example_sentence, row.language_code) ? row.example_sentence : null,
@@ -103,7 +117,7 @@ function serializeVocabulary(row: VocabularyRow) {
 }
 
 const vocabularySelect = `SELECT v.id AS vocabulary_id, f.id AS favorite_id, v.language_code, v.word,
-  v.meaning, v.context_meaning, v.cefr_level, v.etymology, v.memory_tip, v.example_sentence, v.example_translation,
+  v.meaning, v.context_meaning, v.cefr_level, v.part_of_speech, v.pronunciation, v.etymology, v.memory_tip, v.example_sentence, v.example_translation,
   (SELECT MAX(s.created_at) FROM ai_stories s
    WHERE s.user_id = v.user_id AND s.vocabulary_ids @> ARRAY[v.id]::bigint[]
      AND s.created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days') AS last_story_used_at,
@@ -140,18 +154,20 @@ vocabulariesRouter.post('/', requireAuth, async (request, response, next) => {
     await client.query('BEGIN')
     const saved = await client.query<{ id: string }>(
       `INSERT INTO vocabularies
-         (user_id, language_code, word, meaning, context_meaning, cefr_level, etymology, memory_tip, example_sentence, example_translation)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         (user_id, language_code, word, meaning, context_meaning, cefr_level, etymology, memory_tip, example_sentence, example_translation, part_of_speech, pronunciation)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        ON CONFLICT (user_id, language_code, word) DO UPDATE SET
          meaning=EXCLUDED.meaning, context_meaning=EXCLUDED.context_meaning,
          cefr_level=COALESCE(EXCLUDED.cefr_level,vocabularies.cefr_level),
+         part_of_speech=COALESCE(EXCLUDED.part_of_speech, CASE WHEN EXCLUDED.meaning = vocabularies.meaning AND EXCLUDED.context_meaning IS NOT DISTINCT FROM vocabularies.context_meaning THEN vocabularies.part_of_speech END),
+         pronunciation=COALESCE(EXCLUDED.pronunciation, CASE WHEN EXCLUDED.meaning = vocabularies.meaning AND EXCLUDED.context_meaning IS NOT DISTINCT FROM vocabularies.context_meaning THEN vocabularies.pronunciation END),
          etymology=COALESCE(EXCLUDED.etymology,vocabularies.etymology),
          memory_tip=COALESCE(EXCLUDED.memory_tip,vocabularies.memory_tip),
          example_sentence=COALESCE(EXCLUDED.example_sentence,vocabularies.example_sentence),
          example_translation=COALESCE(EXCLUDED.example_translation,vocabularies.example_translation), archived_at=NULL
        RETURNING id`,
       [request.auth!.userId, vocabulary.languageCode, vocabulary.word, vocabulary.meaning,
-        vocabulary.contextMeaning || null, vocabulary.cefrLevel, vocabulary.etymology, vocabulary.memoryTip, vocabulary.exampleSentence, vocabulary.exampleTranslation],
+        vocabulary.contextMeaning || null, vocabulary.cefrLevel, vocabulary.etymology, vocabulary.memoryTip, vocabulary.exampleSentence, vocabulary.exampleTranslation, vocabulary.partOfSpeech, vocabulary.pronunciation],
     )
     const vocabularyId = saved.rows[0].id
     await client.query(`INSERT INTO vocabulary_progress (user_id,vocabulary_id) VALUES ($1,$2) ON CONFLICT (user_id,vocabulary_id) DO NOTHING`, [request.auth!.userId, vocabularyId])
@@ -162,6 +178,51 @@ vocabulariesRouter.post('/', requireAuth, async (request, response, next) => {
   } catch (error) {
     await client.query('ROLLBACK'); next(error)
   } finally { client.release() }
+})
+
+type VocabularyReadingRow = Pick<VocabularyRow, 'word' | 'meaning' | 'context_meaning' | 'example_sentence' | 'part_of_speech' | 'pronunciation'> & { language_code: LanguageCode }
+
+vocabulariesRouter.post('/:vocabularyId/reading', requireAuth, async (request, response, next) => {
+  const id = String(request.params.vocabularyId)
+  if (!/^\d{1,19}$/u.test(id) || BigInt(id) > 9_223_372_036_854_775_807n) {
+    response.status(400).json({ message: '단어 번호가 올바르지 않습니다.' })
+    return
+  }
+  const userId = request.auth!.userId
+  const controller = new AbortController()
+  response.once('close', () => controller.abort())
+  try {
+    const { rows: [word] } = await pool.query<VocabularyReadingRow>(
+      `SELECT word, meaning, context_meaning, language_code, example_sentence, part_of_speech, pronunciation
+       FROM vocabularies WHERE id=$1 AND user_id=$2 AND archived_at IS NULL`, [id, userId],
+    )
+    if (!word) {
+      response.status(404).json({ message: '저장한 단어를 찾을 수 없습니다.' })
+      return
+    }
+    if (word.part_of_speech !== null && word.pronunciation !== null) {
+      response.json({ partOfSpeech: word.part_of_speech, pronunciation: word.pronunciation })
+      return
+    }
+    const reading = await generateVocabularyReading({
+      word: word.word, meaning: word.meaning, contextMeaning: word.context_meaning, languageCode: word.language_code,
+      exampleSentence: word.example_sentence && isExampleInLearningLanguage(word.example_sentence, word.language_code) ? word.example_sentence : null,
+    }, controller.signal)
+    if (controller.signal.aborted) return
+    const { rows: [saved] } = await pool.query<Pick<VocabularyReadingRow, 'part_of_speech' | 'pronunciation'>>(
+      `UPDATE vocabularies SET part_of_speech=COALESCE(part_of_speech,$3), pronunciation=COALESCE(pronunciation,$4)
+       WHERE id=$1 AND user_id=$2 AND archived_at IS NULL AND meaning=$5 AND context_meaning IS NOT DISTINCT FROM $6
+       RETURNING part_of_speech, pronunciation`,
+      [id, userId, reading.partOfSpeech, reading.pronunciation, word.meaning, word.context_meaning],
+    )
+    if (!saved) {
+      response.status(409).json({ message: '단어 정보가 변경되었습니다. 다시 시도해 주세요.' })
+      return
+    }
+    response.json({ partOfSpeech: saved.part_of_speech, pronunciation: saved.pronunciation })
+  } catch (error) {
+    if (!controller.signal.aborted) next(error)
+  }
 })
 
 vocabulariesRouter.delete('/:vocabularyId/incorrect-practice', requireAuth, async (request,response,next)=>{

@@ -31,7 +31,7 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
   try {
     await execute(join(pgBin, 'pg_ctl'), ['-D', data, '-l', join(directory, 'postgres.log'), '-o', `-k ${directory} -h '' -p 55439`, '-w', 'start'])
     started = true
-    Object.assign(process.env, { PGHOST: directory, PGPORT: '55439', PGDATABASE: 'postgres', PGUSER: 'postgres', PGPASSWORD: 'test', JWT_SECRET: 'quiz-retry-test', DB_SSL: 'false' })
+    Object.assign(process.env, { PGHOST: directory, PGPORT: '55439', PGDATABASE: 'postgres', PGUSER: 'postgres', PGPASSWORD: 'test', JWT_SECRET: 'quiz-retry-test', OPENAI_API_KEY: 'vocabulary-reading-test', DB_SSL: 'false' })
     const { pool } = await import('../config/database.js')
     closePool = () => pool.end()
     await pool.query(await readFile(new URL('../../../docs/db.sql', import.meta.url), 'utf8'))
@@ -46,6 +46,8 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
       ADD COLUMN IF NOT EXISTS explanation text,ADD COLUMN IF NOT EXISTS generation_source varchar(24) DEFAULT 'deterministic',
       ADD COLUMN IF NOT EXISTS response_time_ms integer`)
     await pool.query(await readFile(new URL('../../sql/019_incorrect_practice.sql',import.meta.url),'utf8'))
+    await pool.query(await readFile(new URL('../../sql/011_ai_story_details.sql',import.meta.url),'utf8'))
+    await pool.query(await readFile(new URL('../../sql/021_vocabulary_readings.sql',import.meta.url),'utf8'))
     const { quizzesRouter } = await import('./quizzes.js')
     const app = express()
     app.use(express.json(), cookieParser())
@@ -62,6 +64,31 @@ test('quiz retries preserve first answers, queue order, rewards, and resumabilit
     const user = await pool.query<{ id: string }>(`INSERT INTO users(email, password_hash, display_name) VALUES ('retry@test.local', 'test', 'test') RETURNING id`)
     const userId = user.rows[0].id
     const cookie = `hwalingo_session=${jwt.sign({ userId }, 'quiz-retry-test')}`
+    await t.test('saved vocabulary preserves readings and backfills older words once', async subtest => {
+      const { rows: [reader] } = await pool.query<{ id: string }>(`INSERT INTO users(email, password_hash, display_name) VALUES ('reading@test.local', 'test', 'reading') RETURNING id`)
+      const endpoint = `http://127.0.0.1:${address.port}/api/vocabularies`
+      const readingCookie = `hwalingo_session=${jwt.sign({ userId: reader.id }, 'quiz-retry-test')}`
+      const post = (path: string, body?: object, session = readingCookie) => fetch(endpoint + path, {
+        method: 'POST', headers: { cookie: session, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
+      })
+      const { getOpenAIClient } = await import('../config/openai.js')
+      const expected = { partOfSpeech: '동사', pronunciation: '/a.kœ.ji/' }
+      const generation = subtest.mock.method(getOpenAIClient().responses, 'create', async () => ({ output_text: JSON.stringify(expected) }))
+      const input = { languageCode: 'fr', word: 'accueilli', meaning: '환영하다', cefrLevel: 'B1' }
+      const saved = await post('', { ...input, ...expected })
+      assert.equal(saved.status, 201, await saved.clone().text())
+      const { vocabulary } = await saved.json()
+      assert.equal(vocabulary.partOfSpeech, expected.partOfSpeech)
+      assert.equal(vocabulary.pronunciation, expected.pronunciation)
+      assert.deepEqual(await (await post(`/${vocabulary.vocabularyId}/reading`)).json(), expected)
+      assert.equal(generation.mock.callCount(), 0)
+      const legacy = await pool.query<{ id: string }>(`INSERT INTO vocabularies(user_id, language_code, word, meaning) VALUES ($1, 'fr', 'accueillir', '환영하다') RETURNING id`, [reader.id])
+      const url = `/${legacy.rows[0].id}/reading`
+      assert.equal((await post(url, undefined, cookie)).status, 404)
+      assert.deepEqual(await (await post(url)).json(), expected)
+      assert.deepEqual(await (await post(url)).json(), expected)
+      assert.equal(generation.mock.callCount(), 1)
+    })
     const send = (path: string, body?: object) => fetch(`${base}${path}`, {
       method: body ? 'POST' : 'GET', headers: { cookie, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
     })

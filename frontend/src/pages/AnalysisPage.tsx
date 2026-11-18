@@ -17,7 +17,7 @@ import {
 import SpeechControls from '../components/study/SpeechControls'
 import AiLoadingOverlay from '../components/ui/AiLoadingOverlay'
 import { AlertDialog } from '../components/ui/Dialog'
-import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
+import { analyzeSentence, getSentenceParaphrases, getSentenceVocabulary, sentenceVocabularyDetailQuery, type AnalysisRequest, type LanguageCode, type SentenceAnalysis } from '../services/analysis'
 import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyInput } from '../services/vocabulary'
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' }
@@ -42,19 +42,6 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [loadingParaphrases, setLoadingParaphrases] = useState<Set<number>>(new Set())
   const queryClient = useQueryClient()
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
-  const vocabularySentences = analysis?.sentences.map(({ inputText, learningSentence }) => ({ inputText, learningSentence }))
-  const vocabulary = useQuery({
-    queryKey: ['analysis-vocabulary', analysis?.inputLanguage, analysis?.learningLanguage, vocabularySentences],
-    queryFn: ({ signal }) => {
-      if (!analysis || !vocabularySentences) throw new Error('분석 문장을 찾을 수 없습니다.')
-      return getSentenceVocabulary({
-        inputLanguage: analysis.inputLanguage, learningLanguage: analysis.learningLanguage, sentences: vocabularySentences,
-      }, signal)
-    },
-    enabled: !isLoading && Boolean(vocabularySentences?.length),
-    staleTime: Infinity,
-    retry: false,
-  })
   const saveWord = useMutation({
     mutationFn: ({ input }: { input: SaveVocabularyInput; wordKey: string }) => saveVocabulary(input),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
@@ -132,20 +119,51 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     paraphraseControllersRef.current.forEach(controller => controller.abort())
     paraphraseControllersRef.current.clear()
     const controller = new AbortController()
+    const preloadVocabularyDetails = async ({ inputLanguage, learningLanguage, sentences }: SentenceAnalysis) => {
+      for (const sentence of sentences) {
+        for (const word of sentence.vocabularySummaries ?? []) {
+          if (controller.signal.aborted) return
+          await queryClient.prefetchQuery(sentenceVocabularyDetailQuery(inputLanguage, learningLanguage, sentence, word))
+        }
+      }
+    }
     const run = async () => {
       setIsLoading(true)
+      setAnalysis(undefined)
       onLoadingChange(true)
       setError('')
       setWordActionAlert(undefined)
       try {
         const nextAnalysis = await analyzeSentence(request, controller.signal)
-        setAnalysis(nextAnalysis)
+        const sentences = nextAnalysis.sentences.map(sentence => {
+          if (sentence.vocabularySummaries !== undefined) return sentence
+          const existing = sentence.vocabulary?.filter(word => ['B1', 'B2', 'C1', 'C2'].includes(word.level))
+            .map(({ word, level, basicMeaning }) => ({ word, level, basicMeaning }))
+          return existing?.length ? { ...sentence, vocabularySummaries: existing } : sentence
+        })
+        const missing = sentences.flatMap((sentence, index) => sentence.vocabularySummaries === undefined ? [index] : [])
+        if (missing.length) {
+          const summaries = await getSentenceVocabulary({
+            inputLanguage: nextAnalysis.inputLanguage,
+            learningLanguage: nextAnalysis.learningLanguage,
+            sentences: missing.map(index => {
+              const { inputText, learningSentence } = sentences[index]
+              return { inputText, learningSentence }
+            }),
+          }, controller.signal)
+          if (summaries.length !== missing.length) throw new Error('핵심 어휘 목록을 불러오지 못했습니다. 다시 분석해 주세요.')
+          missing.forEach((sentenceIndex, index) => {
+            sentences[sentenceIndex] = { ...sentences[sentenceIndex], vocabularySummaries: summaries[index] }
+          })
+        }
+        if (controller.signal.aborted) return
+        const readyAnalysis = { ...nextAnalysis, sentences }
+        setAnalysis(readyAnalysis)
         setRevealedChunks(new Set())
         setOpenTranslations(new Set())
         setOpenParaphrases(new Set())
         setLoadingParaphrases(new Set())
-        setIsLoading(false)
-        onLoadingChange(false)
+        void preloadVocabularyDetails(readyAnalysis)
       } catch (caught) {
         if (controller.signal.aborted) return
         setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
@@ -164,7 +182,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       controller.abort()
       onLoadingChange(false)
     }
-  }, [onLoadingChange, request, requestId])
+  }, [onLoadingChange, queryClient, request, requestId])
 
   return <div className="analysis-page analysis-page-v2 analysis-results-root">
     <LearningTimer activity="analysis" enabled={Boolean(analysis) && !isLoading}/>
@@ -177,8 +195,8 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       <section className="analysis-background-v2"><div className="analysis-background-heading"><BookBookmarkIcon weight="duotone" aria-hidden="true"/><h3>배경 지식</h3></div><p>{analysis.backgroundKnowledge}</p></section>
 
       {analysis.sentences.map((sentence, sentenceIndex) => {
-        const words = vocabulary.data?.[sentenceIndex] ?? []
-        const showVocabulary = words.length > 0 || vocabulary.isFetching || vocabulary.isError
+        const words = sentence.vocabularySummaries ?? []
+        const showVocabulary = words.length > 0
         const translationOpen = openTranslations.has(sentenceIndex)
         const paraphrasesOpen = openParaphrases.has(sentenceIndex)
         const paraphrasesLoading = loadingParaphrases.has(sentenceIndex)
@@ -213,9 +231,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
 
             {showVocabulary && <aside className="sentence-vocab-column">
               <h3><BookOpenIcon className="analysis-heading-icon analysis-icon-vocabulary" weight="duotone" aria-hidden="true"/>핵심 어휘</h3>
-              {vocabulary.isFetching && !words.length ? <div className="empty-vocabulary" role="status">핵심 어휘를 찾고 있어요…</div>
-                : vocabulary.isError && !words.length ? <div className="empty-vocabulary" role="alert">{vocabulary.error.message} <button type="button" className="section-placeholder" onClick={() => void vocabulary.refetch()}>다시 시도</button></div>
-                : words.map(word => {
+              {words.map(word => {
                   const wordKey = `${sentenceIndex}-${word.word}`
                   const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
                   const saving = (saveWord.isPending && saveWord.variables.wordKey === wordKey)
@@ -228,6 +244,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
                       if (savedVocabulary) removeWord.mutate({ vocabularyId: savedVocabulary.vocabularyId, wordKey })
                       else saveWord.mutate({ wordKey, input: {
                         languageCode: analysis.learningLanguage, word: word.word, meaning: word.basicMeaning, cefrLevel: word.level,
+                        partOfSpeech: detail?.partOfSpeech, pronunciation: detail?.pronunciation,
                         contextMeaning: detail?.contextualMeaning ?? '', etymology: detail?.etymology ?? '', memoryTip: detail?.memoryTip ?? '',
                         exampleSentence: detail?.exampleSentence, exampleTranslation: detail?.exampleMeaning,
                       } })

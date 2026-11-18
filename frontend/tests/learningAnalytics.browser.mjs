@@ -49,6 +49,7 @@ function fixture(url,method,body={}){
  if(u.pathname==='/api/quizzes/sessions/active')return{session:practiceSession?.status==='active'?practiceSession:null}
  if(u.pathname.startsWith('/api/quizzes/sessions/'))return{session:practiceSession}
  if(u.pathname==='/api/vocabularies')return{vocabularies:empty?[]:vocab}
+ if(/^\/api\/vocabularies\/[^/]+\/reading$/.test(u.pathname))return{partOfSpeech:'명사',pronunciation:'/test/'}
  if(u.pathname==='/api/progress/me')return{progress:empty?{...progress,savedWords:0,masteredWords:0,totalXp:0,masteryDistribution:progress.masteryDistribution.map(d=>({...d,wordCount:0}))}:progress}
  if(u.pathname==='/api/progress/word-growth')return{words:empty?[]:vocab.slice(0,3).map((w,i)=>({vocabularyId:w.vocabularyId,word:w.word,meaning:w.meaning,languageCode:w.languageCode,beforeLevel:0,currentLevel:3-i,gained:3-i}))}
  if(u.pathname==='/api/progress/activity')return{range,uniqueWords:empty?0:23,days:days.map((date,i)=>({date,newAnswers:empty?0:i%4,reviewAnswers:empty?0:i%5,correctAnswers:empty?0:i%4,uniqueWords:empty?0:i%5}))}
@@ -225,8 +226,14 @@ try{
   }
   if(width===390){await evaluate(`document.documentElement.dataset.theme='dark'`);await screenshot('growth-dark');await evaluate(`document.documentElement.dataset.theme='light'`)}
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/vocabulary`});await ready('내 단어장');await ready('example-1')
-  await click('.compact-word-card .vocabulary-pronounce')
+  assert.equal(await evaluate(`document.querySelector('.compact-word-card .word-card-metadata')`),null)
+  await click('.compact-word-card .vocabulary-card-toggle')
   assert.ok(await evaluate(`document.querySelector('.compact-word-card.expanded .word-details')!==null`))
+  const expandedWord = await evaluate(`document.querySelector('.compact-word-card.expanded .vocabulary-pronounce').textContent`)
+  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.compact-word-card.expanded .word-card-reading > small'), badge => badge.textContent)`),
+    [vocab.find(item => item.word === expandedWord).languageCode.toUpperCase(),'B2'])
+  await ready('/test/')
+  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.compact-word-card.expanded .word-card-reading > span'), field => field.textContent)`),['명사','/test/'])
   await click('.vocabulary-edit-toolbar button')
   assert.ok(await evaluate(`document.querySelector('.compact-word-card .vocabulary-remove-control')!==null`),'vocabulary keeps delete')
   await click('.vocabulary-edit-toolbar button')

@@ -13,10 +13,17 @@ let analysisPosts = 0
 let latestReads = 0
 let vocabularyListPosts = 0
 let vocabularyDetailPosts = 0
+let releaseVocabularyDetail
+let notifyVocabularyDetailRequested
+const vocabularyDetailRequested = new Promise(resolve => { notifyVocabularyDetailRequested = resolve })
+let useLegacyAnalysis = false
+let releaseVocabulary
+let notifyVocabularyRequested
 const summary = {word:'plaza',basicMeaning:'광장',level:'B1'}
 const detail = {...summary,pronunciation:'/ˈplɑːzə/',partOfSpeech:'명사',contextualMeaning:'작은 광장',exampleSentence:'Meet me at the plaza.',exampleMeaning:'광장에서 만나자.',etymology:'광장을 뜻하는 스페인어에서 왔어요.',memoryTip:'광장에서 만나는 장면을 떠올려요.'}
-const analysis = { inputLanguage:'es', learningLanguage:'en', detectedSourceLanguage:'es', backgroundKnowledge:'광장을 설계한 상황이에요.', warnings:[], sentences:[{inputText:'Una plaza.',learningSentence:'A plaza.',koreanTranslation:'광장입니다.',englishTranslation:'A plaza.',chunks:[{targetText:'A plaza.',sourceMeaning:'광장.'}],keyExpressions:[],paraphrases:[],vocabulary:[]}] }
+const analysis = { inputLanguage:'es', learningLanguage:'en', detectedSourceLanguage:'es', backgroundKnowledge:'광장을 설계한 상황이에요.', warnings:[], sentences:[{inputText:'Una plaza.',learningSentence:'A plaza.',koreanTranslation:'광장입니다.',englishTranslation:'A plaza.',chunks:[{targetText:'A plaza.',sourceMeaning:'광장.'}],keyExpressions:[],paraphrases:[],vocabulary:[],vocabularySummaries:[summary]}] }
 const job = {id:'saved-job',status:'completed',request:{text:'Una plaza.',inputLanguage:'es',learningLanguage:'en'},analysis,message:null}
+const legacyJob = {...job, analysis: {...analysis, sentences: analysis.sentences.map(sentence => ({...sentence, vocabularySummaries: undefined}))}}
 const server = createServer(async (req,res) => {
  const url = new URL(req.url,'http://localhost')
  res.setHeader('Cache-Control','no-store')
@@ -27,10 +34,17 @@ const server = createServer(async (req,res) => {
   if (url.pathname === '/api/analysis/vocabulary' && req.method === 'POST') {
    if (url.searchParams.get('view') === 'summary') {
     vocabularyListPosts++
-    res.statusCode = vocabularyListPosts === 1 ? 504 : 200
-    res.end(JSON.stringify(vocabularyListPosts === 1 ? {message:'어휘 요청 시간이 초과됐어요.'} : {vocabularies:[[summary]]}))
+    if (useLegacyAnalysis) await new Promise(resolve => {
+     releaseVocabulary = resolve
+     notifyVocabularyRequested()
+    })
+    res.end(JSON.stringify({vocabularies:[[summary]]}))
    } else {
     vocabularyDetailPosts++
+    if (vocabularyDetailPosts === 1) await new Promise(resolve => {
+     releaseVocabularyDetail = resolve
+     notifyVocabularyDetailRequested()
+    })
     res.end(JSON.stringify({vocabularies:[[detail]]}))
    }
    return
@@ -39,7 +53,8 @@ const server = createServer(async (req,res) => {
    :url.pathname==='/api/settings/me'?{settings:{theme:'light',weeklyGoalDays:5,quizQuestionCount:10}}
    :url.pathname==='/api/progress/me'?{progress:{currentStreak:3}}
    :url.pathname==='/api/vocabularies'?{vocabularies:[]}
-   :url.pathname.startsWith('/api/analysis/jobs/')||url.pathname==='/api/analysis'?{job,analysis}:{}
+   :url.pathname.startsWith('/api/analysis/jobs/')||url.pathname==='/api/analysis'
+    ?{job:useLegacyAnalysis?legacyJob:job,analysis:useLegacyAnalysis?legacyJob.analysis:analysis}:{}
   res.end(JSON.stringify(fixture));return
  }
  const file = url.pathname.includes('.')?url.pathname.slice(1):'index.html'
@@ -76,20 +91,25 @@ try {
 
  await until(`document.body.innerText.includes('광장을 설계한 상황이에요.')`)
  assert.equal(analysisPosts,1,'Study submits the requested analysis once')
- await until(`document.body.innerText.includes('어휘 요청 시간이 초과됐어요.')`)
- await evaluate(`document.querySelector('.empty-vocabulary button').click()`)
  await until(`document.querySelector('.analysis-vocabulary-summary-meaning')?.textContent === '광장'`)
- assert.equal(analysisPosts,1,'Retrying vocabulary must not repeat the sentence analysis')
- assert.equal(vocabularyDetailPosts,0,'Collapsed vocabulary must not request details')
- assert.equal(await evaluate(`Boolean(document.querySelector('.analysis-word-details'))`),false)
- assert.equal(await evaluate(`Boolean(document.querySelector('.sentence-vocab-card > button[aria-label="단어장에 저장"]'))`),true)
- const toggleVocabulary = `document.querySelector('.sentence-vocab-title button').click()`
- await evaluate(toggleVocabulary)
+ assert.equal(vocabularyListPosts,0,'Bundled vocabulary must not make a separate list request')
+ await vocabularyDetailRequested
+ const toggleVocabulary = `document.querySelector('.analysis-vocabulary-toggle').click()`
+ try {
+  assert.equal(vocabularyDetailPosts,1,'Details must be requested before the card is opened')
+  assert.equal(await evaluate(`Boolean(document.querySelector('.analysis-word-details'))`),false)
+  assert.equal(await evaluate(`Boolean(document.querySelector('.sentence-vocab-card > button[aria-label="단어장에 저장"]'))`),true)
+  await evaluate(toggleVocabulary)
+  assert.equal(await evaluate(`Boolean(document.querySelector('.analysis-word-details [role="status"]'))`),true)
+ } finally { releaseVocabularyDetail() }
  await until(`document.querySelector('.analysis-word-details')?.innerText.includes('Meet me at the plaza.')`)
+ assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.analysis-vocabulary-reading > *'), field => field.textContent)`),['B1','명사','/ˈplɑːzə/'])
+ assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.analysis-vocabulary-meanings > *'), field => field.textContent)`),['기본 뜻','광장','문맥 뜻','작은 광장'])
+ assert.equal(await evaluate(`document.querySelector('.analysis-vocabulary-metadata > :last-child')?.getAttribute('aria-label')`),'plaza 발음 듣기')
  assert.equal(vocabularyDetailPosts,1)
  await evaluate(toggleVocabulary)
  assert.equal(await evaluate(`Boolean(document.querySelector('.analysis-word-details'))`),false)
- await evaluate(toggleVocabulary)
+ await evaluate(`document.querySelector('.analysis-vocabulary-label').click()`)
  await until(`document.querySelector('.analysis-word-details')?.innerText.includes('Meet me at the plaza.')`)
  assert.equal(vocabularyDetailPosts,1,'Reopening must reuse completed details')
  await evaluate(`document.querySelector('.clickable-chunks button').click()`)
@@ -108,5 +128,15 @@ try {
  await evaluate(`Array.from(document.querySelectorAll('[role="alertdialog"] button')).find(b=>b.textContent==='새로고침').click()`)
  await until(`document.body.innerText.includes('AI 분석 시작')`)
  assert.equal(await evaluate(`document.querySelector('textarea').value`),'','Confirmed update must reload the page')
- console.log('PASS: previous-analysis UI and automatic lookup removed, normal analysis still works; cached-client update is announced, deferrable, and reloads on confirmation.')
+ useLegacyAnalysis = true
+ const vocabularyRequested = new Promise(resolve => { notifyVocabularyRequested = resolve })
+ await evaluate(`(() => {const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'Esta es otra frase.');input.dispatchEvent(new Event('input',{bubbles:true}))})()`)
+ await evaluate(`document.querySelector('.study-composer-submit button').click()`)
+ await vocabularyRequested
+ try {
+  assert.equal(await evaluate(`Boolean(document.querySelector('.sentence-analysis-card'))`),false,'Analysis must wait for missing vocabulary before showing results')
+ } finally { releaseVocabulary() }
+ await until(`document.querySelector('.analysis-vocabulary-summary-meaning')?.textContent === '광장'`)
+ assert.equal(vocabularyListPosts,1)
+ console.log('PASS: analysis displays vocabulary before background details complete, and opening a card shares the prefetched request. Service worker update flow passed.')
 } finally {clearTimeout(timeout);chrome.kill('SIGTERM');await new Promise(resolve=>server.close(resolve))}

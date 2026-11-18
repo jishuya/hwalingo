@@ -11,6 +11,8 @@ export interface Vocabulary {
   meaning: string
   contextMeaning: string | null
   cefrLevel: string | null
+  partOfSpeech?: string | null
+  pronunciation?: string | null
   etymology: string | null
   memoryTip: string | null
   exampleSentence: string | null
@@ -31,6 +33,8 @@ export interface SaveVocabularyInput {
   meaning: string
   contextMeaning: string
   cefrLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+  partOfSpeech?: string
+  pronunciation?: string
   etymology: string
   memoryTip: string
   exampleSentence?: string
@@ -66,6 +70,10 @@ export async function getVocabularies(favoritesOnly = false): Promise<Vocabulary
 export async function saveVocabulary(input: SaveVocabularyInput): Promise<Vocabulary> {
   const result = await request<{ vocabulary: Vocabulary }>('/api/vocabularies', { method: 'POST', body: JSON.stringify(input) })
   return result.vocabulary
+}
+
+export function getVocabularyReading(vocabularyId: string, signal?: AbortSignal): Promise<{ partOfSpeech: string; pronunciation: string }> {
+  return request(`/api/vocabularies/${encodeURIComponent(vocabularyId)}/reading`, { method: 'POST', signal })
 }
 
 export function deleteVocabulary(vocabularyId: string): Promise<void> {

@@ -110,7 +110,7 @@ export default function VocabularyPage({ onIncorrectTest }: { onIncorrectTest: (
     {vocabulariesQuery.isPending ? <div className="empty-state"><p>단어장을 불러오고 있어요.</p></div>
       : needsLogin ? <LoginRequired/>
       : vocabulariesQuery.isError ? <section className="vocabulary-load-error" role="alert"><span className="vocabulary-load-error-icon" aria-hidden="true"><ArrowClockwiseIcon/></span><h2>단어장을 불러오지 못했어요</h2><p>잠시 후 다시 시도해 주세요.</p><button type="button" className="primary" onClick={() => void vocabulariesQuery.refetch()}>다시 불러오기</button></section>
-        : !saved.length ? <div className="empty-state vocabulary-empty"><StarIcon/><h2>아직 저장한 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘에서 즐겨찾기 별표를 누르면<br/>이곳에서 다시 학습할 수 있어요.</p></div>
+        : !saved.length ? <div className="empty-state vocabulary-empty"><StarIcon/><h2>아직 저장한 단어가 없어요</h2><p>AI 문장 분석의 핵심 어휘에서 단어장 아이콘을 누르면<br/>이곳에서 다시 학습할 수 있어요.</p></div>
           : !visibleWords.length ? <div className="empty-state vocabulary-empty"><MagnifyingGlassIcon/><h2>조건에 맞는 단어가 없어요</h2></div>
             : <div className="word-grid compact-word-grid">{visibleWords.map(word => {
               const expanded = expandedId === word.vocabularyId

@@ -1,5 +1,5 @@
 export const AI_RULES = {
-  sentenceAnalysis: { timeoutMs: 30_000, maxRetries: 1, maxOutputTokens: 4_000 },
+  sentenceAnalysis: { timeoutMs: 45_000, maxRetries: 1, maxOutputTokens: 6_000 },
   sentenceVocabulary: { timeoutMs: 30_000, maxRetries: 1, maxOutputTokens: 10_000 },
   sentenceParaphrases: { timeoutMs: 15_000, maxRetries: 0, maxOutputTokens: 1_400 },
   storyGeneration: { timeoutMs: 40_000, maxRetries: 1, maxOutputTokens: 4_000 },

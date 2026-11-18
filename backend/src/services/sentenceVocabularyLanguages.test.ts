@@ -94,19 +94,26 @@ test('actual sentence-analysis requests contain no grammatical role classificati
   const { analyzeSentence } = await import('./openai.js')
   const client = getOpenAIClient()
   for (const fixture of fixtures) {
+    const summary = { word: fixture.word, basicMeaning: '회복', level: 'B2' }
     const method = mock.method(client.responses, 'create', async (request: { instructions: string; text: unknown }) => {
       assert.doesNotMatch(request.instructions, /Assign a grammatical role|same-role|subject relative|grammarInstructions/)
       const schema = JSON.stringify(request.text)
+      assert.match(schema, /"vocabularySummaries"/)
       assert.doesNotMatch(schema, /"role"|"subject"|"verb"/)
       return { output_text: JSON.stringify({ inputLanguage: fixture.language, learningLanguage: fixture.language,
         detectedSourceLanguage: fixture.language, backgroundKnowledge: '다시 도전하는 상황이에요.', warnings: [],
         sentences: [{ inputText: fixture.sentence, learningSentence: fixture.sentence,
-          koreanTranslation: '다시 도전해요.', englishTranslation: 'Try again.', keyExpressions: [],
+          koreanTranslation: fixture.language === 'ko' ? '' : '다시 도전해요.',
+          englishTranslation: fixture.language === 'en' ? '' : 'Try again.', keyExpressions: [],
+          vocabularySummaries: [summary, summary, { ...summary, level: 'A2' }],
           chunks: [{ targetText: fixture.sentence, sourceMeaning: '다시 도전해요.' }] }] }) }
     })
     try {
       const result = await analyzeSentence({ text: fixture.sentence, inputLanguage: fixture.language, learningLanguage: fixture.language })
       assert.equal(result.sentences[0].learningSentence, fixture.sentence)
+      assert.equal(result.sentences[0].koreanTranslation, fixture.language === 'ko' ? fixture.sentence : '다시 도전해요.')
+      assert.equal(result.sentences[0].englishTranslation, fixture.language === 'en' ? fixture.sentence : 'Try again.')
+      assert.deepEqual(result.sentences[0].vocabularySummaries, [summary])
       assert.equal(method.mock.callCount(), 1)
     } finally { method.mock.restore() }
   }
