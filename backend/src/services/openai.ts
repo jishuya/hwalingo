@@ -293,7 +293,7 @@ const sentenceVocabularySchema = {
   properties: {
     sentences: { type: 'array', items: { type: 'object', additionalProperties: false, properties: {
       sentenceIndex: { type: 'integer' },
-      vocabulary: { type: 'array', maxItems: 2, items: vocabularyItemSchema },
+      vocabulary: { type: 'array', items: vocabularyItemSchema },
     }, required: ['sentenceIndex', 'vocabulary'] } },
   },
   required: ['sentences'],

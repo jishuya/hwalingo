@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { CameraIcon, ImageIcon, CropIcon, InfoIcon, LightbulbIcon } from '@phosphor-icons/react'
 import { AlertDialog, ConfirmDialog, Modal } from '../ui/Dialog'
-import { extractImageText, type OcrResult } from '../../services/ocr'
+import { extractImageText } from '../../services/ocr'
 import { tidyOcrWhitespace } from '../../utils/tidyOcrWhitespace'
 import ImageCropper from './ImageCropper'
 import PhotoZoomViewer from './PhotoZoomViewer'
@@ -16,11 +16,13 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
   const [cropping, setCropping] = useState(false)
   const [preview, setPreview] = useState('')
   const [result, setResult] = useState<string | undefined>()
-  const [metadata, setMetadata] = useState<OcrResult>()
+  const [initialText, setInitialText] = useState<string>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [confirm, setConfirm] = useState(false)
   const [editNotice, setEditNotice] = useState('')
+  const textToApply = tidyOcrWhitespace(result ?? '')
+  const canApply = textToApply.length > 0 && textToApply.length <= 500
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
   useEffect(() => () => controller.current?.abort(), [])
@@ -34,7 +36,7 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
     setCropping(false)
     setPreview('')
     setResult(undefined)
-    setMetadata(undefined)
+    setInitialText(undefined)
     setEditNotice('')
     setConfirm(false)
   }
@@ -47,7 +49,7 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
       return
     }
     setResult(undefined)
-    setMetadata(undefined)
+    setInitialText(undefined)
     setEditNotice('')
     setPreview(URL.createObjectURL(selected))
     setFile(selected)
@@ -64,8 +66,9 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
     try {
       const response = await extractImageText(selected, current.signal)
       if (!current.signal.aborted) {
-        setResult(response.text)
-        setMetadata(response)
+        const text = tidyOcrWhitespace(response.text)
+        setResult(text)
+        setInitialText(text)
         setCropping(false)
       }
     } catch (cause) {
@@ -78,8 +81,8 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
     }
   }
   const apply = () => {
-    if (!result?.trim() || result.length > 500) return
-    onApply(result.trim())
+    if (!canApply) return
+    onApply(textToApply)
     close()
   }
   const flashEditButton = (button: HTMLButtonElement) => {
@@ -113,11 +116,11 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
       <span className="study-text-count" aria-label="입력 글자 수">{characterCount} / 500자</span>
       </div>
     </div>
-    <Modal open={Boolean(file) && !confirm && !error} title={cropping ? '사진 자르기' : '추출한 글 확인'} titleBadge={<span className="photo-crop-smart-badge">{cropping ? 'AI OCR' : 'OCR 정밀인식'}</span>} description={cropping ? '인식할 문장이 상자 안에 오도록 조절해 주세요.' : undefined} onClose={close} footer={cropping ? undefined : <><button className="ui-dialog-secondary" onClick={close}>취소</button><button className="ui-dialog-primary" disabled={!result?.trim() || result.length > 500} onClick={() => hasText ? setConfirm(true) : apply()}>입력창에 적용</button></>}>
+    <Modal open={Boolean(file) && !confirm && !error} title={cropping ? '사진 자르기' : '추출한 글 확인'} titleBadge={<span className="photo-crop-smart-badge">{cropping ? 'AI OCR' : 'OCR 정밀인식'}</span>} description={cropping ? '인식할 문장이 상자 안에 오도록 조절해 주세요.' : undefined} onClose={close} footer={cropping ? undefined : <><button className="ui-dialog-secondary" onClick={close}>취소</button><button className="ui-dialog-primary" disabled={!canApply} onClick={() => hasText ? setConfirm(true) : apply()}>입력창에 적용</button></>}>
       <div className="photo-text-content">
         {cropping && originalFile ? <ImageCropper file={originalFile} extracting={loading} onComplete={extract} onError={message => { close(); setError(message) }}/> : <>
           {preview && <PhotoZoomViewer key={preview} src={preview} completed={result !== undefined}/>}
-          <button type="button" className="ui-dialog-secondary ui-dialog-action photo-ocr-recrop" onClick={() => { setResult(undefined); setMetadata(undefined); setEditNotice(''); setCropping(true) }}><CropIcon aria-hidden="true"/>영역 다시 자르기</button>
+          <button type="button" className="ui-dialog-secondary ui-dialog-action photo-ocr-recrop" onClick={() => { setResult(undefined); setInitialText(undefined); setEditNotice(''); setCropping(true) }}><CropIcon aria-hidden="true"/>영역 다시 자르기</button>
         </>}
         {cropping && <button type="button" className="photo-crop-reselect" disabled={loading} onClick={() => { close(); uploadRef.current?.click() }}>다른 사진 선택하기</button>}
         {result !== undefined && <>
@@ -126,14 +129,13 @@ export default function PhotoTextInput({ hasText, disabled, onApply, children, c
             <textarea id="ocr-result" value={result} aria-describedby="ocr-character-count ocr-edit-notice" onChange={event => { setResult(event.target.value); setEditNotice('') }}/>
             <div className="photo-ocr-editor-footer">
               <div className="photo-ocr-editor-actions" role="group" aria-label="추출한 글 편집">
-                <button type="button" disabled={!result} onClick={event => { flashEditButton(event.currentTarget); setResult(tidyOcrWhitespace(result)) }}><span className="photo-ocr-action-emoji" aria-hidden="true">🧹</span>공백 정리</button>
                 <button type="button" disabled={!result} onClick={event => { flashEditButton(event.currentTarget); void copyText() }}><span className="photo-ocr-action-emoji" aria-hidden="true">📋</span>복사</button>
-                <button type="button" disabled={!metadata || result === metadata.text} onClick={() => { if (metadata) { setResult(metadata.text); setEditNotice('처음 추출한 원문으로 복원했어요.') } }}><span className="photo-ocr-action-symbol" aria-hidden="true">↺</span>원문 복원</button>
+                <button type="button" disabled={initialText === undefined || result === initialText} onClick={() => { setResult(initialText); setEditNotice('처음 표시된 글로 복원했어요.') }}><span className="photo-ocr-action-symbol" aria-hidden="true">↺</span>원문 복원</button>
               </div>
-              <span id="ocr-character-count" className={result.length > 500 ? 'photo-ocr-count over-limit' : 'photo-ocr-count'}><strong>{result.length}</strong> / 500자</span>
+              <span id="ocr-character-count" className={textToApply.length > 500 ? 'photo-ocr-count over-limit' : 'photo-ocr-count'}><strong>{textToApply.length}</strong> / 500자</span>
             </div>
           </div>
-          <p id="ocr-edit-notice" className="photo-ocr-edit-notice" role="status">{result.length > 500 ? '입력창에 적용하려면 500자 이내로 줄여 주세요.' : editNotice}</p>
+          <p id="ocr-edit-notice" className="photo-ocr-edit-notice" role="status">{textToApply.length > 500 ? '입력창에 적용하려면 500자 이내로 줄여 주세요.' : editNotice}</p>
           <div className="photo-ocr-edit-tip"><LightbulbIcon weight="fill" aria-hidden="true"/><p>불필요한 문장 기호나 머리말을 지우면 더 정확하게 번역 및 분석됩니다.</p></div>
 
         </>}

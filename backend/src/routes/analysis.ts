@@ -63,7 +63,7 @@ analysisRouter.post('/vocabulary', requireAuth, async (request, response, next) 
     }
     const vocabularies = await withAIResponseCache({
       userId: request.auth!.userId,
-      operation: 'sentence_vocabulary_v15',
+      operation: 'sentence_vocabulary_v17',
       keyParts: { inputLanguage, learningLanguage, sentences },
       ttlMs: AI_RULES.cache.sentenceVocabularyTtlMs,
       generate: () => generateSentenceVocabulary({
