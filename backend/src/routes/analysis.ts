@@ -1,11 +1,34 @@
+import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { requireAuth } from '../middleware/requireAuth.js'
-import { generateSentenceParaphrases, generateSentenceVocabulary, languageNames, type LanguageCode } from '../services/openai.js'
+import { generateSentenceParaphrases, generateSentenceVocabulary, generateVocabularySummaries, languageNames, type LanguageCode, type VocabularySummary } from '../services/openai.js'
+import { isKoreanExplanation } from '../services/vocabularyPresentation.js'
 import { AI_RULES } from '../config/aiRules.js'
-import { withAIResponseCache } from '../services/aiResponseCache.js'
+import { createAICacheKey, withAIResponseCache } from '../services/aiResponseCache.js'
 import { createAnalysisJob, findAnalysisJob, presentAnalysisJob } from '../services/analysisJobs.js'
 
 export const analysisRouter = Router()
+
+type VocabularyJob = { id: string } & (
+  | { status: 'running' }
+  | { status: 'completed'; vocabularies: VocabularySummary[][] }
+  | { status: 'failed'; error: unknown }
+)
+const vocabularyJobs = new Map<string, Map<string, VocabularyJob>>()
+
+analysisRouter.get('/vocabulary/jobs/:id', requireAuth, (request, response, next) => {
+  const job = [...(vocabularyJobs.get(request.auth!.userId)?.values() ?? [])].find(item => item.id === request.params.id)
+  response.set('Cache-Control', 'no-store')
+  if (!job) {
+    response.status(404).json({ message: '어휘 작업이 만료되었습니다. 다시 시도해 주세요.' })
+  } else if (job.status === 'running') {
+    response.status(202).json({ jobId: job.id })
+  } else if (job.status === 'completed') {
+    response.json({ vocabularies: job.vocabularies })
+  } else {
+    next(job.error)
+  }
+})
 
 analysisRouter.post('/paraphrases', requireAuth, async (request, response, next) => {
   const abortController = new AbortController()
@@ -57,24 +80,68 @@ analysisRouter.post('/vocabulary', requireAuth, async (request, response, next) 
       response.status(400).json({ status: 'error', message: '어휘를 분석할 문장이 올바르지 않습니다.' })
       return
     }
-    if (!(inputLanguage in languageNames) || !(learningLanguage in languageNames)) {
+    if (!Object.hasOwn(languageNames, inputLanguage) || !Object.hasOwn(languageNames, learningLanguage)) {
       response.status(400).json({ status: 'error', message: '언어 설정이 올바르지 않습니다.' })
       return
     }
-    const vocabularies = await withAIResponseCache({
-      userId: request.auth!.userId,
-      operation: 'sentence_vocabulary_v17',
-      keyParts: { inputLanguage, learningLanguage, sentences },
+    const summary = request.query.view === 'summary'
+    const targetData = request.body.target
+    let target: VocabularySummary | undefined
+    if (targetData !== undefined) {
+      if (summary || sentences.length !== 1 || typeof targetData?.word !== 'string'
+        || !targetData.word.trim() || targetData.word.length > 500
+        || !['B1', 'B2', 'C1', 'C2'].includes(targetData.level)
+        || typeof targetData.basicMeaning !== 'string' || targetData.basicMeaning.length > 500
+        || !isKoreanExplanation(targetData.basicMeaning)) {
+        response.status(400).json({ message: '상세 정보를 요청한 어휘가 올바르지 않습니다.' })
+        return
+      }
+      target = { word: targetData.word, level: targetData.level, basicMeaning: targetData.basicMeaning }
+    }
+    const userId = request.auth!.userId
+    const keyParts = { inputLanguage, learningLanguage, sentences, target }
+    const operation = summary ? 'sentence_vocabulary_summary_v1' : target ? 'sentence_vocabulary_detail_v1' : 'sentence_vocabulary_v17'
+    const loadVocabulary = (signal: AbortSignal) => withAIResponseCache<VocabularySummary[][]>({
+      userId,
+      operation,
+      keyParts,
       ttlMs: AI_RULES.cache.sentenceVocabularyTtlMs,
-      generate: () => generateSentenceVocabulary({
-        text: sentences.map(sentence => sentence.inputText).join(' '),
-        inputLanguage,
-        learningLanguage,
-        sentences,
-      }, abortController.signal),
-      shouldCache: vocabularies => vocabularies.every(items => items.every(item => Boolean(item.memoryTip))),
+      generate: () => {
+        const input = { text: sentences.map(sentence => sentence.inputText).join(' '), ...keyParts }
+        return summary ? generateVocabularySummaries(input, signal) : generateSentenceVocabulary(input, signal)
+      },
+      shouldCache: vocabularies => summary || vocabularies.every(items => items.every(item => 'memoryTip' in item && Boolean(item.memoryTip))),
       coalesce: false,
     })
+    if (request.query.async === '1') {
+      const key = createAICacheKey({ operation, keyParts })
+      const jobs = vocabularyJobs.get(userId) ?? new Map<string, VocabularyJob>()
+      const existing = jobs.get(key)
+      response.set('Cache-Control', 'no-store')
+      if (existing?.status === 'running') {
+        response.status(202).json({ jobId: existing.id })
+        return
+      }
+      if (existing?.status === 'completed') {
+        response.json({ vocabularies: existing.vocabularies })
+        return
+      }
+      const job = { id: randomUUID() }
+      vocabularyJobs.set(userId, jobs)
+      jobs.set(key, { ...job, status: 'running' })
+      response.status(202).json({ jobId: job.id })
+      void loadVocabulary(AbortSignal.timeout(120_000)).then(
+        vocabularies => jobs.set(key, { ...job, status: 'completed', vocabularies }),
+        error => jobs.set(key, { ...job, status: 'failed', error }),
+      ).finally(() => {
+        setTimeout(() => {
+          if (jobs.get(key)?.id === job.id) jobs.delete(key)
+          if (!jobs.size && vocabularyJobs.get(userId) === jobs) vocabularyJobs.delete(userId)
+        }, 5 * 60_000).unref()
+      })
+      return
+    }
+    const vocabularies = await loadVocabulary(abortController.signal)
     response.json({ vocabularies })
     console.info(JSON.stringify({
       event: 'sentence_vocabulary_response_sent',

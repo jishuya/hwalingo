@@ -11,6 +11,10 @@ const profile = await mkdtemp(path.join(tmpdir(), 'hwalingo-recovery-browser-'))
 let workerVersion = 1
 let analysisPosts = 0
 let latestReads = 0
+let vocabularyListPosts = 0
+let vocabularyDetailPosts = 0
+const summary = {word:'plaza',basicMeaning:'광장',level:'B1'}
+const detail = {...summary,pronunciation:'/ˈplɑːzə/',partOfSpeech:'명사',contextualMeaning:'작은 광장',exampleSentence:'Meet me at the plaza.',exampleMeaning:'광장에서 만나자.',etymology:'광장을 뜻하는 스페인어에서 왔어요.',memoryTip:'광장에서 만나는 장면을 떠올려요.'}
 const analysis = { inputLanguage:'es', learningLanguage:'en', detectedSourceLanguage:'es', backgroundKnowledge:'광장을 설계한 상황이에요.', warnings:[], sentences:[{inputText:'Una plaza.',learningSentence:'A plaza.',koreanTranslation:'광장입니다.',englishTranslation:'A plaza.',chunks:[{targetText:'A plaza.',sourceMeaning:'광장.'}],keyExpressions:[],paraphrases:[],vocabulary:[]}] }
 const job = {id:'saved-job',status:'completed',request:{text:'Una plaza.',inputLanguage:'es',learningLanguage:'en'},analysis,message:null}
 const server = createServer(async (req,res) => {
@@ -20,11 +24,21 @@ const server = createServer(async (req,res) => {
   res.setHeader('Content-Type','application/json')
   if(req.method==='POST'&&url.pathname==='/api/analysis')analysisPosts++
   if(url.pathname==='/api/analysis/jobs/latest')latestReads++
+  if (url.pathname === '/api/analysis/vocabulary' && req.method === 'POST') {
+   if (url.searchParams.get('view') === 'summary') {
+    vocabularyListPosts++
+    res.statusCode = vocabularyListPosts === 1 ? 504 : 200
+    res.end(JSON.stringify(vocabularyListPosts === 1 ? {message:'어휘 요청 시간이 초과됐어요.'} : {vocabularies:[[summary]]}))
+   } else {
+    vocabularyDetailPosts++
+    res.end(JSON.stringify({vocabularies:[[detail]]}))
+   }
+   return
+  }
   const fixture = url.pathname==='/api/auth/me'?{user:{id:'1',displayName:'검증',email:'test@example.invalid'}}
    :url.pathname==='/api/settings/me'?{settings:{theme:'light',weeklyGoalDays:5,quizQuestionCount:10}}
    :url.pathname==='/api/progress/me'?{progress:{currentStreak:3}}
    :url.pathname==='/api/vocabularies'?{vocabularies:[]}
-   :url.pathname==='/api/analysis/vocabulary'?{vocabularies:[[]]}
    :url.pathname.startsWith('/api/analysis/jobs/')||url.pathname==='/api/analysis'?{job,analysis}:{}
   res.end(JSON.stringify(fixture));return
  }
@@ -62,6 +76,22 @@ try {
 
  await until(`document.body.innerText.includes('광장을 설계한 상황이에요.')`)
  assert.equal(analysisPosts,1,'Study submits the requested analysis once')
+ await until(`document.body.innerText.includes('어휘 요청 시간이 초과됐어요.')`)
+ await evaluate(`document.querySelector('.empty-vocabulary button').click()`)
+ await until(`document.querySelector('.analysis-vocabulary-summary-meaning')?.textContent === '광장'`)
+ assert.equal(analysisPosts,1,'Retrying vocabulary must not repeat the sentence analysis')
+ assert.equal(vocabularyDetailPosts,0,'Collapsed vocabulary must not request details')
+ assert.equal(await evaluate(`Boolean(document.querySelector('.analysis-word-details'))`),false)
+ assert.equal(await evaluate(`Boolean(document.querySelector('.sentence-vocab-card > button[aria-label="단어장에 저장"]'))`),true)
+ const toggleVocabulary = `document.querySelector('.sentence-vocab-title button').click()`
+ await evaluate(toggleVocabulary)
+ await until(`document.querySelector('.analysis-word-details')?.innerText.includes('Meet me at the plaza.')`)
+ assert.equal(vocabularyDetailPosts,1)
+ await evaluate(toggleVocabulary)
+ assert.equal(await evaluate(`Boolean(document.querySelector('.analysis-word-details'))`),false)
+ await evaluate(toggleVocabulary)
+ await until(`document.querySelector('.analysis-word-details')?.innerText.includes('Meet me at the plaza.')`)
+ assert.equal(vocabularyDetailPosts,1,'Reopening must reuse completed details')
  await evaluate(`document.querySelector('.clickable-chunks button').click()`)
  assert.equal(await evaluate(`document.querySelector('.clickable-chunks button').textContent`),'광장')
  await until(`Boolean(navigator.serviceWorker.controller)`)

@@ -15,6 +15,28 @@ const request = { text: '잃었던 지위를 되찾는다.', inputLanguage: 'ko'
   sentences: [{ inputText: '잃었던 지위를 되찾는다.', learningSentence: good.exampleSentence }] }
 const output = (item: typeof good) => ({ output_text: JSON.stringify({ sentences: [{ sentenceIndex: 0, vocabulary: [item] }] }) })
 
+test('the vocabulary list uses the compact schema and details stay scoped to the requested word', async () => {
+  const { getOpenAIClient } = await import('../config/openai.js')
+  const { generateSentenceVocabulary, generateVocabularySummaries } = await import('./openai.js')
+  const target = { word: good.word, basicMeaning: good.basicMeaning, level: 'B2' as const }
+  const method = mock.method(getOpenAIClient().responses, 'create', async (payload: {
+    input: string; text: { format: { name: string; schema: unknown } }
+  }) => {
+    if (payload.text.format.name === 'sentence_vocabulary_summary') {
+      assert.doesNotMatch(JSON.stringify(payload.text.format.schema), /exampleSentence|memoryTip|etymology/)
+      return { output_text: JSON.stringify({ sentences: [{ sentenceIndex: 0, vocabulary: [target, target, { ...target, level: 'A2' }] }] }) }
+    }
+    assert.deepEqual(JSON.parse(payload.input).target, target)
+    return output(good)
+  })
+  try {
+    assert.deepEqual(await generateVocabularySummaries(request, new AbortController().signal), [[target]])
+    assert.equal(method.mock.callCount(), 1)
+    assert.deepEqual(await generateSentenceVocabulary({ ...request, target }), [[good]])
+    assert.equal(method.mock.callCount(), 2)
+  } finally { method.mock.restore() }
+})
+
 test('missing optional memory tip does not fail otherwise valid vocabulary after repair attempts', async () => {
   const { getOpenAIClient } = await import('../config/openai.js')
   const { generateSentenceVocabulary } = await import('./openai.js')

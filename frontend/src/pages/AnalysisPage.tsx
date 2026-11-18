@@ -1,21 +1,16 @@
-import { highlightVocabularyText } from '../utils/highlightVocabularyText'
+import AnalysisVocabularyCard from '../components/study/AnalysisVocabularyCard'
 import LearningTimer from '../components/learning/LearningTimer'
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowUpIcon,
   ArrowsClockwiseIcon,
-  StarIcon,
   BookOpenIcon,
   BookBookmarkIcon,
   BrainIcon,
-  SparkleIcon,
-  PlantIcon,
   EyeIcon,
   EyeSlashIcon,
   FileTextIcon,
-  LightbulbIcon,
-  SpeakerHighIcon,
   TranslateIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
@@ -39,17 +34,27 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [analysis, setAnalysis] = useState<SentenceAnalysis>()
   const [isLoading, setIsLoading] = useState(false)
   const [speechRate, setSpeechRate] = useState(1)
-  const [isVocabularyLoading, setIsVocabularyLoading] = useState(false)
-  const [vocabularyError, setVocabularyError] = useState('')
   const [wordActionAlert, setWordActionAlert] = useState<{ title: string; message: string }>()
   const [error, setError] = useState('')
   const [revealedChunks, setRevealedChunks] = useState<Set<string>>(new Set())
   const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set())
   const [openParaphrases, setOpenParaphrases] = useState<Set<number>>(new Set())
   const [loadingParaphrases, setLoadingParaphrases] = useState<Set<number>>(new Set())
-  const [openExampleTranslations, setOpenExampleTranslations] = useState<Set<string>>(new Set())
   const queryClient = useQueryClient()
   const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
+  const vocabularySentences = analysis?.sentences.map(({ inputText, learningSentence }) => ({ inputText, learningSentence }))
+  const vocabulary = useQuery({
+    queryKey: ['analysis-vocabulary', analysis?.inputLanguage, analysis?.learningLanguage, vocabularySentences],
+    queryFn: ({ signal }) => {
+      if (!analysis || !vocabularySentences) throw new Error('분석 문장을 찾을 수 없습니다.')
+      return getSentenceVocabulary({
+        inputLanguage: analysis.inputLanguage, learningLanguage: analysis.learningLanguage, sentences: vocabularySentences,
+      }, signal)
+    },
+    enabled: !isLoading && Boolean(vocabularySentences?.length),
+    staleTime: Infinity,
+    retry: false,
+  })
   const saveWord = useMutation({
     mutationFn: ({ input }: { input: SaveVocabularyInput; wordKey: string }) => saveVocabulary(input),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
@@ -129,10 +134,8 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     const controller = new AbortController()
     const run = async () => {
       setIsLoading(true)
-      setIsVocabularyLoading(false)
       onLoadingChange(true)
       setError('')
-      setVocabularyError('')
       setWordActionAlert(undefined)
       try {
         const nextAnalysis = await analyzeSentence(request, controller.signal)
@@ -141,33 +144,8 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
         setOpenTranslations(new Set())
         setOpenParaphrases(new Set())
         setLoadingParaphrases(new Set())
-        setOpenExampleTranslations(new Set())
         setIsLoading(false)
         onLoadingChange(false)
-        setIsVocabularyLoading(true)
-        try {
-          const vocabularies = await getSentenceVocabulary({
-            inputLanguage: nextAnalysis.inputLanguage,
-            learningLanguage: nextAnalysis.learningLanguage,
-            sentences: nextAnalysis.sentences.map(sentence => ({
-              inputText: sentence.inputText,
-              learningSentence: sentence.learningSentence,
-            })),
-          }, controller.signal)
-          setAnalysis(current => current ? {
-            ...current,
-            sentences: current.sentences.map((sentence, index) => ({
-              ...sentence,
-              vocabulary: vocabularies[index] ?? [],
-            })),
-          } : current)
-        } catch (caught) {
-          if (!controller.signal.aborted) {
-            setVocabularyError(caught instanceof Error ? caught.message : '상세 어휘를 불러오지 못했습니다.')
-          }
-        } finally {
-          if (!controller.signal.aborted) setIsVocabularyLoading(false)
-        }
       } catch (caught) {
         if (controller.signal.aborted) return
         setError(caught instanceof Error ? caught.message : 'AI 분석을 완료하지 못했습니다.')
@@ -199,7 +177,8 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       <section className="analysis-background-v2"><div className="analysis-background-heading"><BookBookmarkIcon weight="duotone" aria-hidden="true"/><h3>배경 지식</h3></div><p>{analysis.backgroundKnowledge}</p></section>
 
       {analysis.sentences.map((sentence, sentenceIndex) => {
-        const showVocabulary = sentence.vocabulary.length > 0 || isVocabularyLoading || Boolean(vocabularyError)
+        const words = vocabulary.data?.[sentenceIndex] ?? []
+        const showVocabulary = words.length > 0 || vocabulary.isFetching || vocabulary.isError
         const translationOpen = openTranslations.has(sentenceIndex)
         const paraphrasesOpen = openParaphrases.has(sentenceIndex)
         const paraphrasesLoading = loadingParaphrases.has(sentenceIndex)
@@ -234,30 +213,26 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
 
             {showVocabulary && <aside className="sentence-vocab-column">
               <h3><BookOpenIcon className="analysis-heading-icon analysis-icon-vocabulary" weight="duotone" aria-hidden="true"/>핵심 어휘</h3>
-              {isVocabularyLoading && sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">상세 어휘를 정리하고 있어요…</div>
-                : vocabularyError && sentence.vocabulary.length === 0 ? <div className="empty-vocabulary">{vocabularyError}</div>
-                : sentence.vocabulary.map(word => {
-                const wordKey = `${sentenceIndex}-${word.word}`
-                const exampleTranslationOpen = openExampleTranslations.has(wordKey)
-                const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
-                const saved = Boolean(savedVocabulary)
-                const saving = (saveWord.isPending && saveWord.variables.wordKey === wordKey)
-                  || (removeWord.isPending && removeWord.variables.wordKey === wordKey)
-                return <article className="sentence-vocab-card" key={wordKey}>
-                  <button className={saved ? 'saved' : ''} disabled={saving} aria-label={saved ? '단어 저장 취소' : '단어장에 저장'} aria-pressed={saved} onClick={() => {
-                    setWordActionAlert(undefined)
-                    if (savedVocabulary) removeWord.mutate({ vocabularyId: savedVocabulary.vocabularyId, wordKey })
-                    else saveWord.mutate({ wordKey, input: { languageCode: analysis.learningLanguage, word: word.word, meaning: word.basicMeaning, contextMeaning: word.contextualMeaning, cefrLevel: word.level, etymology: word.etymology, memoryTip: word.memoryTip, exampleSentence: word.exampleSentence, exampleTranslation: word.exampleMeaning } })
-                  }}><StarIcon weight={saved ? 'fill' : 'regular'}/></button>
-                  <div className="sentence-vocab-title"><div className="sentence-vocab-name"><h4><span className="sentence-vocab-word">{word.word}</span><span className="sentence-vocab-level" aria-label={`CEFR ${word.level}`}>{word.level}</span></h4>{word.pronunciation && <small className="vocab-pronunciation" aria-label={`발음 ${word.pronunciation}`}>{word.pronunciation}</small>}</div><button aria-label={`${word.word} 발음 듣기`} onClick={() => speak(word.word, analysis.learningLanguage)}><SpeakerHighIcon/></button></div>
-                  <p className="sentence-vocab-basic"><b>기본:</b> {word.basicMeaning}</p><p className="sentence-vocab-context"><b>문맥:</b> {word.contextualMeaning}</p>
-                  <div className="analysis-word-details">
-                    {word.exampleSentence && <div className="analysis-word-example"><div className="analysis-word-detail-heading"><b><SparkleIcon weight="fill" aria-hidden="true"/>예문</b><div><button type="button" aria-label={`${word.word} 예문 듣기`} onClick={() => speak(word.exampleSentence, analysis.learningLanguage)}><SpeakerHighIcon/></button>{word.exampleMeaning && <button type="button" className={exampleTranslationOpen ? 'active' : ''} aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-pressed={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}><TranslateIcon/></button>}</div></div><blockquote>{word.exampleMeaning ? <button type="button" className="analysis-example-toggle" aria-label={`${word.word} 예문 해석 ${exampleTranslationOpen ? '숨기기' : '보기'}`} aria-expanded={exampleTranslationOpen} onClick={() => toggleInSet(setOpenExampleTranslations, wordKey)}>{highlightVocabularyText(word.exampleSentence, word.word, 'analysis-example-highlight')}</button> : highlightVocabularyText(word.exampleSentence, word.word, 'analysis-example-highlight')}</blockquote>{exampleTranslationOpen && word.exampleMeaning && <p className="analysis-word-example-translation">{word.exampleMeaning}</p>}</div>}
-                    {word.etymology && <div className="analysis-word-etymology"><b><PlantIcon weight="fill" aria-hidden="true"/>어원</b><p>{word.etymology}</p></div>}
-                    {word.memoryTip && <div className="analysis-word-memory-tip"><b><LightbulbIcon weight="fill" aria-hidden="true"/>AI 스마트 암기 팁</b><p>{highlightVocabularyText(word.memoryTip, word.word, 'analysis-tip-highlight', true)}</p></div>}
-                  </div>
-                </article>
-              })}
+              {vocabulary.isFetching && !words.length ? <div className="empty-vocabulary" role="status">핵심 어휘를 찾고 있어요…</div>
+                : vocabulary.isError && !words.length ? <div className="empty-vocabulary" role="alert">{vocabulary.error.message} <button type="button" className="section-placeholder" onClick={() => void vocabulary.refetch()}>다시 시도</button></div>
+                : words.map(word => {
+                  const wordKey = `${sentenceIndex}-${word.word}`
+                  const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
+                  const saving = (saveWord.isPending && saveWord.variables.wordKey === wordKey)
+                    || (removeWord.isPending && removeWord.variables.wordKey === wordKey)
+                  return <AnalysisVocabularyCard key={wordKey} summary={word} sentence={sentence}
+                    inputLanguage={analysis.inputLanguage} learningLanguage={analysis.learningLanguage}
+                    saved={Boolean(savedVocabulary)} saving={saving} speak={speak}
+                    onSaveToggle={detail => {
+                      setWordActionAlert(undefined)
+                      if (savedVocabulary) removeWord.mutate({ vocabularyId: savedVocabulary.vocabularyId, wordKey })
+                      else saveWord.mutate({ wordKey, input: {
+                        languageCode: analysis.learningLanguage, word: word.word, meaning: word.basicMeaning, cefrLevel: word.level,
+                        contextMeaning: detail?.contextualMeaning ?? '', etymology: detail?.etymology ?? '', memoryTip: detail?.memoryTip ?? '',
+                        exampleSentence: detail?.exampleSentence, exampleTranslation: detail?.exampleMeaning,
+                      } })
+                    }}/>
+                })}
             </aside>}
           </div>
         </article>

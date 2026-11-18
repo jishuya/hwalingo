@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { analyzeSentence, getLatestAnalysisJob, type AnalysisJob, type SentenceAnalysis } from '../src/services/analysis.ts'
+import { analyzeSentence, getLatestAnalysisJob, getSentenceVocabulary, type AnalysisJob, type SentenceAnalysis } from '../src/services/analysis.ts'
 
 const analysis: SentenceAnalysis = {
   inputLanguage: 'es', learningLanguage: 'en', detectedSourceLanguage: 'es',
@@ -58,6 +58,27 @@ test('analysis polling, recovery, upstream failure, auth and cancellation', asyn
     await t.test('latest analysis is loaded from the authenticated API', async () => {
       globalThis.fetch = async path => { assert.equal(path, '/api/analysis/jobs/latest'); return response(completed) }
       assert.deepEqual(await getLatestAnalysisJob(), completed)
+    })
+    await t.test('vocabulary polls an accepted job and returns all qualifying items', async () => {
+      const items = Array.from({ length: 6 }, (_, index) => ({ word: `word-${index}`, level: 'B1' }))
+      const calls: string[] = []
+      globalThis.fetch = async (path, options) => {
+        calls.push(String(path))
+        if (options?.method === 'POST') {
+          return Response.json({ jobId: 'vocab-job' }, { status: 202 })
+        }
+        if (calls.length === 2) return Response.json({ jobId: 'vocab-job' }, { status: 202 })
+        return Response.json({ vocabularies: [[...items, { word: 'basic', level: 'A2' }]] })
+      }
+      assert.deepEqual(await getSentenceVocabulary({
+        inputLanguage: 'es', learningLanguage: 'en',
+        sentences: [{ inputText: 'Hola.', learningSentence: 'Hello.' }],
+      }), [items])
+      assert.deepEqual(calls, [
+        '/api/analysis/vocabulary?async=1&view=summary',
+        '/api/analysis/vocabulary/jobs/vocab-job',
+        '/api/analysis/vocabulary/jobs/vocab-job',
+      ])
     })
   } finally { globalThis.fetch = originalFetch }
 })

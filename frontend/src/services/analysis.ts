@@ -39,6 +39,10 @@ export interface AnalyzedSentence {
 
 export type SentenceParaphrase = AnalyzedSentence['paraphrases'][number]
 export type VocabularyAnalysis = AnalyzedSentence['vocabulary'][number]
+export type VocabularySummary = Pick<VocabularyAnalysis, 'word' | 'level' | 'basicMeaning'>
+type VocabularyRequest = Pick<AnalysisRequest, 'inputLanguage' | 'learningLanguage'> & {
+  sentences: Array<Pick<AnalyzedSentence, 'inputText' | 'learningSentence'>>
+}
 
 const punctuationOnly = /^[\s\u200B-\u200D\u2060\uFEFF]*[,.，。、｡．]+[\s\u200B-\u200D\u2060\uFEFF]*$/u
 const standaloneJapaneseParticle = /^(?:は|が|を|に|へ|で|と|も|の|から|まで|より|では|には|とは|にも|でも)$/u
@@ -146,13 +150,37 @@ export async function getSentenceParaphrases(input: Pick<AnalysisRequest, 'input
   return result.paraphrases
 }
 
-export async function getSentenceVocabulary(input: Pick<AnalysisRequest, 'inputLanguage' | 'learningLanguage'> & {
-  sentences: Array<Pick<AnalyzedSentence, 'inputText' | 'learningSentence'>>
-}, signal?: AbortSignal): Promise<VocabularyAnalysis[][]> {
-  const response = await apiFetch('/api/analysis/vocabulary', {
-    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
+export function getSentenceVocabulary(input: VocabularyRequest, signal?: AbortSignal): Promise<VocabularySummary[][]> {
+  return requestVocabulary<VocabularySummary>('/api/analysis/vocabulary?async=1&view=summary', input, signal)
+}
+
+export async function getSentenceVocabularyDetail(input: VocabularyRequest & { target: VocabularySummary }, signal?: AbortSignal): Promise<VocabularyAnalysis> {
+  const [[detail] = []] = await requestVocabulary<VocabularyAnalysis>('/api/analysis/vocabulary?async=1', input, signal)
+  if (!detail?.partOfSpeech || detail.word !== input.target.word) throw new Error('어휘 상세 정보를 불러오지 못했습니다.')
+  return detail
+}
+
+async function requestVocabulary<T extends VocabularySummary>(path: string, input: VocabularyRequest & { target?: VocabularySummary }, signal?: AbortSignal): Promise<T[][]> {
+  let response = await apiFetch(path, {
+    method: 'POST', credentials: 'include', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
   })
-  const result = await response.json().catch(() => ({})) as { vocabularies?: VocabularyAnalysis[][]; message?: string }
+  const readResult = (response: Response) => response.json().catch(() => ({})) as Promise<{
+    jobId?: string; vocabularies?: T[][]; message?: string
+  }>
+  let result = await readResult(response)
+  if (response.status === 202 && result.jobId) {
+    const url = `/api/analysis/vocabulary/jobs/${encodeURIComponent(result.jobId)}`
+    const deadline = Date.now() + 130_000
+    let gatewayFailures = 0
+    do {
+      if (Date.now() >= deadline) throw new Error('어휘 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.')
+      await waitForPoll(signal)
+      response = await apiFetch(url, { credentials: 'include', cache: 'no-store', signal })
+      result = await readResult(response)
+      if (response.status === 504 && !result.message) gatewayFailures++
+      else gatewayFailures = 0
+    } while (response.status === 202 || (gatewayFailures > 0 && gatewayFailures < 3))
+  }
   if (!response.ok || !result.vocabularies) throw new Error(result.message ?? '상세 어휘를 불러오지 못했습니다.')
   return result.vocabularies.map(items => items.filter(item => ['B1', 'B2', 'C1', 'C2'].includes(item.level)))
 }

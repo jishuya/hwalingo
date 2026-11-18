@@ -316,6 +316,7 @@ html[data-theme='dark']{--dark:#e7f4eb;--muted:#a8b9af;--cream:#101914;--line:#3
 .analysis-icon-vocabulary{--section-icon-color:#c1842f;--section-icon-accent:#f5cf76}
 
 /* Analysis vocabulary details follow the vocabulary card design. */
+.sentence-vocab-card>.analysis-vocabulary-summary-meaning{margin-top:2px;padding-left:24px}
 .analysis-word-details{display:flex;flex-direction:column;gap:14px;margin-top:14px}
 .analysis-word-details p{margin:0;font-size:var(--font-sm);line-height:1.6}
 .analysis-word-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}

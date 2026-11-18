@@ -29,18 +29,27 @@ export function isExampleInLearningLanguage(value: string, language: string): bo
     && !/\p{Letter}/u.test(normalized.replace(allowedLetters[code], ''))
 }
 
-export function isVocabularyInLearningLanguage(
-  item: Pick<VocabularyAnalysis, 'word' | 'exampleSentence'>,
+export function isVocabularyWordInLearningLanguage(
+  value: string,
   learningSentence: string,
   language: LanguageCode,
 ): boolean {
-  const word = item.word.normalize('NFC').trim()
-  if (!word || !scripts[language].test(word) || !isExampleInLearningLanguage(item.exampleSentence, language)) return false
+  const word = value.normalize('NFC').trim()
+  if (!word || !scripts[language].test(word)) return false
   // East Asian learning words must not silently contain an English source word.
   if (['zh', 'ja', 'ko'].includes(language) && /\p{Script=Latin}/u.test(word)) return false
   if (['en', 'fr', 'de', 'es'].includes(language) && /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(word)) return false
   // Lemmas can differ from inflected surface forms; require exact occurrence for Chinese only.
   return language !== 'zh' || learningSentence.normalize('NFC').includes(word)
+}
+
+export function isVocabularyInLearningLanguage(
+  item: Pick<VocabularyAnalysis, 'word' | 'exampleSentence'>,
+  learningSentence: string,
+  language: LanguageCode,
+): boolean {
+  return isVocabularyWordInLearningLanguage(item.word, learningSentence, language)
+    && isExampleInLearningLanguage(item.exampleSentence, language)
 }
 
 export class VocabularyLanguageError extends Error {
