@@ -61,7 +61,9 @@ const server = createServer(async (req,res) => {
  try {
   const content = await readFile(path.join(root,file))
   res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.html')?'text/html':file.endsWith('.css')?'text/css':file.endsWith('.json')||file.endsWith('.webmanifest')?'application/json':file.endsWith('.svg')?'image/svg+xml':'application/octet-stream')
-  res.end(file==='sw.js'?Buffer.concat([content,Buffer.from(`\n// browser-test-version-${workerVersion}`)]):content)
+  res.end(file==='sw.js'?Buffer.concat([content,Buffer.from(`\nself.addEventListener('message', event => {
+    if (event.data === 'TEST_WORKER_VERSION') event.ports[0]?.postMessage(${workerVersion});
+  });`)]):content)
  } catch {res.statusCode=404;res.end('not found')}
 })
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve))
@@ -115,18 +117,27 @@ try {
  await evaluate(`document.querySelector('.clickable-chunks button').click()`)
  assert.equal(await evaluate(`document.querySelector('.clickable-chunks button').textContent`),'광장')
  await until(`Boolean(navigator.serviceWorker.controller)`)
+ const controllingVersion = `new Promise(resolve => {
+   const channel = new MessageChannel();
+   channel.port1.onmessage = event => resolve(event.data);
+   navigator.serviceWorker.controller.postMessage('TEST_WORKER_VERSION', [channel.port2]);
+ })`
+ assert.equal(await evaluate(controllingVersion),1)
  await evaluate(`(() => {const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'작성 중인 내용');input.dispatchEvent(new Event('input',{bubbles:true}))})()`)
  workerVersion=2
  await evaluate(`navigator.serviceWorker.getRegistration().then(r=>r.update()).then(()=>true)`)
  await until(`document.body.innerText.includes('새 버전이 준비됐어요')`)
+ assert.equal(await evaluate(`navigator.serviceWorker.getRegistration().then(registration => Boolean(registration.waiting))`),true)
  assert.equal(await evaluate(`document.querySelector('textarea').value`),'작성 중인 내용','An update must not silently discard input')
  await evaluate(`Array.from(document.querySelectorAll('[role="alertdialog"] button')).find(b=>b.textContent==='나중에').click()`)
  assert.equal(await evaluate(`document.querySelector('textarea').value`),'작성 중인 내용')
+ assert.equal(await evaluate(controllingVersion),1,'Deferring the update should leave the first worker in control')
  workerVersion=3
  await evaluate(`navigator.serviceWorker.getRegistration().then(r=>r.update()).then(()=>true)`)
  await until(`document.body.innerText.includes('새 버전이 준비됐어요')`)
  await evaluate(`Array.from(document.querySelectorAll('[role="alertdialog"] button')).find(b=>b.textContent==='새로고침').click()`)
- await until(`document.body.innerText.includes('AI 분석 시작')`)
+ await until(`document.querySelector('textarea')?.value === ''`)
+ assert.equal(await evaluate(controllingVersion),3,'The reloaded page must be controlled by the newest worker')
  assert.equal(await evaluate(`document.querySelector('textarea').value`),'','Confirmed update must reload the page')
  useLegacyAnalysis = true
  const vocabularyRequested = new Promise(resolve => { notifyVocabularyRequested = resolve })
