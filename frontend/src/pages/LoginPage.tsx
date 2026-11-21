@@ -58,6 +58,7 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
         </form>
 
         <p className="auth-switch">처음 방문하셨나요? <button type="button" onClick={() => setSignupOpen(true)}>회원가입</button></p>
+        <p className="auth-switch"><a href="/privacy.html">개인정보처리방침</a></p>
 
       </div>
     </section>
