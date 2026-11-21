@@ -32,7 +32,9 @@ export default defineConfig({
       },
       workbox: {
         clientsClaim: true,
+        navigateFallbackDenylist: [/^\/privacy(?:\.html)?(?:\?|$)/],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globIgnores: ['**/node_modules/**/*', 'privacy.html'],
       }
     })
   ]
