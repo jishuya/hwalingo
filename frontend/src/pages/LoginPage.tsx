@@ -1,7 +1,8 @@
-import { ArrowRight, Check, EnvelopeSimple, Eye, EyeSlash, LockKey } from '@phosphor-icons/react'
+import { ArrowRight, Check, EnvelopeSimple, Eye, EyeSlash, LockKey, ShieldCheckIcon } from '@phosphor-icons/react'
 import { useEffect, useState, type FormEvent } from 'react'
 import SignupModal from '../components/auth/SignupModal'
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal'
+import AnalysisPreview from '../components/study/AnalysisPreview'
 import { AlertDialog } from '../components/ui/Dialog'
 import logo from '../assets/hwalingo_logo.png'
 import wordmark from '../assets/wordmarks/hwalingo-wordmark-01-rounded.png'
@@ -13,6 +14,7 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [signupOpen, setSignupOpen] = useState(() => new URLSearchParams(window.location.search).get('signup') === '1')
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
   const [error, setError] = useState('')
   const [passwordChanged, setPasswordChanged] = useState(false)
@@ -58,9 +60,20 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
         </form>
 
         <p className="auth-switch">처음 방문하셨나요? <button type="button" onClick={() => setSignupOpen(true)}>회원가입</button></p>
-        <p className="auth-switch"><a href="/privacy.html">개인정보처리방침</a></p>
+        <p className="auth-switch">
+          <a className="auth-privacy-link" href="/privacy.html">
+            <ShieldCheckIcon weight="duotone" aria-hidden="true"/>
+            개인정보처리방침
+          </a>
+        </p>
+        <p className="auth-switch"><button className="auth-preview-button" type="button" onClick={() => setPreviewOpen(true)}>가입 없이 체험하기</button></p>
 
       </div>
     </section>
-  </main>{signupOpen && <SignupModal onClose={() => setSignupOpen(false)} onComplete={done}/>} {forgotPasswordOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setForgotPasswordOpen(false)} onComplete={() => { setForgotPasswordOpen(false); setPassword(''); setPasswordChanged(true) }}/>}<AlertDialog open={passwordChanged} title="비밀번호 변경 완료" message={<>비밀번호가 변경되었습니다.<br/>새 비밀번호로 로그인해주세요.</>} tone="success" onClose={() => setPasswordChanged(false)}/></>
+  </main>
+    {previewOpen && <AnalysisPreview onClose={() => setPreviewOpen(false)} onSignup={() => {
+      setPreviewOpen(false)
+      setSignupOpen(true)
+    }}/>}
+    {signupOpen && <SignupModal onClose={() => setSignupOpen(false)} onComplete={done}/>} {forgotPasswordOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setForgotPasswordOpen(false)} onComplete={() => { setForgotPasswordOpen(false); setPassword(''); setPasswordChanged(true) }}/>}<AlertDialog open={passwordChanged} title="비밀번호 변경 완료" message={<>비밀번호가 변경되었습니다.<br/>새 비밀번호로 로그인해주세요.</>} tone="success" onClose={() => setPasswordChanged(false)}/></>
 }

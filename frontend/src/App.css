@@ -1096,3 +1096,36 @@ html[data-theme='dark'] .profile-level-avatar>.profile-avatar-collection-button{
 @keyframes profile-collection-ripple{0%,6%{transform:scale(.9);opacity:0}12%{opacity:.55}32%,100%{transform:scale(1.4);opacity:0}}
 @media(prefers-reduced-motion:reduce){.profile-avatar-collection-button:not(:disabled)::after{animation:none;display:none}.profile-avatar-collection-button:not(:disabled)>svg:first-child{animation:none}}
 
+
+.auth-privacy-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--auth-green) 8%, transparent);
+  color: var(--auth-green);
+  font-weight: 700;
+  text-decoration: none;
+}
+.auth-privacy-link:hover {
+  background: color-mix(in srgb, var(--auth-green) 14%, transparent);
+}
+.auth-privacy-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.auth-privacy-link svg {
+  width: 16px;
+  height: 16px;
+}
+.setting-list .profile-privacy-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.auth-switch .auth-preview-button {
+  color: #338051;
+}

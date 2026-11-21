@@ -22,16 +22,24 @@ import { deleteVocabulary, getVocabularies, saveVocabulary, type SaveVocabularyI
 
 const speechLanguages: Record<LanguageCode, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' }
 
-export default function AnalysisPage({ request, requestId, onLoadingChange }: { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void }) {
+type AnalysisPageProps =
+  | { request: AnalysisRequest; requestId: number; onLoadingChange: (isLoading: boolean) => void; preview?: never }
+  | { preview: SentenceAnalysis; onSignup: () => void }
+
+export default function AnalysisPage(props: AnalysisPageProps) {
+  const { preview } = props
+  const { request, requestId, onLoadingChange } = 'request' in props ? props : {}
   const [showScrollTop, setShowScrollTop] = useState(false)
   useEffect(() => {
+    if (preview) return
     const updateScrollTop = () => setShowScrollTop(window.scrollY > 400)
     updateScrollTop()
     window.addEventListener('scroll', updateScrollTop, { passive: true })
     return () => window.removeEventListener('scroll', updateScrollTop)
-  }, [])
+  }, [preview])
 
-  const [analysis, setAnalysis] = useState<SentenceAnalysis>()
+  const [fetchedAnalysis, setAnalysis] = useState<SentenceAnalysis>()
+  const analysis = preview ?? fetchedAnalysis
   const [isLoading, setIsLoading] = useState(false)
   const [speechRate, setSpeechRate] = useState(1)
   const [wordActionAlert, setWordActionAlert] = useState<{ title: string; message: string }>()
@@ -41,7 +49,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   const [openParaphrases, setOpenParaphrases] = useState<Set<number>>(new Set())
   const [loadingParaphrases, setLoadingParaphrases] = useState<Set<number>>(new Set())
   const queryClient = useQueryClient()
-  const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies() })
+  const vocabulariesQuery = useQuery({ queryKey: ['vocabularies'], queryFn: () => getVocabularies(), enabled: !preview })
   const saveWord = useMutation({
     mutationFn: ({ input }: { input: SaveVocabularyInput; wordKey: string }) => saveVocabulary(input),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['vocabularies'] }),
@@ -89,6 +97,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
     const sentence = analysis?.sentences[sentenceIndex]
     if (!sentence) return
     if (!sentence.paraphrases.length) {
+      if (preview) return
       paraphraseControllersRef.current.get(sentenceIndex)?.abort()
       const controller = new AbortController()
       paraphraseControllersRef.current.set(sentenceIndex, controller)
@@ -116,6 +125,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   }
 
   useEffect(() => {
+    if (!request || !onLoadingChange) return
     paraphraseControllersRef.current.forEach(controller => controller.abort())
     paraphraseControllersRef.current.clear()
     const controller = new AbortController()
@@ -185,7 +195,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
   }, [onLoadingChange, queryClient, request, requestId])
 
   return <div className="analysis-page analysis-page-v2 analysis-results-root">
-    <LearningTimer activity="analysis" enabled={Boolean(analysis) && !isLoading}/>
+    {!preview && <LearningTimer activity="analysis" enabled={Boolean(analysis) && !isLoading}/>}
     {error && <p role="alert" className="analysis-result-error">{error}</p>}
     <AiLoadingOverlay open={isLoading} kind="analysis"/>
 
@@ -195,7 +205,7 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
       <section className="analysis-background-v2"><div className="analysis-background-heading"><BookBookmarkIcon weight="duotone" aria-hidden="true"/><h3>배경 지식</h3></div><p>{analysis.backgroundKnowledge}</p></section>
 
       {analysis.sentences.map((sentence, sentenceIndex) => {
-        const words = sentence.vocabularySummaries ?? []
+        const words = preview ? sentence.vocabulary : (sentence.vocabularySummaries ?? [])
         const showVocabulary = words.length > 0
         const translationOpen = openTranslations.has(sentenceIndex)
         const paraphrasesOpen = openParaphrases.has(sentenceIndex)
@@ -233,13 +243,18 @@ export default function AnalysisPage({ request, requestId, onLoadingChange }: { 
               <h3><BookOpenIcon className="analysis-heading-icon analysis-icon-vocabulary" weight="duotone" aria-hidden="true"/>핵심 어휘</h3>
               {words.map(word => {
                   const wordKey = `${sentenceIndex}-${word.word}`
-                  const savedVocabulary = vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
+                  const savedVocabulary = !preview && vocabulariesQuery.data?.find(item => item.languageCode === analysis.learningLanguage && item.word.toLocaleLowerCase() === word.word.toLocaleLowerCase())
                   const saving = (saveWord.isPending && saveWord.variables.wordKey === wordKey)
                     || (removeWord.isPending && removeWord.variables.wordKey === wordKey)
                   return <AnalysisVocabularyCard key={wordKey} summary={word} sentence={sentence}
                     inputLanguage={analysis.inputLanguage} learningLanguage={analysis.learningLanguage}
+                    previewDetail={preview ? sentence.vocabulary.find(item => item.word === word.word) : undefined}
                     saved={Boolean(savedVocabulary)} saving={saving} speak={speak}
                     onSaveToggle={detail => {
+                      if ('onSignup' in props) {
+                        props.onSignup()
+                        return
+                      }
                       setWordActionAlert(undefined)
                       if (savedVocabulary) removeWord.mutate({ vocabularyId: savedVocabulary.vocabularyId, wordKey })
                       else saveWord.mutate({ wordKey, input: {
