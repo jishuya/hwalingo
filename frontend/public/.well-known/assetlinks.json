@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.netlify.hwalingo",
+      "sha256_cert_fingerprints": [
+        "B5:32:60:2A:D3:19:6E:70:4C:8C:BC:B0:AB:B3:E8:B1:88:48:46:BE:9E:06:C4:90:A2:83:E2:1B:96:D1:01:C8",
+        "D8:62:77:F7:5D:F4:1D:DE:BC:C1:3F:7E:D5:5A:4E:58:D5:1E:54:9A:65:A2:E0:78:FC:4B:E9:A9:85:BE:AE:8D"
+      ]
+    }
+  }
+]
