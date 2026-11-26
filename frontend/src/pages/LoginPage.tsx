@@ -8,10 +8,18 @@ import logo from '../assets/hwalingo_logo.png'
 import wordmark from '../assets/wordmarks/hwalingo-wordmark-01-rounded.png'
 import { login, type AuthUser } from '../services/auth'
 
+const lastLoginEmailKey = 'hwalingo:last-login-email'
+
 export default function LoginPage({ done }: { done: (user: AuthUser) => void }) {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => {
+    try {
+      return localStorage.getItem(lastLoginEmailKey) ?? ''
+    } catch {
+      return ''
+    }
+  })
+  const [rememberEmail, setRememberEmail] = useState(Boolean(email))
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [signupOpen, setSignupOpen] = useState(() => new URLSearchParams(window.location.search).get('signup') === '1')
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -32,12 +40,30 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
     setSubmitting(true)
 
     try {
-      const result = await login(email, password, rememberMe)
+      const result = await login(email, password)
+      if (rememberEmail) {
+        try {
+          localStorage.setItem(lastLoginEmailKey, result.user.email)
+        } catch {
+          // Login can complete when browser storage is unavailable.
+        }
+      }
       done(result.user)
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : '요청을 처리하지 못했습니다.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const changeRememberEmail = (checked: boolean) => {
+    setRememberEmail(checked)
+    if (!checked) {
+      try {
+        localStorage.removeItem(lastLoginEmailKey)
+      } catch {
+        // The checkbox remains usable when browser storage is unavailable.
+      }
     }
   }
 
@@ -54,7 +80,10 @@ export default function LoginPage({ done }: { done: (user: AuthUser) => void }) 
           <label className="auth-field"><span className="auth-sr-only">이메일</span><EnvelopeSimple className="auth-field-icon"/><input value={email} onChange={event => setEmail(event.target.value)} type="email" autoComplete="email" placeholder="이메일 주소" required/></label>
           <label className="auth-field auth-password"><span className="auth-sr-only">비밀번호</span><LockKey className="auth-field-icon"/><input value={password} onChange={event => setPassword(event.target.value)} type={showPassword ? 'text' : 'password'} minLength={8} maxLength={72} autoComplete="current-password" placeholder="비밀번호 (8자 이상)" required/><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}>{showPassword ? <EyeSlash/> : <Eye/>}</button></label>
 
-          <div className="auth-options"><label className="auth-check"><input checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} type="checkbox"/><span><Check weight="bold"/></span>로그인 유지</label><button type="button" onClick={() => { setError(''); setForgotPasswordOpen(true) }}>비밀번호를 잊으셨나요?</button></div>
+          <div className="auth-options">
+            <label className="auth-check"><input checked={rememberEmail} onChange={event => changeRememberEmail(event.target.checked)} disabled={submitting} type="checkbox"/><span><Check weight="bold"/></span>아이디 기억하기</label>
+            <button type="button" onClick={() => { setError(''); setForgotPasswordOpen(true) }}>비밀번호를 잊으셨나요?</button>
+          </div>
           {error && <p className="auth-error" role="alert">{error}</p>}
           <button className="auth-submit" disabled={submitting}>{submitting ? '잠시만 기다려주세요' : '로그인하기'}<ArrowRight weight="bold"/></button>
         </form>

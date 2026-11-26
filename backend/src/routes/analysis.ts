@@ -100,7 +100,7 @@ analysisRouter.post('/vocabulary', requireAuth, async (request, response, next) 
     }
     const userId = request.auth!.userId
     const keyParts = { inputLanguage, learningLanguage, sentences, target }
-    const operation = summary ? 'sentence_vocabulary_summary_v1' : target ? 'sentence_vocabulary_detail_v2' : 'sentence_vocabulary_v17'
+    const operation = summary ? 'sentence_vocabulary_summary_v2' : target ? 'sentence_vocabulary_detail_v2' : 'sentence_vocabulary_v18'
     const loadVocabulary = (signal: AbortSignal) => withAIResponseCache<VocabularySummary[][]>({
       userId,
       operation,

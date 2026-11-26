@@ -38,10 +38,10 @@ export function getCurrentUser(): Promise<AuthResponse> {
   return request('/api/auth/me')
 }
 
-export function login(email: string, password: string, rememberMe: boolean): Promise<AuthResponse> {
+export function login(email: string, password: string): Promise<AuthResponse> {
   return request('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password, rememberMe }),
+    body: JSON.stringify({ email, password, rememberMe: true }),
   })
 }
 

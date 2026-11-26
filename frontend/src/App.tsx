@@ -1,8 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import LoginRequired from './components/ui/LoginRequired'
 import { SESSION_EXPIRED_EVENT } from './services/apiFetch'
-import { RobotIcon, StarIcon, ExamIcon, SparkleIcon, UserCircleIcon, ChartBarIcon } from '@phosphor-icons/react'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
 import StudyPage from './pages/StudyPage'
@@ -27,11 +25,17 @@ export default function App() {
   const authQuery = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: getCurrentUser,
+    enabled: !sessionExpired,
     retry: false,
     refetchOnWindowFocus: true,
   })
   useEffect(() => {
-    const expireSession = () => setSessionExpired(true)
+    const expireSession = () => {
+      setSessionExpired(true)
+      if (location.pathname !== '/login') history.replaceState(null, '', '/login')
+      setPage('login')
+      window.scrollTo(0, 0)
+    }
     window.addEventListener(SESSION_EXPIRED_EVENT, expireSession)
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expireSession)
   }, [])
@@ -91,24 +95,9 @@ export default function App() {
     go('login')
   }
 
+  if (sessionExpired) return <LoginPage done={finishAuth}/>
   if (authQuery.isPending) return <div className="auth-loading">Hwalingo 불러오는 중...</div>
-  if (page === 'login' || (!authQuery.data && !sessionExpired)) return <LoginPage done={finishAuth}/>
-
-  if (sessionExpired) {
-    const titles = {
-      study: { title: 'AI 문장 분석', Icon: RobotIcon },
-      vocabulary: { title: '내 단어장', Icon: StarIcon },
-      quiz: { title: '테스트', Icon: ExamIcon },
-      story: { title: '스토리텔링', Icon: SparkleIcon },
-      profile: { title: '마이페이지', Icon: UserCircleIcon },
-      'learning-progress': { title: '학습 리포트', Icon: ChartBarIcon },
-    }
-    const { title, Icon } = titles[page]
-    return <AppShell page={page} go={go} onHome={goHome} sessionExpired><div className="page session-expired-page">
-      <header className="page-title"><span className="page-title-icon"><Icon weight="duotone" aria-hidden="true"/></span><h1>{title}</h1></header>
-      <LoginRequired/>
-    </div></AppShell>
-  }
+  if (page === 'login' || !authQuery.data) return <LoginPage done={finishAuth}/>
 
   const content = page === 'study'
     ? <StudyPage key={studyPageKey}/>

@@ -1,5 +1,5 @@
 import { isVocabularyInLearningLanguage, isVocabularyWordInLearningLanguage, VocabularyLanguageError } from './vocabularyLanguage.js'
-import { buildVocabularyInstructions } from './sentenceVocabularyPrompts.js'
+import { buildVocabularyInstructions, vocabularyWordFormInstructions } from './sentenceVocabularyPrompts.js'
 import { isKanaReading, isPoliteEtymology, isKoreanExplanation, VocabularyExplanationError } from './vocabularyPresentation.js'
 import { env } from '../config/env.js'
 import { getOpenAIClient } from '../config/openai.js'
@@ -72,7 +72,7 @@ const vocabularySummaryItemsSchema = {
     required: ['word', 'basicMeaning', 'level'],
   },
 } as const
-const vocabularySummaryInstructions = 'For each learning sentence, list every distinct vocabulary item whose contextual usage is CEFR B1, B2, C1, or C2. Exclude A1/A2. Use the learning language for word and a short Korean-only basicMeaning appropriate for that sense. Return an empty list if none qualify.'
+const vocabularySummaryInstructions = `For each learning sentence, list every distinct vocabulary item whose contextual usage is CEFR B1, B2, C1, or C2. Exclude A1/A2. Use the learning language for word and a short Korean-only basicMeaning appropriate for that sense. Return an empty list if none qualify. ${vocabularyWordFormInstructions}`
 
 const sentenceAnalysisSchema = {
   type: 'object', additionalProperties: false,
